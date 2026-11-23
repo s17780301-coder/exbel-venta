@@ -70,6 +70,7 @@ class _ImportarState extends State<_Importar> {
   late int _encabezado;
   late Map<String, int> _cols;
   bool _reemplazar = true;
+  bool _granel = true;
   bool _trabajando = false;
   double _avance = 0;
   ResumenImportacion? _resumen;
@@ -85,6 +86,12 @@ class _ImportarState extends State<_Importar> {
   List<String> get _titulos => widget.filas[_encabezado];
   int get _datos => widget.filas.length - _encabezado - 1;
 
+  int get _conDecimales {
+    final i = _cols['existencia'];
+    if (i == null) return 0;
+    return widget.filas.skip(_encabezado + 1).where((f) => i < f.length && tieneDecimales(f[i])).length;
+  }
+
   Future<void> _importar() async {
     final faltan = campos.where((c) => c.obligatorio && !_cols.containsKey(c.clave)).map((c) => c.nombre).toList();
     if (faltan.isNotEmpty) return aviso(context, 'Indica qué columna es: ${faltan.join(', ')}.');
@@ -97,6 +104,7 @@ class _ImportarState extends State<_Importar> {
               _encabezado,
               _cols,
               reemplazarExistencia: _reemplazar,
+              granelSiDecimales: _granel && !_cols.containsKey('tipo'),
               cajeroId: sesion.cajero?.id,
               progreso: (h, t) {
                 if (mounted && (h % 25 == 0 || h == t)) setState(() => _avance = t == 0 ? 1 : h / t);
@@ -178,6 +186,14 @@ class _ImportarState extends State<_Importar> {
                   FilaTabla([for (final c in usados) (celda(_valor(ejemplos[i], c.clave)), c.clave == 'descripcion' || c.clave == 'nombre' ? 4 : 2, false)],
                       par: i.isOdd),
                 const SizedBox(height: 14),
+                if (!widget.clientes && !_cols.containsKey('tipo') && _cols.containsKey('existencia'))
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: _granel,
+                    onChanged: (v) => setState(() => _granel = v ?? true),
+                    title: Text('Marcar como granel (kg) los que tienen existencia con decimales ($_conDecimales productos)'),
+                    subtitle: const Text('Eleventa no exporta si un producto es a granel; los decimales (ej. arroz 20.24) lo delatan.'),
+                  ),
                 if (!widget.clientes)
                   CheckboxListTile(
                     contentPadding: EdgeInsets.zero,

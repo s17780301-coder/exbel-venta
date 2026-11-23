@@ -1,6 +1,7 @@
 import 'dart:convert';
 
-import 'package:excel/excel.dart' show Excel, CellValue, IntCellValue, DoubleCellValue, BoolCellValue;
+import 'package:archive/archive.dart';
+import 'package:xml/xml.dart';
 
 import '../core/db.dart';
 import '../core/ids.dart';
@@ -9,19 +10,7 @@ import 'repos.dart';
 
 /// Lee un archivo de Excel (.xlsx) o CSV y regresa sus filas como texto.
 List<List<String>> leerTabla(List<int> bytes, String nombre) {
-  final n = nombre.toLowerCase();
-  if (n.endsWith('.xlsx')) {
-    final excel = Excel.decodeBytes(bytes);
-    // La hoja con más filas (el catálogo).
-    List<List<String>> mejor = [];
-    for (final hoja in excel.tables.values) {
-      final filas = [
-        for (final fila in hoja.rows) [for (final c in fila) _celda(c?.value)],
-      ].where((f) => f.any((x) => x.trim().isNotEmpty)).toList();
-      if (filas.length > mejor.length) mejor = filas;
-    }
-    return mejor;
-  }
+  if (nombre.toLowerCase().endsWith('.xlsx')) return leerXlsx(bytes);
   String texto;
   try {
     texto = utf8.decode(bytes);
@@ -31,16 +20,73 @@ List<List<String>> leerTabla(List<int> bytes, String nombre) {
   return leerCsvTexto(texto);
 }
 
-String _celda(CellValue? v) {
-  if (v == null) return '';
-  if (v is IntCellValue) return '${v.value}';
-  if (v is DoubleCellValue) {
-    final d = v.value;
-    // Los códigos de barras llegan como número: 7501055300846.0
-    return d == d.roundToDouble() && d.abs() < 1e15 ? d.toInt().toString() : d.toString();
+/// Lector propio de .xlsx (es un ZIP con XML): lee el texto de las celdas de
+/// la hoja con más filas. Funciona con los archivos que exporta Eleventa.
+List<List<String>> leerXlsx(List<int> bytes) {
+  final zip = ZipDecoder().decodeBytes(bytes);
+  String? texto(ArchiveFile? f) => f == null ? null : utf8.decode(f.content as List<int>, allowMalformed: true);
+  final compartidos = <String>[];
+  final ss = texto(zip.findFile('xl/sharedStrings.xml'));
+  if (ss != null) {
+    for (final si in XmlDocument.parse(ss).findAllElements('si')) {
+      compartidos.add(si.findAllElements('t').map((t) => t.innerText).join());
+    }
   }
-  if (v is BoolCellValue) return v.value ? 'si' : 'no';
-  return v.toString().trim();
+  var mejor = <List<String>>[];
+  for (final f in zip.files) {
+    if (!f.isFile || !RegExp(r'^xl/worksheets/sheet\d+\.xml$').hasMatch(f.name)) continue;
+    final doc = XmlDocument.parse(texto(f)!);
+    final filas = <List<String>>[];
+    for (final row in doc.findAllElements('row')) {
+      final fila = <String>[];
+      for (final c in row.findElements('c')) {
+        final col = _columna(c.getAttribute('r') ?? '') ?? fila.length;
+        final t = c.getAttribute('t');
+        String v;
+        if (t == 'inlineStr') {
+          v = c.findAllElements('t').map((e) => e.innerText).join();
+        } else {
+          final crudo = c.getElement('v')?.innerText ?? '';
+          if (t == 's') {
+            final i = int.tryParse(crudo);
+            v = i != null && i >= 0 && i < compartidos.length ? compartidos[i] : '';
+          } else if (t == 'b') {
+            v = crudo == '1' ? 'si' : 'no';
+          } else if (t == 'str' || t == 'e') {
+            v = crudo;
+          } else {
+            v = _numero(crudo);
+          }
+        }
+        while (fila.length <= col) {
+          fila.add('');
+        }
+        fila[col] = v.trim();
+      }
+      if (fila.any((x) => x.isNotEmpty)) filas.add(fila);
+    }
+    if (filas.length > mejor.length) mejor = filas;
+  }
+  return mejor;
+}
+
+/// "C12" -> 2
+int? _columna(String ref) {
+  final letras = RegExp(r'^[A-Z]+').firstMatch(ref.toUpperCase())?.group(0);
+  if (letras == null) return null;
+  var n = 0;
+  for (final u in letras.codeUnits) {
+    n = n * 26 + (u - 64);
+  }
+  return n - 1;
+}
+
+/// Los códigos de barras llegan como número (7501055300846 o 7.501055300846E12).
+String _numero(String crudo) {
+  final d = double.tryParse(crudo);
+  if (d == null) return crudo;
+  if (d == d.roundToDouble() && d.abs() < 1e15) return d.toInt().toString();
+  return crudo;
 }
 
 List<List<String>> leerCsvTexto(String texto) {
@@ -197,6 +243,13 @@ double? leerNumero(String s) {
   return c == null ? null : c / 100;
 }
 
+/// "20.24" sí; "18.00" no. Eleventa no exporta si es a granel, pero una
+/// existencia con decimales casi siempre lo indica (arroz, aguacate…).
+bool tieneDecimales(String s) {
+  final n = leerNumero(s);
+  return n != null && (n * 1000).round() % 1000 != 0;
+}
+
 /// IVA: "16", "16%", "0.16", "Sí" -> 16. "No", "0", "Exento" -> 0.
 double leerIva(String s) {
   final n = normalizar(s);
@@ -227,6 +280,7 @@ Future<ResumenImportacion> importarProductos(
   int filaEncabezado,
   Map<String, int> columnas, {
   bool reemplazarExistencia = true,
+  bool granelSiDecimales = false,
   String? cajeroId,
   void Function(int hechos, int total)? progreso,
 }) async {
@@ -262,7 +316,9 @@ Future<ResumenImportacion> importarProductos(
         id: existente?.id ?? nuevoId(),
         codigo: codigo,
         descripcion: desc,
-        tipo: columnas.containsKey('tipo') ? leerTipo(v(f, 'tipo')) : (existente?.tipo ?? 'unidad'),
+        tipo: columnas.containsKey('tipo')
+            ? leerTipo(v(f, 'tipo'))
+            : (granelSiDecimales && tieneDecimales(v(f, 'existencia')) ? 'granel' : (existente?.tipo ?? 'unidad')),
         departamentoId: depId,
         costoCentavos: leerDinero(v(f, 'costo')) ?? existente?.costoCentavos ?? 0,
         precioCentavos: precio,

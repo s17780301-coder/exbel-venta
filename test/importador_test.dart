@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:exbel_venta/core/db.dart';
 import 'package:exbel_venta/data/ejemplo.dart';
 import 'package:exbel_venta/data/importador.dart';
@@ -105,5 +107,33 @@ void main() {
     expect(await repos.ventas.listar(), isEmpty);
     expect(await repos.cajeros.hayCajeros(), isTrue);
     expect((await repos.caja.turnoAbierto())?.id, turno.id);
+  });
+
+  test('lee el Excel que exporta Eleventa (FlexCel) e importa', () async {
+    final bytes = File('test/datos/eleventa_muestra.xlsx').readAsBytesSync();
+    final filas = leerTabla(bytes, 'inventario.xlsx');
+    expect(filas.length, 41);
+    expect(filas.first.first, 'Código');
+    final (fila, cols) = detectarColumnas(filas, camposProducto);
+    expect(fila, 0);
+    expect(cols, {
+      'codigo': 0, 'descripcion': 1, 'costo': 2, 'precio': 3, 'mayoreo': 4,
+      'existencia': 5, 'minimo': 6, 'maximo': 7, 'departamento': 8,
+    });
+    final r = await importarProductos(filas, fila, cols);
+    expect(r.errores, isEmpty);
+    expect(r.nuevos, 40);
+    final p = (await repos.productos.porCodigo('7500000000001'))!;
+    expect(p.descripcion, 'Producto de prueba 1');
+    expect(p.precioCentavos, 1214);
+    expect(p.existencia, 18);
+  });
+
+  test('existencia con decimales se marca como granel', () async {
+    final filas = leerCsvTexto('Código,Producto,P. Venta,Existencia\nARROZ,Arroz,\$24.00,20.24\nCOCA,Coca 600,\$18.00,18.00\n');
+    final (f, c) = detectarColumnas(filas, camposProducto);
+    await importarProductos(filas, f, c, granelSiDecimales: true);
+    expect((await repos.productos.porCodigo('ARROZ'))!.tipo, 'granel');
+    expect((await repos.productos.porCodigo('COCA'))!.tipo, 'unidad');
   });
 }
