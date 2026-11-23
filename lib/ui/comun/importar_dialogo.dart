@@ -149,7 +149,7 @@ class _ImportarState extends State<_Importar> {
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 Text('${widget.archivo} · $_datos filas', style: const TextStyle(color: ExColor.texto2)),
                 const SizedBox(height: 6),
-                const Text('Revisa qué columna del archivo corresponde a cada dato. Ya las acomodé solo; corrige si alguna está mal.'),
+                const Text('Las columnas se detectaron automáticamente. Verifica que cada dato corresponda a la columna correcta antes de importar.'),
                 const SizedBox(height: 14),
                 Wrap(spacing: 14, runSpacing: 12, children: [
                   for (final c in campos)
