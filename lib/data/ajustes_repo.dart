@@ -1,5 +1,6 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import '../core/bascula.dart';
 import '../core/caja_local.dart';
 
 /// Versión personalizada para esta tienda.
@@ -41,6 +42,12 @@ abstract final class Ajuste {
   // Báscula (código de etiqueta con peso o precio).
   static const basculaPrefijo = 'bascula_prefijo';
   static const basculaModo = 'bascula_modo'; // peso | precio
+
+  // Báscula conectada por USB / serial (puerto COM). Vacío = sin báscula.
+  static const basculaPuerto = 'bascula_puerto';
+  static const basculaBaudios = 'bascula_baudios';
+  static const basculaFormato = 'bascula_formato';
+  static const basculaPedido = 'bascula_pedido';
 
   // Folios y moneda.
   static const folioMinimo = 'folio_minimo';
@@ -96,6 +103,10 @@ const ajustesDeCaja = <String>{
   Ajuste.impresion,
   Ajuste.basculaPrefijo,
   Ajuste.basculaModo,
+  Ajuste.basculaPuerto,
+  Ajuste.basculaBaudios,
+  Ajuste.basculaFormato,
+  Ajuste.basculaPedido,
   'impresora_tickets',
   'tickets_pendientes',
 };
@@ -130,4 +141,24 @@ class AjustesRepo {
   }
 
   Future<void> guardarSi(String clave, bool valor) => guardar(clave, valor ? '1' : '0');
+}
+
+/// Báscula conectada configurada en esta caja (null = ninguna).
+ConfigBascula? configBascula(AjustesRepo a) {
+  final puerto = a.texto(Ajuste.basculaPuerto).trim();
+  if (puerto.isEmpty) return null;
+  return ConfigBascula(
+    puerto: puerto,
+    baudios: int.tryParse(a.texto(Ajuste.basculaBaudios)) ?? 9600,
+    formato: a.texto(Ajuste.basculaFormato).isEmpty ? '8N1' : a.texto(Ajuste.basculaFormato),
+    pedido: a.texto(Ajuste.basculaPedido) == '-' ? '' : (a.texto(Ajuste.basculaPedido).isEmpty ? 'P' : a.texto(Ajuste.basculaPedido)),
+  );
+}
+
+Future<void> guardarConfigBascula(AjustesRepo a, ConfigBascula? c) async {
+  await a.guardar(Ajuste.basculaPuerto, c?.puerto ?? '');
+  if (c == null) return;
+  await a.guardar(Ajuste.basculaBaudios, '${c.baudios}');
+  await a.guardar(Ajuste.basculaFormato, c.formato);
+  await a.guardar(Ajuste.basculaPedido, c.pedido.isEmpty ? '-' : c.pedido);
 }

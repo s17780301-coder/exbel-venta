@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:window_manager/window_manager.dart';
 
+import '../../core/bascula.dart';
 import '../../core/cajon.dart';
 import '../../core/db.dart';
 import '../../core/formato.dart';
@@ -24,7 +25,7 @@ import '../sesion.dart';
 import '../tema/tema.dart';
 import '../zoom.dart';
 
-const versionExBel = '0.6.0';
+const versionExBel = '0.6.1';
 
 /// Configuración de la tienda.
 class ConfigPage extends StatefulWidget {
@@ -744,9 +745,183 @@ class _Bascula extends StatefulWidget {
 }
 
 class _BasculaState extends State<_Bascula> {
+  List<(String, String)> _puertos = [];
+  bool _cargando = true;
+  bool _buscando = false;
+  String _avance = '';
+  ConfigBascula? _config;
+  final _lector = LectorBascula.instancia;
+  bool _leyendo = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _config = configBascula(repos.ajustes);
+    _cargarPuertos();
+  }
+
+  @override
+  void dispose() {
+    if (_leyendo) _lector.soltar();
+    super.dispose();
+  }
+
+  Future<void> _cargarPuertos() async {
+    setState(() => _cargando = true);
+    final l = await puertosCom();
+    if (mounted) {
+      setState(() {
+        _puertos = l;
+        _cargando = false;
+      });
+    }
+  }
+
+  Future<void> _usar(ConfigBascula? c) async {
+    await guardarConfigBascula(repos.ajustes, c);
+    setState(() => _config = c);
+    if (_leyendo) {
+      _lector.soltar();
+      _leyendo = false;
+    }
+    if (c != null) {
+      _leyendo = true;
+      await _lector.usar(c);
+    }
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _buscar() async {
+    if (_puertos.isEmpty) await _cargarPuertos();
+    if (_puertos.isEmpty) return;
+    if (_leyendo) {
+      _lector.soltar();
+      _leyendo = false;
+    }
+    setState(() {
+      _buscando = true;
+      _avance = 'Buscando…';
+    });
+    final r = await buscarBascula([for (final x in _puertos) x.$1], avance: (t) {
+      if (mounted) setState(() => _avance = t);
+    });
+    if (!mounted) return;
+    setState(() => _buscando = false);
+    if (r == null) {
+      setState(() => _avance = 'No contestó ninguna báscula. Revisa que esté prendida y conectada, pon algo encima y '
+          'vuelve a buscar. Si sigue igual, configúrala a mano con los datos de su manual.');
+      return;
+    }
+    setState(() => _avance = 'Báscula encontrada en ${r.$1.puerto}. Respondió: "${r.$2}"');
+    await _usar(r.$1);
+  }
+
+  Widget _desplegable<T>(String etiqueta, T valor, List<(T, String)> opciones, void Function(T) cambio) => SizedBox(
+        width: 230,
+        child: DropdownButtonFormField<T>(
+          value: opciones.any((o) => o.$1 == valor) ? valor : null,
+          decoration: InputDecoration(labelText: etiqueta),
+          items: [for (final o in opciones) DropdownMenuItem(value: o.$1, child: Text(o.$2, overflow: TextOverflow.ellipsis))],
+          onChanged: (v) {
+            if (v != null) cambio(v);
+          },
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
+    final c = _config;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _titulo('Báscula conectada (USB)', 'Para pesar en el mostrador: al vender un producto a granel se llena solo el peso.'),
+      Wrap(spacing: 12, runSpacing: 10, crossAxisAlignment: WrapCrossAlignment.center, children: [
+        FilledButton.icon(
+          onPressed: _buscando || _cargando ? null : _buscar,
+          icon: const Icon(Icons.search),
+          label: const Text('Buscar báscula automáticamente'),
+        ),
+        OutlinedButton.icon(
+          onPressed: _cargando || _buscando ? null : _cargarPuertos,
+          icon: const Icon(Icons.refresh),
+          label: const Text('Volver a revisar puertos'),
+        ),
+        if (c != null)
+          OutlinedButton.icon(
+            onPressed: _buscando ? null : () => _usar(null),
+            icon: const Icon(Icons.link_off),
+            label: const Text('Quitar báscula'),
+          ),
+      ]),
+      const SizedBox(height: 10),
+      if (_cargando) const LinearProgressIndicator(),
+      if (_buscando) const LinearProgressIndicator(),
+      if (_avance.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 6), child: Text(_avance)),
+      if (!_cargando && _puertos.isEmpty)
+        const Padding(
+          padding: EdgeInsets.only(top: 8),
+          child: Text(
+              'Windows no muestra ningún puerto COM. Conecta la báscula por USB y préndela. Si aun así no aparece, le falta su '
+              'controlador (driver): viene en el disco o en la página del fabricante, normalmente "CH340", "Prolific" o "FTDI".',
+              style: TextStyle(color: ExColor.rojo)),
+        ),
+      if (_puertos.isNotEmpty) ...[
+        const SizedBox(height: 8),
+        Text('Puertos en esta computadora: ${_puertos.map((x) => x.$2).join(', ')}', style: const TextStyle(color: ExColor.texto2)),
+      ],
+      const SizedBox(height: 16),
+      if (c != null)
+        ExSeccionSimple(
+          child: Row(children: [
+            const Icon(Icons.scale_outlined, size: 36, color: ExColor.indigo),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                ValueListenableBuilder<double?>(
+                  valueListenable: _lector.peso,
+                  builder: (_, v, __) =>
+                      Text(_leyendo ? (v == null ? '— kg' : '${v.toStringAsFixed(3)} kg') : 'Configurada', style: ExTexto.mono(28)),
+                ),
+                ValueListenableBuilder<String>(
+                  valueListenable: _lector.estado,
+                  builder: (_, e, __) => Text(e.isEmpty ? c.toString() : e,
+                      style: TextStyle(color: e.isEmpty ? ExColor.texto2 : ExColor.rojo)),
+                ),
+              ]),
+            ),
+            if (!_leyendo)
+              OutlinedButton(
+                onPressed: () async {
+                  _leyendo = true;
+                  await _lector.usar(c);
+                  if (mounted) setState(() {});
+                },
+                child: const Text('Probar lectura'),
+              ),
+          ]),
+        ),
+      const SizedBox(height: 14),
+      ExpansionTile(
+        tilePadding: EdgeInsets.zero,
+        title: const Text('Configurar a mano', style: TextStyle(fontWeight: FontWeight.w600)),
+        children: [
+          Wrap(spacing: 12, runSpacing: 12, children: [
+            _desplegable<String>('Puerto', c?.puerto ?? '', [for (final x in _puertos) (x.$1, x.$2)],
+                (v) => _usar(ConfigBascula(puerto: v, baudios: c?.baudios ?? 9600, formato: c?.formato ?? '8N1', pedido: c?.pedido ?? 'P'))),
+            if (c != null) ...[
+              _desplegable<int>('Velocidad', c.baudios, [for (final b in const [1200, 2400, 4800, 9600, 19200, 38400]) (b, '$b')],
+                  (v) => _usar(ConfigBascula(puerto: c.puerto, baudios: v, formato: c.formato, pedido: c.pedido))),
+              _desplegable<String>('Datos', c.formato, const [('8N1', '8 bits, sin paridad'), ('7E1', '7 bits, paridad par')],
+                  (v) => _usar(ConfigBascula(puerto: c.puerto, baudios: c.baudios, formato: v, pedido: c.pedido))),
+              _desplegable<String>(
+                  'Pedir el peso con',
+                  c.pedido,
+                  const [('P', 'P (Torrey, Rhino, Noval)'), ('W', 'W (CAS, Toledo)'), ('ENQ', 'ENQ'), ('', 'Nada: manda sola')],
+                  (v) => _usar(ConfigBascula(puerto: c.puerto, baudios: c.baudios, formato: c.formato, pedido: v))),
+            ],
+          ]),
+          const SizedBox(height: 8),
+        ],
+      ),
+      const Divider(height: 36),
       _titulo('Báscula con etiquetas', 'Para básculas que imprimen etiqueta con código de barras (salchichonería, cremería).'),
       const _Campo(Ajuste.basculaPrefijo, 'Prefijo de la etiqueta', ayuda: 'Normalmente 20. Vacío = desactivado'),
       Row(children: [

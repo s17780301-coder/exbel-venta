@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../core/bascula.dart';
 import '../../core/formato.dart';
+import '../../data/ajustes_repo.dart';
 import '../../data/repos.dart';
 import '../../models/modelos.dart';
 import '../comun/dialogos.dart';
@@ -25,9 +27,37 @@ class _Granel extends StatefulWidget {
 class _GranelState extends State<_Granel> {
   final _cant = TextEditingController();
   final _imp = TextEditingController();
+  final _bascula = configBascula(repos.ajustes);
+  final _lector = LectorBascula.instancia;
+
+  /// Mientras el cajero no escriba, la cantidad sigue a la báscula.
+  bool _siguePeso = true;
+
+  @override
+  void initState() {
+    super.initState();
+    final b = _bascula;
+    if (b != null) {
+      _lector.peso.addListener(_nuevoPeso);
+      _lector.usar(b);
+      _nuevoPeso();
+    }
+  }
+
+  void _nuevoPeso() {
+    final v = _lector.peso.value;
+    if (!_siguePeso || v == null || !mounted) return;
+    _cant.text = v <= 0 ? '' : formatoCantidad(v);
+    _cant.selection = TextSelection.collapsed(offset: _cant.text.length);
+    _desdeCantidad(_cant.text);
+  }
 
   @override
   void dispose() {
+    if (_bascula != null) {
+      _lector.peso.removeListener(_nuevoPeso);
+      _lector.soltar();
+    }
     _cant.dispose();
     _imp.dispose();
     super.dispose();
@@ -59,19 +89,32 @@ class _GranelState extends State<_Granel> {
           Text('Precio: ${formatoPesos(widget.p.precioCentavos)} por kilo / litro',
               style: const TextStyle(color: ExColor.texto2)),
           const SizedBox(height: 16),
+          if (_bascula != null) ...[
+            _PesoEnVivo(lector: _lector, siguiendo: _siguePeso, onVolver: () {
+              setState(() => _siguePeso = true);
+              _nuevoPeso();
+            }),
+            const SizedBox(height: 14),
+          ],
           CampoNumero(
               controller: _cant,
               etiqueta: 'Cantidad (kg)',
-              ayuda: 'Ej. 0.250 = 250 gramos',
+              ayuda: _bascula != null ? 'Se llena con la báscula. Enter para agregar.' : 'Ej. 0.250 = 250 gramos',
               autofocus: true,
-              onChanged: _desdeCantidad,
+              onChanged: (v) {
+                if (_siguePeso) setState(() => _siguePeso = false);
+                _desdeCantidad(v);
+              },
               onSubmitted: (_) => _aceptar()),
           const SizedBox(height: 14),
           CampoNumero(
               controller: _imp,
               etiqueta: 'O importe (\$)',
               ayuda: 'Ej. 20 = veinte pesos',
-              onChanged: _desdeImporte,
+              onChanged: (v) {
+                if (_siguePeso) setState(() => _siguePeso = false);
+                _desdeImporte(v);
+              },
               onSubmitted: (_) => _aceptar()),
         ]),
       ),
@@ -81,6 +124,55 @@ class _GranelState extends State<_Granel> {
       ],
     );
   }
+}
+
+/// Peso que marca la báscula en este momento.
+class _PesoEnVivo extends StatelessWidget {
+  const _PesoEnVivo({required this.lector, required this.siguiendo, required this.onVolver});
+  final LectorBascula lector;
+  final bool siguiendo;
+  final VoidCallback onVolver;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: ExColor.concreto,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: ExColor.borde, width: 1.2),
+      ),
+      child: Row(children: [
+        const Icon(Icons.scale_outlined, color: ExColor.indigo, size: 30),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ValueListenableBuilder2(
+            a: lector.peso,
+            b: lector.estado,
+            builder: (peso, estado) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(peso == null ? '— kg' : '${peso.toStringAsFixed(3)} kg', style: ExTexto.mono(30, color: ExColor.tinta)),
+              Text(estado.isNotEmpty ? estado : (siguiendo ? 'Báscula' : 'Cantidad escrita a mano'),
+                  style: TextStyle(color: estado.isNotEmpty ? ExColor.rojo : ExColor.texto2, fontSize: 13)),
+            ]),
+          ),
+        ),
+        if (!siguiendo) TextButton(onPressed: onVolver, child: const Text('Usar báscula')),
+      ]),
+    );
+  }
+}
+
+class ValueListenableBuilder2<A, B> extends StatelessWidget {
+  const ValueListenableBuilder2({super.key, required this.a, required this.b, required this.builder});
+  final ValueListenable<A> a;
+  final ValueListenable<B> b;
+  final Widget Function(A a, B b) builder;
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<A>(
+        valueListenable: a,
+        builder: (_, va, __) => ValueListenableBuilder<B>(valueListenable: b, builder: (_, vb, __) => builder(va, vb)),
+      );
 }
 
 /// Ctrl+P: artículo que no está en el catálogo.
