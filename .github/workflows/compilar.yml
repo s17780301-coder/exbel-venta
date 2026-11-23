@@ -54,6 +54,15 @@ jobs:
             (Get-Content $f) -replace 'exbel_venta', 'exBel venta' -replace 'mx\.exbel', 'exBel' | Set-Content $f
           }
           Select-String -Path windows/runner/main.cpp -Pattern 'Create'
+      - name: F10 y Alt no activan el menú de Windows (F10 = buscar)
+        shell: pwsh
+        run: |
+          $f = "windows/runner/flutter_window.cpp"
+          $c = Get-Content $f -Raw
+          $c = $c -replace 'case WM_FONTCHANGE:', "case WM_SYSCOMMAND:`r`n      if ((wparam & 0xFFF0) == SC_KEYMENU) return 0;`r`n      break;`r`n    case WM_FONTCHANGE:"
+          Set-Content $f $c
+          Select-String -Path $f -Pattern 'SC_KEYMENU'
+          if (-not (Select-String -Path $f -Pattern 'SC_KEYMENU' -Quiet)) { exit 1 }
       - name: Compilar
         run: flutter build windows --release --build-number=${{ github.run_number }}
       - name: Incluir las librerías de Visual C++ (para equipos que no las tienen)

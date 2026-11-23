@@ -175,7 +175,7 @@ class _VentasPageState extends State<VentasPage> {
     final ctrl = HardwareKeyboard.instance.isControlPressed;
     if (k == LogicalKeyboardKey.f12) {
       _cobrar();
-    } else if (k == LogicalKeyboardKey.f10) {
+    } else if (k == LogicalKeyboardKey.f10 || (ctrl && k == LogicalKeyboardKey.keyF)) {
       _buscar();
     } else if (k == LogicalKeyboardKey.f11) {
       _mayoreo();

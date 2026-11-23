@@ -77,8 +77,12 @@ class _PrincipalState extends State<Principal> {
   }
 
   bool _tecla(KeyEvent e) {
-    if (e is! KeyDownEvent) return false;
-    if (!(ModalRoute.of(context)?.isCurrent ?? false)) return false;
+    final ctrl = HardwareKeyboard.instance.isControlPressed;
+    final buscar = e.logicalKey == LogicalKeyboardKey.f10 || (ctrl && e.logicalKey == LogicalKeyboardKey.keyF);
+    // F10 es tecla de sistema en Windows (activa el menú de la ventana y se
+    // "come" las teclas siguientes): se consume también al soltarla.
+    if (e is! KeyDownEvent) return e.logicalKey == LogicalKeyboardKey.f10;
+    if (!(ModalRoute.of(context)?.isCurrent ?? false)) return e.logicalKey == LogicalKeyboardKey.f10;
     final mapa = {
       LogicalKeyboardKey.f1: 0,
       LogicalKeyboardKey.f2: 1,
@@ -91,7 +95,7 @@ class _PrincipalState extends State<Principal> {
       return true;
     }
     // F10 en cualquier pantalla: buscador universal.
-    if (e.logicalKey == LogicalKeyboardKey.f10 && _actual != 0) {
+    if (buscar && _actual != 0) {
       _buscarUniversal();
       return true;
     }
@@ -115,7 +119,7 @@ class _PrincipalState extends State<Principal> {
         ([LogicalKeyboardKey.numpadAdd, LogicalKeyboardKey.numpadSubtract, LogicalKeyboardKey.add, LogicalKeyboardKey.minus]
                 .contains(k) &&
             codigoVentasVacio()) ||
-        (ctrl && [LogicalKeyboardKey.keyP, LogicalKeyboardKey.keyD, LogicalKeyboardKey.keyB].contains(k));
+        (ctrl && [LogicalKeyboardKey.keyP, LogicalKeyboardKey.keyD, LogicalKeyboardKey.keyB, LogicalKeyboardKey.keyF].contains(k));
   }
 
   Future<void> _ir(int i) async {
