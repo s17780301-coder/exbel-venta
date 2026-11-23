@@ -192,6 +192,8 @@ class _PrincipalState extends State<Principal> {
     );
   }
 
+  /// Barra superior clara, como Eleventa: la tienda a la izquierda y las
+  /// secciones en botones con recuadro.
   Widget _barraSuperior() {
     final negocio = repos.ajustes.texto(Ajuste.nombreNegocio);
     final logo = repos.ajustes.texto(Ajuste.logoNegocio);
@@ -200,14 +202,17 @@ class _PrincipalState extends State<Principal> {
     final turno = sesion.turno;
     return Container(
       height: 92,
-      color: ExColor.tinta,
+      decoration: const BoxDecoration(
+        color: ExColor.blanco,
+        border: Border(bottom: BorderSide(color: ExColor.borde, width: 1.4)),
+      ),
       padding: const EdgeInsets.only(left: 14),
       child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         // Extremo superior izquierdo: exBel™ chiquito y la tienda.
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-            const ExMarca(oscuro: true, tamano: 11),
+            const ExMarca(tamano: 11),
             const SizedBox(height: 2),
             Tooltip(
               message: 'Cambiar el nombre o el logotipo de la tienda',
@@ -225,34 +230,42 @@ class _PrincipalState extends State<Principal> {
                     const SizedBox(width: 8),
                   ],
                   ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 300),
-                    child: NombreTienda(negocio, tamano: 26),
+                    constraints: const BoxConstraints(maxWidth: 280),
+                    child: NombreTienda(negocio, tamano: 26, oscuro: false),
                   ),
                 ]),
               ),
             ),
           ]),
         ),
-        const SizedBox(width: 24),
-        for (var i = 0; i < _secciones.length; i++) _pestana(i),
-        const Spacer(),
+        const SizedBox(width: 18),
+        Expanded(
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(children: [for (var i = 0; i < _secciones.length; i++) _pestana(i)]),
+            ),
+          ),
+        ),
         if (cajero != null)
           InkWell(
             onTap: _cambiarCajero,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(children: [
-                ExAvatar(cajero.nombre, size: 38),
-                const SizedBox(width: 8),
-                Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(cajero.nombre, style: const TextStyle(color: ExColor.concreto, fontWeight: FontWeight.w600, fontSize: 16)),
+                Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  const Text('Le atiende:', style: TextStyle(color: ExColor.texto2, fontSize: 12)),
+                  Text(cajero.nombre, style: const TextStyle(color: ExColor.tinta, fontWeight: FontWeight.w700, fontSize: 16)),
                   Text(turno == null ? 'Sin turno' : 'Turno ${turno.numero}',
-                      style: const TextStyle(color: ExColor.textoClaro2, fontSize: 13)),
+                      style: const TextStyle(color: ExColor.texto2, fontSize: 12)),
                 ]),
+                const SizedBox(width: 8),
+                ExAvatar(cajero.nombre, size: 38),
               ]),
             ),
           ),
-        const Align(alignment: Alignment.topCenter, child: BotonesVentana(oscuro: true)),
+        const Align(alignment: Alignment.topCenter, child: BotonesVentana()),
       ]),
     );
   }
@@ -260,27 +273,29 @@ class _PrincipalState extends State<Principal> {
   Widget _pestana(int i) {
     final s = _secciones[i];
     final activa = i == _actual;
-    return InkWell(
-      onTap: () => _ir(i),
-      child: Container(
-        constraints: const BoxConstraints(minWidth: 96),
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-          color: activa ? ExColor.concreto : Colors.transparent,
-          border: Border(top: BorderSide(color: activa ? ExColor.acento : Colors.transparent, width: 3)),
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: Material(
+        color: activa ? ExColor.indigo : ExColor.concreto,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(color: activa ? ExColor.indigo : ExColor.borde, width: 1.4),
         ),
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(s.icono, size: 34, color: activa ? ExColor.indigo : ExColor.textoClaro),
-          const SizedBox(height: 5),
-          Text(
-            s.tecla == null ? s.nombre : '${s.tecla} ${s.nombre}',
-            style: TextStyle(
-              fontSize: 14.5,
-              fontWeight: activa ? FontWeight.w700 : FontWeight.w500,
-              color: activa ? ExColor.tinta : ExColor.textoClaro,
-            ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: () => _ir(i),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(s.icono, size: 26, color: activa ? ExColor.blanco : ExColor.indigo),
+              const SizedBox(width: 8),
+              Text(
+                s.tecla == null ? s.nombre : '${s.tecla} ${s.nombre}',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: activa ? ExColor.blanco : ExColor.tinta),
+              ),
+            ]),
           ),
-        ]),
+        ),
       ),
     );
   }
