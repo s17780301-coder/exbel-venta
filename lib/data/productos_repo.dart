@@ -3,6 +3,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import '../core/db.dart';
 import '../core/errores.dart';
 import '../core/ids.dart';
+import '../core/texto.dart';
 import '../models/modelos.dart';
 
 class MovimientoInventario {
@@ -68,16 +69,19 @@ class ProductosRepo {
     return f.isEmpty ? null : Producto.desdeMapa(f.first);
   }
 
-  /// Busca por descripción o código. Todas las palabras deben aparecer;
-  /// con `%` al inicio busca en cualquier parte (como Eleventa).
+  /// Búsqueda inteligente: sin importar acentos ni mayúsculas, todas las
+  /// palabras deben aparecer (en cualquier orden). Con [porUso] salen primero
+  /// el código exacto, los que empiezan con lo escrito y, entre ellos, los que
+  /// más se venden.
   Future<List<Producto>> buscar(String texto,
-      {String? departamentoId, bool soloBajos = false, bool soloFavoritos = false, int limite = 300}) async {
+      {String? departamentoId, bool soloBajos = false, bool soloFavoritos = false, bool porUso = false, int limite = 300}) async {
     final where = <String>['p.activo = 1'];
     final args = <Object?>[];
-    final palabras = texto.trim().replaceAll('%', ' ').split(RegExp(r'\s+')).where((x) => x.isNotEmpty);
+    final limpio = texto.trim().replaceAll('%', ' ');
+    final palabras = sinAcentos(limpio).split(' ').where((x) => x.isNotEmpty).toList();
     for (final w in palabras) {
-      where.add('(p.descripcion LIKE ? OR p.codigo LIKE ?)');
-      args..add('%$w%')..add('$w%');
+      where.add('p.busqueda LIKE ?');
+      args.add('%$w%');
     }
     if (departamentoId != null) {
       where.add('p.departamento_id = ?');
@@ -85,8 +89,19 @@ class ProductosRepo {
     }
     if (soloBajos) where.add('p.usa_inventario = 1 AND p.minimo > 0 AND p.existencia <= p.minimo');
     if (soloFavoritos) where.add('p.favorito = 1');
+    var orden = 'p.descripcion';
+    final ordenArgs = <Object?>[];
+    if (porUso) {
+      final primera = palabras.isEmpty ? '' : palabras.first;
+      orden = 'CASE WHEN p.codigo = ? THEN 0 WHEN p.busqueda LIKE ? THEN 1 WHEN p.busqueda LIKE ? THEN 2 ELSE 3 END, '
+          '(SELECT COUNT(*) FROM venta_detalle vd WHERE vd.producto_id = p.id) DESC, p.favorito DESC, p.descripcion';
+      ordenArgs
+        ..add(limpio)
+        ..add('$primera%')
+        ..add('% $primera%');
+    }
     final f = await db.rawQuery(
-        '$_selectProducto WHERE ${where.join(' AND ')} ORDER BY p.descripcion LIMIT $limite', args);
+        '$_selectProducto WHERE ${where.join(' AND ')} ORDER BY $orden LIMIT $limite', [...args, ...ordenArgs]);
     return f.map(Producto.desdeMapa).toList();
   }
 
@@ -111,6 +126,7 @@ class ProductosRepo {
     final nuevo = (await db.query('productos', where: 'id = ?', whereArgs: [p.id])).isEmpty;
     await db.transaction((tx) async {
       final m = p.aMapa();
+      m['busqueda'] = textoBusqueda(p.descripcion, p.codigo);
       if (nuevo) m['existencia'] = 0.0;
       await guardarFila(tx, 'productos', m);
       if (nuevo && existenciaInicial != 0) {

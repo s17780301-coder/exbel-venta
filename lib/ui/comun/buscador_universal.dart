@@ -66,10 +66,11 @@ class _BuscadorState extends State<_Buscador> {
     }
     final codigo = t.isEmpty ? null : await repos.productos.porCodigo(t);
     if (codigo != null) r.add(Hallazgo.producto(codigo));
-    for (final p in await repos.productos.buscar(t, limite: 60)) {
+    // Desde 2 letras busca; antes muestra los más vendidos.
+    for (final p in await repos.productos.buscar(t.length >= 2 ? t : '', porUso: true, limite: 60)) {
       if (p.id != codigo?.id) r.add(Hallazgo.producto(p));
     }
-    if (t.isNotEmpty) {
+    if (t.length >= 2) {
       for (final c in (await repos.clientes.buscar(t)).take(20)) {
         r.add(Hallazgo.cliente(c));
       }
@@ -178,7 +179,7 @@ class _BuscadorState extends State<_Buscador> {
                 hint: 'Producto (nombre o código), cliente o folio de venta',
                 onChanged: (_) {
                   _espera?.cancel();
-                  _espera = Timer(const Duration(milliseconds: 180), _buscar);
+                  _espera = Timer(const Duration(milliseconds: 120), _buscar);
                 },
                 onSubmitted: (_) => _aceptar(),
               ),
@@ -192,7 +193,8 @@ class _BuscadorState extends State<_Buscador> {
           Padding(
             padding: const EdgeInsets.all(14),
             child: Row(children: [
-              Text('${_r.length} resultados · ↑ ↓ para moverte · ENTER para elegir', style: const TextStyle(color: ExColor.texto2)),
+              Text(_c.text.trim().length < 2 ? 'Los más vendidos · escribe 2 letras para buscar' : '${_r.length} resultados · ↑ ↓ para moverte · ENTER para elegir',
+                  style: const TextStyle(color: ExColor.texto2)),
               const Spacer(),
               TextButton(onPressed: () => Navigator.pop(context), child: const Text('ESC - Cancelar')),
               const SizedBox(width: 8),

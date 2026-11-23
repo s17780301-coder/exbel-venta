@@ -5,13 +5,14 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'ids.dart';
+import 'texto.dart';
 
 /// Base de datos local de la tienda (SQLite). Todas las tablas llevan
 /// `actualizado` y `sincronizado` para la futura MultiCaja y la nube.
 class AppDb {
   AppDb._();
 
-  static const version = 3;
+  static const version = 4;
 
   /// Carpeta de datos de exBel venta (base, respaldos, logotipo).
   static Future<Directory> carpeta() async {
@@ -36,7 +37,7 @@ class AppDb {
         onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
         onCreate: (db, _) async {
           final b = db.batch();
-          for (final sql in [...esquema, ...migracionV2, ...migracionV3]) {
+          for (final sql in [...esquema, ...migracionV2, ...migracionV3, ...migracionV4]) {
             b.execute(sql);
           }
           await b.commit(noResult: true);
@@ -51,6 +52,18 @@ class AppDb {
             for (final sql in migracionV3) {
               await db.execute(sql);
             }
+          }
+          if (antes < 4) {
+            for (final sql in migracionV4) {
+              await db.execute(sql);
+            }
+            // Texto de búsqueda sin acentos para los productos que ya había.
+            final b = db.batch();
+            for (final f in await db.query('productos', columns: ['id', 'descripcion', 'codigo'])) {
+              b.update('productos', {'busqueda': textoBusqueda(f['descripcion'] as String, f['codigo'] as String)},
+                  where: 'id = ?', whereArgs: [f['id']]);
+            }
+            await b.commit(noResult: true);
           }
         },
       ),
@@ -249,6 +262,12 @@ const migracionV2 = <String>[
 /// v3: pago con transferencia.
 const migracionV3 = <String>[
   'ALTER TABLE ventas ADD COLUMN transferencia_centavos INTEGER NOT NULL DEFAULT 0',
+];
+
+/// v4: búsqueda inteligente (sin acentos) y popularidad de productos.
+const migracionV4 = <String>[
+  "ALTER TABLE productos ADD COLUMN busqueda TEXT NOT NULL DEFAULT ''",
+  'CREATE INDEX IF NOT EXISTS idx_detalle_producto ON venta_detalle(producto_id)',
 ];
 
 /// Actualiza la fila si existe; si no, la inserta.

@@ -184,4 +184,19 @@ void main() {
     final porFolio = await repos.ventas.listar(texto: '${v.folio}');
     expect(porFolio.single.articulos, 3);
   });
+
+  test('búsqueda inteligente: sin acentos y primero los más vendidos', () async {
+    expect((await repos.productos.buscar('azucar')).single.descripcion, 'Azúcar estándar (kg)');
+    expect((await repos.productos.buscar('KG AZÚ')).single.codigo, '1032');
+    // Vender "Jabón de tocador" lo pone antes que "Jabón de barra".
+    final tocador = (await repos.productos.porCodigo('1074'))!;
+    await repos.ventas.registrar(
+      renglones: [Renglon.deProducto(tocador)],
+      pago: Pago(efectivoCentavos: 1900),
+      turnoId: turno.id,
+      cajeroId: admin.id,
+    );
+    final r = await repos.productos.buscar('ja', porUso: true);
+    expect(r.first.codigo, '1074');
+  });
 }

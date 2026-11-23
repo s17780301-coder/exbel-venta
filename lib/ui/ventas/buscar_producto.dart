@@ -46,7 +46,8 @@ class _BuscadorState extends State<_Buscador> {
   }
 
   Future<void> _buscar() async {
-    final r = await repos.productos.buscar(_c.text, limite: 200);
+    final t = _c.text.trim();
+    final r = await repos.productos.buscar(t.length >= 2 || int.tryParse(t) != null ? t : '', porUso: true, limite: 200);
     if (mounted) {
       setState(() {
         _lista = r;
@@ -96,7 +97,7 @@ class _BuscadorState extends State<_Buscador> {
                     hint: 'Escribe parte del nombre o del código',
                     onChanged: (_) {
                       _espera?.cancel();
-                      _espera = Timer(const Duration(milliseconds: 180), _buscar);
+                      _espera = Timer(const Duration(milliseconds: 120), _buscar);
                     },
                     onSubmitted: (_) => _aceptar(),
                   ),

@@ -15,6 +15,10 @@ class ZoomPantalla extends StatelessWidget {
       valueListenable: zoomPantalla,
       builder: (context, z, _) {
         final mq = MediaQuery.of(context);
+        // Nunca agrandar tanto que queden menos de 760 puntos de alto: si no,
+        // la tabla de la venta se queda sin espacio en monitores bajos.
+        final maximo = mq.size.height / 760;
+        z = z > maximo ? (maximo < 1 ? 1.0 : maximo) : z;
         if ((z - 1).abs() < 0.01) return child;
         final tam = mq.size / z;
         return MediaQuery(

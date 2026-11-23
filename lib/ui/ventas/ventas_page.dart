@@ -582,9 +582,9 @@ class _VentasPageState extends State<VentasPage> {
       Container(
         width: double.infinity,
         color: ExColor.indigo,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         child: Row(children: [
-          Text('VENTA - ${_t.nombre}', style: ExTexto.titulo(20, color: ExColor.blanco)),
+          Text('VENTA - ${_t.nombre}', style: ExTexto.titulo(19, color: ExColor.blanco)),
           if (_t.cliente != null) ...[
             const SizedBox(width: 16),
             const Icon(Icons.person, color: ExColor.lavanda, size: 20),
@@ -594,7 +594,7 @@ class _VentasPageState extends State<VentasPage> {
         ]),
       ),
       _captura(),
-      if (_favoritos.isNotEmpty) _barraFavoritos(),
+      if (_favoritos.isNotEmpty && MediaQuery.of(context).size.height > 820) _barraFavoritos(),
       _botones(),
       _barraTickets(),
       Expanded(child: _tabla()),
@@ -605,7 +605,7 @@ class _VentasPageState extends State<VentasPage> {
   Widget _barraTickets() {
     return Container(
       color: ExColor.blanco,
-      height: 46,
+      height: 40,
       child: Row(children: [
         Expanded(
           child: ListView(scrollDirection: Axis.horizontal, children: [
@@ -658,16 +658,16 @@ class _VentasPageState extends State<VentasPage> {
     final cliente = _t.cliente;
     return Container(
       color: ExColor.concreto,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
       child: Row(children: [
-        Text('Código del producto:', style: ExTexto.titulo(20)),
+        Text('Código del producto:', style: ExTexto.titulo(19)),
         const SizedBox(width: 12),
         Expanded(
           child: TextField(
             controller: _codigo,
             focusNode: _focoCodigo,
             autofocus: true,
-            style: ExTexto.mono(24, peso: FontWeight.w600),
+            style: ExTexto.mono(22, peso: FontWeight.w600),
             decoration: InputDecoration(
               hintText: 'Escanea o escribe el código · 3*código para varias piezas · o escribe el nombre',
               hintStyle: const TextStyle(fontSize: 15, color: ExColor.texto2),
@@ -677,14 +677,14 @@ class _VentasPageState extends State<VentasPage> {
                   borderRadius: BorderRadius.circular(28), borderSide: const BorderSide(color: ExColor.linea)),
               focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(28), borderSide: const BorderSide(color: ExColor.indigo, width: 2)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
             ),
             onSubmitted: _capturar,
           ),
         ),
         const SizedBox(width: 12),
         SizedBox(
-          height: 60,
+          height: 50,
           child: FilledButton.icon(
             onPressed: () => _capturar(_codigo.text),
             icon: const Icon(Icons.keyboard_return),
@@ -693,7 +693,7 @@ class _VentasPageState extends State<VentasPage> {
         ),
         const SizedBox(width: 12),
         OutlinedButton.icon(
-          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 60)),
+          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 50)),
           onPressed: _elegirCliente,
           icon: const Icon(Icons.person_outline),
           label: Text(cliente == null ? 'Cliente' : cliente.nombre, overflow: TextOverflow.ellipsis),
@@ -704,7 +704,7 @@ class _VentasPageState extends State<VentasPage> {
 
   Widget _barraFavoritos() {
     return Container(
-      height: 52,
+      height: 44,
       color: ExColor.concreto,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: ListView.separated(
@@ -735,7 +735,7 @@ class _VentasPageState extends State<VentasPage> {
           padding: const EdgeInsets.only(right: 6),
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               side: const BorderSide(color: ExColor.linea),
               backgroundColor: ExColor.blanco,
             ),
@@ -750,7 +750,7 @@ class _VentasPageState extends State<VentasPage> {
         );
     return Container(
       color: ExColor.concreto,
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 10),
+      padding: const EdgeInsets.fromLTRB(16, 2, 16, 6),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(children: [
@@ -851,8 +851,8 @@ class _VentasPageState extends State<VentasPage> {
 
   Widget _chico(IconData i, String t, VoidCallback f) => OutlinedButton.icon(
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size(0, 42),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          minimumSize: const Size(0, 38),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           backgroundColor: ExColor.blanco,
           side: const BorderSide(color: ExColor.linea),
         ),
@@ -878,7 +878,7 @@ class _VentasPageState extends State<VentasPage> {
           ),
         ]);
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
@@ -887,8 +887,8 @@ class _VentasPageState extends State<VentasPage> {
             if (_t.ahorroCentavos > 0)
               Text('El cliente ahorra ${formatoPesos(_t.ahorroCentavos)}',
                   style: const TextStyle(color: ExColor.verde, fontWeight: FontWeight.w600, fontSize: 15)),
-            const SizedBox(height: 10),
-            Wrap(spacing: 8, runSpacing: 8, children: [
+            const SizedBox(height: 6),
+            Wrap(spacing: 6, runSpacing: 6, children: [
               _chico(Icons.sync_alt, 'F5 - Cambiar', _siguienteTicket),
               _chico(Icons.add_box_outlined, 'F6 - Pendiente', _nuevoTicket),
               _chico(Icons.delete_outline, 'Eliminar', () => _cerrarTicket(_actual)),
@@ -896,19 +896,8 @@ class _VentasPageState extends State<VentasPage> {
               _chico(Icons.add, '+ Cantidad', () => _sumar(1)),
               _chico(Icons.remove, '− Cantidad', () => _sumar(-1)),
               _chico(Icons.undo, 'Devolución', _ventasDelDia),
-            ]),
-            const SizedBox(height: 8),
-            Wrap(spacing: 8, runSpacing: 8, children: [
-              OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(minimumSize: const Size(0, 50)),
-                  onPressed: _reimprimir,
-                  icon: const Icon(Icons.print_outlined),
-                  label: const Text('Reimprimir último ticket', style: TextStyle(fontSize: 15))),
-              OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(minimumSize: const Size(0, 50)),
-                  onPressed: _ventasDelDia,
-                  icon: const Icon(Icons.receipt_long_outlined),
-                  label: const Text('Ventas del día y devoluciones', style: TextStyle(fontSize: 15))),
+              _chico(Icons.print_outlined, 'Reimprimir último ticket', _reimprimir),
+              _chico(Icons.receipt_long_outlined, 'Ventas del día y devoluciones', _ventasDelDia),
             ]),
           ]),
         ),
@@ -935,11 +924,11 @@ class _VentasPageState extends State<VentasPage> {
           child: Row(children: [
             Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
               const Text('TOTAL', style: TextStyle(color: ExColor.textoClaro2, fontSize: 14, letterSpacing: 2)),
-              Text(formatoPesos(_t.totalCentavos), style: ExTexto.titulo(60, color: ExColor.concreto)),
+              Text(formatoPesos(_t.totalCentavos), style: ExTexto.titulo(52, color: ExColor.concreto)),
             ]),
             const SizedBox(width: 20),
             SizedBox(
-              height: 96,
+              height: 84,
               child: FilledButton(
                 style: FilledButton.styleFrom(
                   backgroundColor: ExColor.acento,
