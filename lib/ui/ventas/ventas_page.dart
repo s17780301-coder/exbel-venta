@@ -195,7 +195,7 @@ class _VentasPageState extends State<VentasPage> {
     } else if (k == LogicalKeyboardKey.insert) {
       _varios();
     } else if (k == LogicalKeyboardKey.delete) {
-      _borrarSeleccion();
+      if (_codigo.text.isEmpty) _borrarSeleccion();
     } else if (k == LogicalKeyboardKey.arrowUp) {
       _mover(-1);
     } else if (k == LogicalKeyboardKey.arrowDown) {
@@ -383,8 +383,12 @@ class _VentasPageState extends State<VentasPage> {
   }
 
   void _borrarSeleccion() {
+    if (_t.renglones.isEmpty) return _enfocar();
     final i = _t.seleccion;
-    if (i < 0 || i >= _t.renglones.length) return;
+    if (i < 0 || i >= _t.renglones.length) {
+      aviso(context, 'Haz clic en el artículo que quieres borrar.');
+      return _enfocar();
+    }
     setState(() {
       _t.renglones.removeAt(i);
       _t.seleccion = _t.renglones.isEmpty ? -1 : (i >= _t.renglones.length ? _t.renglones.length - 1 : i);

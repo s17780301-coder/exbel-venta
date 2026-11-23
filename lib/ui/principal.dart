@@ -122,10 +122,10 @@ class _PrincipalState extends State<Principal> {
     return [
           LogicalKeyboardKey.f5, LogicalKeyboardKey.f6, LogicalKeyboardKey.f7, LogicalKeyboardKey.f8,
           LogicalKeyboardKey.f9, LogicalKeyboardKey.f10, LogicalKeyboardKey.f11, LogicalKeyboardKey.f12,
-          LogicalKeyboardKey.insert, LogicalKeyboardKey.delete, LogicalKeyboardKey.arrowUp,
+          LogicalKeyboardKey.insert, LogicalKeyboardKey.arrowUp,
           LogicalKeyboardKey.arrowDown,
         ].contains(k) ||
-        (esMasOMenos(e) != 0 && codigoVentasVacio()) ||
+        ((esMasOMenos(e) != 0 || k == LogicalKeyboardKey.delete) && codigoVentasVacio()) ||
         (ctrl && [LogicalKeyboardKey.keyP, LogicalKeyboardKey.keyD, LogicalKeyboardKey.keyB, LogicalKeyboardKey.keyF].contains(k));
   }
 

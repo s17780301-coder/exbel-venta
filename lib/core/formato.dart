@@ -2,6 +2,9 @@
 /// para evitar errores de redondeo con decimales.
 library;
 
+/// Símbolo de moneda (se cambia en Configuración).
+String simboloMoneda = r'$';
+
 /// 123450 -> "$1,234.50"
 String formatoPesos(int centavos) {
   final negativo = centavos < 0;
@@ -13,7 +16,7 @@ String formatoPesos(int centavos) {
     if (i > 0 && (pesos.length - i) % 3 == 0) buf.write(',');
     buf.write(pesos[i]);
   }
-  return '${negativo ? '-' : ''}\$${buf.toString()}.$cent';
+  return '${negativo ? '-' : ''}$simboloMoneda${buf.toString()}.$cent';
 }
 
 /// "1,234.5" o "$1234.50" -> 123450. Regresa null si no es un número.

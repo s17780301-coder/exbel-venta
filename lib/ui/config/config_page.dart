@@ -10,17 +10,20 @@ import '../../core/db.dart';
 import '../../core/formato.dart';
 import '../../core/tickets.dart';
 import '../../data/ajustes_repo.dart';
+import '../../data/ejemplo.dart';
 import '../../data/importador.dart';
 import '../../data/repos.dart';
 import '../../models/modelos.dart';
 import '../comun/dialogos.dart';
 import '../comun/ex_widgets.dart';
 import '../comun/impresion.dart';
+import '../comun/importar_dialogo.dart';
+
 import '../sesion.dart';
 import '../tema/tema.dart';
 import '../zoom.dart';
 
-const versionExBel = '0.3.5';
+const versionExBel = '0.4.0';
 
 /// Configuración de la tienda.
 class ConfigPage extends StatefulWidget {
@@ -30,21 +33,86 @@ class ConfigPage extends StatefulWidget {
   State<ConfigPage> createState() => _ConfigPageState();
 }
 
-const _secciones = [
-  ('Tienda y ticket', Icons.storefront_outlined),
-  ('Pantalla', Icons.zoom_in),
-  ('Ventas y cobro', Icons.point_of_sale),
-  ('Productos e impuestos', Icons.inventory_2_outlined),
-  ('Cajeros y permisos', Icons.badge_outlined),
-  ('Corte de caja', Icons.calculate_outlined),
-  ('Báscula', Icons.scale_outlined),
-  ('Cajón de dinero', Icons.inbox_outlined),
-  ('Respaldos', Icons.backup_outlined),
-  ('Acerca de exBel venta', Icons.info_outline),
+/// Una opción de la pantalla de Configuración (ícono + nombre).
+class _Opcion {
+  const _Opcion(this.nombre, this.icono, this.color, this.pagina);
+  final String nombre;
+  final IconData icono;
+  final Color color;
+  final Widget pagina;
+}
+
+const _verde = Color(0xFF13803B);
+const _naranja = Color(0xFFE07A10);
+const _azul = Color(0xFF2F6FD6);
+
+/// Como en Eleventa: íconos por grupo.
+final _grupos = <(String, List<_Opcion>)>[
+  (
+    'General',
+    const [
+      _Opcion('Opciones habilitadas', Icons.settings_suggest_outlined, ExColor.texto2, _Opciones()),
+      _Opcion('Cajeros', Icons.badge_outlined, _azul, _Cajeros()),
+      _Opcion('Base de Datos', Icons.storage_outlined, ExColor.indigo, _Respaldos()),
+      _Opcion('Artículos Precargados', Icons.inventory_outlined, ExColor.rojo, _Precargados()),
+      _Opcion('Facturación', Icons.receipt_long_outlined, ExColor.texto2, _Proximamente('Facturación',
+          'Facturar (CFDI 4.0) requiere contratar un PAC que timbre las facturas. Se agregará en una próxima versión.')),
+      _Opcion('Modificar Folios', Icons.format_list_numbered, ExColor.indigo, _Folios()),
+    ]
+  ),
+  (
+    'Personalización',
+    const [
+      _Opcion('Logotipo del Programa', Icons.image_outlined, _azul, _Logotipo()),
+      _Opcion('Ticket', Icons.receipt_outlined, ExColor.texto2, _TicketCfg()),
+      _Opcion('Formas de Pago', Icons.payments_outlined, ExColor.rojo, _FormasPago()),
+      _Opcion('Impuestos', Icons.account_balance_outlined, _naranja, _Impuestos()),
+      _Opcion('Corte', Icons.content_cut, ExColor.indigo, _Corte()),
+      _Opcion('Símbolo de Moneda', Icons.attach_money, _verde, _Moneda()),
+      _Opcion('Unidades de Medida', Icons.straighten, _azul, _Unidades()),
+      _Opcion('Tamaño de Pantalla', Icons.zoom_in, ExColor.indigo, _Pantalla()),
+    ]
+  ),
+  (
+    'Dispositivos',
+    const [
+      _Opcion('Impresora de Tickets', Icons.print_outlined, ExColor.texto2, _Impresora()),
+      _Opcion('Lector de Códigos', Icons.qr_code_scanner, ExColor.indigo, _Lector()),
+      _Opcion('Cajón de Dinero', Icons.inbox_outlined, ExColor.texto2, _Cajon()),
+      _Opcion('Báscula', Icons.scale_outlined, ExColor.rojo, _Bascula()),
+      _Opcion('Terminal TPV', Icons.credit_card, ExColor.tinta, _Proximamente('Terminal TPV',
+          'Por ahora, cobra en tu terminal (Clip, Mercado Pago, banco) y en exBel elige "Tarjeta" al cobrar. '
+          'La conexión directa con terminales llegará en una próxima versión.')),
+    ]
+  ),
+  (
+    'Servicios',
+    const [
+      _Opcion('Recargas Electrónicas', Icons.phone_android, ExColor.texto2, _Proximamente('Recargas electrónicas',
+          'Requiere contrato con un proveedor de recargas. Se agregará en una próxima versión.')),
+      _Opcion('Pago de Servicios', Icons.request_quote_outlined, _verde, _Proximamente('Pago de servicios',
+          'Requiere contrato con un proveedor de pago de servicios. Se agregará en una próxima versión.')),
+      _Opcion('Compras / Proveedores', Icons.local_shipping_outlined, ExColor.rojo, _Proximamente('Compras y proveedores',
+          'Mientras tanto, registra la mercancía que llega en F4 Inventario → Agregar mercancía, y los pagos al proveedor con F8 Salidas.')),
+      _Opcion('Nube exBel', Icons.cloud_outlined, _azul, _Proximamente('Nube exBel',
+          'Para ver tus ventas desde el celular y respaldar en internet. Se agregará en una próxima versión.')),
+      _Opcion('Notificaciones por Correo', Icons.email_outlined, _azul, _Proximamente('Notificaciones por correo',
+          'Para recibir el corte del día en tu correo. Se agregará en una próxima versión.')),
+    ]
+  ),
+  (
+    'Mantenimiento',
+    const [
+      _Opcion('Respaldo Automático', Icons.backup_outlined, _verde, _Respaldos()),
+      _Opcion('Licencia', Icons.vpn_key_outlined, _naranja, _Licencia()),
+      _Opcion('Actualizaciones', Icons.system_update_alt, _azul, _Actualizaciones()),
+      _Opcion('Atajos y Acerca de', Icons.info_outline, ExColor.indigo, _Acerca()),
+    ]
+  ),
 ];
 
 class _ConfigPageState extends State<ConfigPage> {
-  int _sec = 0;
+  _Opcion? _abierta;
 
   @override
   void initState() {
@@ -64,48 +132,65 @@ class _ConfigPageState extends State<ConfigPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+    final abierta = _abierta;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Container(
-        width: 260,
-        color: ExColor.blanco,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-            child: Text('Configuración', style: ExTexto.titulo(26)),
+        color: ExColor.indigo,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Text(abierta == null ? 'CONFIGURACIÓN' : 'CONFIGURACIÓN - ${abierta.nombre.toUpperCase()}',
+            style: ExTexto.titulo(19, color: ExColor.blanco)),
+      ),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+        child: Row(children: [
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(backgroundColor: ExColor.blanco, side: const BorderSide(color: ExColor.linea)),
+            onPressed: abierta == null ? null : () => setState(() => _abierta = null),
+            icon: const Icon(Icons.home_outlined, color: ExColor.acento),
+            label: const Text('Mostrar todas las opciones'),
           ),
-          for (var i = 0; i < _secciones.length; i++)
-            ListTile(
-              selected: _sec == i,
-              selectedTileColor: ExColor.lavanda.withOpacity(0.5),
-              selectedColor: ExColor.tinta,
-              leading: Icon(_secciones[i].$2),
-              title: Text(_secciones[i].$1),
-              onTap: () => setState(() => _sec = i),
-            ),
         ]),
       ),
+      const Divider(),
       Expanded(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 820),
-            child: switch (_sec) {
-              0 => const _Tienda(),
-              1 => const _Pantalla(),
-              2 => const _Ventas(),
-              3 => const _Productos(),
-              4 => const _Cajeros(),
-              5 => const _Corte(),
-              6 => const _Bascula(),
-              7 => const _Cajon(),
-              8 => const _Respaldos(),
-              _ => const _Acerca(),
-            },
-          ),
+          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+          child: abierta == null
+              ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  for (final g in _grupos) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10, bottom: 6),
+                      child: Text(g.$1, style: ExTexto.titulo(18, color: ExColor.indigo)),
+                    ),
+                    Wrap(spacing: 6, runSpacing: 6, children: [for (final o in g.$2) _icono(o)]),
+                    const Divider(height: 18),
+                  ],
+                ])
+              : Align(
+                  alignment: Alignment.topLeft,
+                  child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 860), child: abierta.pagina),
+                ),
         ),
       ),
     ]);
+  }
+
+  Widget _icono(_Opcion o) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => setState(() => _abierta = o),
+      child: SizedBox(
+        width: 150,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+          child: Column(children: [
+            Icon(o.icono, size: 38, color: o.color),
+            const SizedBox(height: 6),
+            Text(o.nombre, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15)),
+          ]),
+        ),
+      ),
+    );
   }
 }
 
@@ -206,20 +291,20 @@ Widget _titulo(String t, [String? sub]) => Padding(
 
 // ---------- Secciones ----------
 
-class _Tienda extends StatefulWidget {
-  const _Tienda();
+class _Logotipo extends StatefulWidget {
+  const _Logotipo();
 
   @override
-  State<_Tienda> createState() => _TiendaState();
+  State<_Logotipo> createState() => _LogotipoState();
 }
 
-class _TiendaState extends State<_Tienda> {
+class _LogotipoState extends State<_Logotipo> {
   @override
   Widget build(BuildContext context) {
     final logo = repos.ajustes.texto(Ajuste.logoNegocio);
     final f = logo.isEmpty ? null : File(logo);
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      _titulo('Tienda y ticket', 'Estos datos salen arriba en la pantalla y en los tickets.'),
+      _titulo('Nombre y logotipo de la tienda', 'Salen arriba a la izquierda y en los tickets.'),
       ExSeccion(
         child: Row(children: [
           if (f != null && f.existsSync())
@@ -241,6 +326,22 @@ class _TiendaState extends State<_Tienda> {
       const _Campo(Ajuste.direccion, 'Dirección'),
       const _Campo(Ajuste.telefono, 'Teléfono'),
       const _Campo(Ajuste.rfc, 'RFC (opcional)'),
+    ]);
+  }
+}
+
+class _TicketCfg extends StatefulWidget {
+  const _TicketCfg();
+
+  @override
+  State<_TicketCfg> createState() => _TicketCfgState();
+}
+
+class _TicketCfgState extends State<_TicketCfg> {
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _titulo('Ticket', 'El nombre, dirección y logotipo se cambian en "Logotipo del Programa".'),
       const _Campo(Ajuste.ticketEncabezado, 'Texto extra arriba del ticket', ayuda: 'Ej. horario o redes sociales'),
       const _Campo(Ajuste.ticketPie, 'Mensaje al final del ticket'),
       const _Interruptor(Ajuste.ticketDesglosarImpuestos, 'Desglosar IVA e IEPS en el ticket'),
@@ -259,26 +360,26 @@ class _TiendaState extends State<_Tienda> {
           },
         ),
       ]),
-      const SizedBox(height: 16),
-      Row(children: [
-        const Text('Al cobrar con F1:  '),
-        SegmentedButton<String>(
-          segments: const [
-            ButtonSegment(value: 'preguntar', label: Text('Ver ticket antes')),
-            ButtonSegment(value: 'siempre', label: Text('Imprimir directo')),
-          ],
-          selected: {repos.ajustes.texto(Ajuste.impresion) == 'siempre' ? 'siempre' : 'preguntar'},
-          onSelectionChanged: (s) async {
-            await repos.ajustes.guardar(Ajuste.impresion, s.first);
-            setState(() {});
-          },
-        ),
-      ]),
-      const SizedBox(height: 16),
+    ]);
+  }
+}
+
+class _Impresora extends StatefulWidget {
+  const _Impresora();
+
+  @override
+  State<_Impresora> createState() => _ImpresoraState();
+}
+
+class _ImpresoraState extends State<_Impresora> {
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _titulo('Impresora de tickets'),
       ListTile(
         contentPadding: EdgeInsets.zero,
-        leading: const Icon(Icons.print_outlined),
-        title: const Text('Impresora de tickets'),
+        leading: const Icon(Icons.print_outlined, size: 32),
+        title: const Text('Impresora'),
         subtitle: Text(impresoraElegida()),
         trailing: Wrap(spacing: 8, children: [
           OutlinedButton(
@@ -304,6 +405,269 @@ class _TiendaState extends State<_Tienda> {
           ),
         ]),
       ),
+      const SizedBox(height: 16),
+      Row(children: [
+        const Text('Al cobrar con F1:  '),
+        SegmentedButton<String>(
+          segments: const [
+            ButtonSegment(value: 'preguntar', label: Text('Ver ticket antes')),
+            ButtonSegment(value: 'siempre', label: Text('Imprimir directo')),
+          ],
+          selected: {repos.ajustes.texto(Ajuste.impresion) == 'siempre' ? 'siempre' : 'preguntar'},
+          onSelectionChanged: (s) async {
+            await repos.ajustes.guardar(Ajuste.impresion, s.first);
+            setState(() {});
+          },
+        ),
+      ]),
+      const SizedBox(height: 12),
+      const Text('El ancho del papel (58 u 80 mm) se cambia en "Ticket".', style: TextStyle(color: ExColor.texto2)),
+    ]);
+  }
+}
+
+class _Opciones extends StatelessWidget {
+  const _Opciones();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [_Ventas(), SizedBox(height: 20), _Productos()]);
+  }
+}
+
+class _FormasPago extends StatelessWidget {
+  const _FormasPago();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _titulo('Formas de pago', 'Efectivo, tarjeta, transferencia y pago mixto siempre están disponibles.'),
+      const _Interruptor(Ajuste.usarCredito, 'Crédito (fiado)'),
+      const _Interruptor(Ajuste.aceptarVales, 'Vales de despensa'),
+      const _Interruptor(Ajuste.aceptarDolares, 'Dólares'),
+      const _Campo(Ajuste.tipoCambio, 'Tipo de cambio (pesos por dólar)', pesos: true),
+      const _Interruptor(Ajuste.permitirCobroMenor, 'Permitir cobrar en efectivo menos del total',
+          'Normalmente apagado: así no se cobra de menos por error.'),
+    ]);
+  }
+}
+
+class _Impuestos extends StatefulWidget {
+  const _Impuestos();
+
+  @override
+  State<_Impuestos> createState() => _ImpuestosState();
+}
+
+class _ImpuestosState extends State<_Impuestos> {
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _titulo('Impuestos', 'Los precios de venta siempre incluyen los impuestos.'),
+      Row(children: [
+        const Text('IVA de los productos nuevos:  '),
+        SegmentedButton<String>(
+          segments: const [
+            ButtonSegment(value: '0', label: Text('0%')),
+            ButtonSegment(value: '8', label: Text('8%')),
+            ButtonSegment(value: '16', label: Text('16%')),
+          ],
+          selected: {formatoCantidad(repos.ajustes.numero(Ajuste.ivaPorOmision))},
+          onSelectionChanged: (s) async {
+            await repos.ajustes.guardar(Ajuste.ivaPorOmision, s.first);
+            setState(() {});
+          },
+        ),
+      ]),
+      const SizedBox(height: 8),
+      const _Interruptor(Ajuste.ticketDesglosarImpuestos, 'Desglosar IVA e IEPS en el ticket'),
+      const SizedBox(height: 8),
+      const Text('La mayoría de los alimentos básicos llevan IVA 0%. Refrescos, botanas y dulces suelen llevar IEPS. '
+          'El IVA e IEPS de cada producto se cambia en el producto. Confírmalo con tu contador.',
+          style: TextStyle(color: ExColor.texto2)),
+    ]);
+  }
+}
+
+class _Folios extends StatelessWidget {
+  const _Folios();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _titulo('Modificar folios', 'Útil si vienes de otro sistema y quieres seguir con tu numeración.'),
+      const _Campo(Ajuste.folioMinimo, 'El siguiente ticket empieza en el folio', numero: true,
+          ayuda: 'Ej. 341572. Si ya hay folios mayores, se sigue con el siguiente.'),
+    ]);
+  }
+}
+
+class _Moneda extends StatelessWidget {
+  const _Moneda();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _titulo('Símbolo de moneda', 'Se usa en pantallas, tickets y reportes.'),
+      const _Campo(Ajuste.simboloMoneda, 'Símbolo', ayuda: 'Normalmente \$'),
+      const Text('El cambio se ve completo al volver a abrir exBel venta.', style: TextStyle(color: ExColor.texto2)),
+    ]);
+  }
+}
+
+class _Unidades extends StatelessWidget {
+  const _Unidades();
+
+  @override
+  Widget build(BuildContext context) {
+    Widget fila(IconData i, String t, String d) => ListTile(
+          leading: Icon(i, color: ExColor.indigo, size: 30),
+          title: Text(t, style: const TextStyle(fontWeight: FontWeight.w700)),
+          subtitle: Text(d),
+        );
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _titulo('Unidades de medida', 'Cada producto se vende de una de estas formas (se elige en el producto).'),
+      fila(Icons.looks_one_outlined, 'Por unidad / pieza', 'Se cuenta en piezas enteras: refrescos, latas, paquetes.'),
+      fila(Icons.scale_outlined, 'A granel (usa decimales)', 'Por kilo, litro o metro: 0.250 = 250 gramos. Se puede vender por importe (\$20 de jamón).'),
+      fila(Icons.inventory_2_outlined, 'Como paquete (kit)', 'Un producto que lleva otros: al venderlo descuenta del inventario lo que contiene.'),
+    ]);
+  }
+}
+
+class _Lector extends StatefulWidget {
+  const _Lector();
+
+  @override
+  State<_Lector> createState() => _LectorState();
+}
+
+class _LectorState extends State<_Lector> {
+  final _c = TextEditingController();
+  String _leido = '';
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _titulo('Lector de códigos', 'Los lectores USB funcionan como teclado: no hay que instalar nada.'),
+      const Text('Prueba: haz clic en el cuadro y escanea un producto.'),
+      const SizedBox(height: 8),
+      TextField(
+        controller: _c,
+        autofocus: true,
+        style: ExTexto.mono(22),
+        decoration: const InputDecoration(labelText: 'Escanea aquí'),
+        onSubmitted: (v) => setState(() {
+          _leido = v;
+          _c.clear();
+        }),
+      ),
+      const SizedBox(height: 12),
+      if (_leido.isNotEmpty)
+        Text('Leído: $_leido  ✓  (el lector manda ENTER al final, así debe ser)',
+            style: const TextStyle(color: ExColor.verde, fontSize: 16, fontWeight: FontWeight.w700)),
+      const SizedBox(height: 12),
+      const Text('Si el código no sale completo o no se agrega solo, configura el lector para que mande "Enter" (CR) al final; '
+          'viene en el manual del lector.', style: TextStyle(color: ExColor.texto2)),
+    ]);
+  }
+}
+
+class _Precargados extends StatelessWidget {
+  const _Precargados();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _titulo('Artículos precargados'),
+      ExSeccion(
+        titulo: 'Traer tu catálogo de Eleventa',
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Exporta tu catálogo desde Eleventa (F3 Productos → Catálogo → Exportar) e impórtalo aquí. '
+              'Se reconocen las columnas solas.'),
+          const SizedBox(height: 10),
+          FilledButton.icon(
+            onPressed: () async {
+              if (await autorizar(context, Permiso.productos) && context.mounted) await importarDesdeArchivo(context);
+            },
+            icon: const Icon(Icons.file_download_outlined),
+            label: const Text('Importar productos (Excel)'),
+          ),
+        ]),
+      ),
+      const SizedBox(height: 14),
+      ExSeccion(
+        titulo: 'Productos de ejemplo',
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Unos 40 productos típicos de abarrotes con sus departamentos, para practicar.'),
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            onPressed: () async {
+              if (!await autorizar(context, Permiso.productos) || !context.mounted) return;
+              await cargarEjemplo(cajeroId: sesion.cajero?.id);
+              avisarCambio();
+              if (context.mounted) aviso(context, 'Productos de ejemplo cargados.');
+            },
+            icon: const Icon(Icons.science_outlined),
+            label: const Text('Cargar productos de ejemplo'),
+          ),
+        ]),
+      ),
+    ]);
+  }
+}
+
+class _Proximamente extends StatelessWidget {
+  const _Proximamente(this.nombre, this.texto);
+  final String nombre;
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _titulo(nombre),
+      Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(color: ExColor.lavanda.withOpacity(0.35), borderRadius: BorderRadius.circular(14)),
+        child: Row(children: [
+          const Icon(Icons.schedule, color: ExColor.indigo, size: 30),
+          const SizedBox(width: 14),
+          Expanded(child: Text(texto, style: const TextStyle(fontSize: 16))),
+        ]),
+      ),
+    ]);
+  }
+}
+
+class _Licencia extends StatelessWidget {
+  const _Licencia();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _titulo('Licencia'),
+      ListTile(leading: const Icon(Icons.storefront), title: Text(repos.ajustes.texto(Ajuste.nombreNegocio)), subtitle: const Text('Tienda')),
+      const ListTile(leading: Icon(Icons.verified_outlined), title: Text('exBel venta'), subtitle: Text('Licencia de prueba')),
+      const Text('La activación de licencias llegará en una próxima versión.', style: TextStyle(color: ExColor.texto2)),
+    ]);
+  }
+}
+
+class _Actualizaciones extends StatelessWidget {
+  const _Actualizaciones();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _titulo('Actualizaciones'),
+      ListTile(leading: const Icon(Icons.info_outline), title: const Text('Versión instalada'), subtitle: Text(versionExBel)),
+      const Text('Para actualizar, abre el instalador nuevo de exBel venta: se instala encima y tus datos se conservan. '
+          'La actualización automática llegará en una próxima versión.', style: TextStyle(color: ExColor.texto2)),
     ]);
   }
 }
@@ -314,16 +678,10 @@ class _Ventas extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      _titulo('Ventas y cobro'),
+      _titulo('Opciones habilitadas'),
       const _Interruptor(Ajuste.venderSinExistencia, 'Permitir vender aunque no haya existencia',
           'Si lo apagas, no deja vender más de lo que hay en inventario.'),
       const _Interruptor(Ajuste.permitirComun, 'Permitir artículo común (Ctrl+P)', 'Vender algo que no está en el catálogo.'),
-      const _Interruptor(Ajuste.usarCredito, 'Vender a crédito (fiado)'),
-      const _Interruptor(Ajuste.aceptarVales, 'Aceptar vales de despensa'),
-      const _Interruptor(Ajuste.aceptarDolares, 'Aceptar dólares'),
-      const _Campo(Ajuste.tipoCambio, 'Tipo de cambio (pesos por dólar)', pesos: true),
-      const _Interruptor(Ajuste.permitirCobroMenor, 'Permitir cobrar en efectivo menos del total',
-          'Normalmente apagado: así no se cobra de menos por error.'),
     ]);
   }
 }
@@ -339,7 +697,7 @@ class _ProductosState extends State<_Productos> {
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      _titulo('Productos e impuestos'),
+      _titulo('Productos'),
       const _Interruptor(Ajuste.usarInventario, 'Los productos nuevos usan inventario'),
       const _Campo(Ajuste.gananciaSugerida, 'Ganancia sugerida para productos nuevos (%)', numero: true),
       const SizedBox(height: 6),
@@ -358,24 +716,6 @@ class _ProductosState extends State<_Productos> {
         ),
       ]),
       const SizedBox(height: 16),
-      Row(children: [
-        const Text('IVA por omisión en productos nuevos:  '),
-        SegmentedButton<String>(
-          segments: const [
-            ButtonSegment(value: '0', label: Text('0%')),
-            ButtonSegment(value: '8', label: Text('8%')),
-            ButtonSegment(value: '16', label: Text('16%')),
-          ],
-          selected: {formatoCantidad(repos.ajustes.numero(Ajuste.ivaPorOmision))},
-          onSelectionChanged: (s) async {
-            await repos.ajustes.guardar(Ajuste.ivaPorOmision, s.first);
-            setState(() {});
-          },
-        ),
-      ]),
-      const SizedBox(height: 10),
-      const Text('La mayoría de los alimentos básicos llevan IVA 0%. Refrescos, botanas y dulces suelen llevar IEPS. '
-          'Confírmalo con tu contador.', style: TextStyle(color: ExColor.texto2)),
     ]);
   }
 }

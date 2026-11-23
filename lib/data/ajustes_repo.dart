@@ -37,6 +37,10 @@ abstract final class Ajuste {
   static const basculaPrefijo = 'bascula_prefijo';
   static const basculaModo = 'bascula_modo'; // peso | precio
 
+  // Folios y moneda.
+  static const folioMinimo = 'folio_minimo';
+  static const simboloMoneda = 'simbolo_moneda';
+
   // Pantalla: tamaño de todo (1 = 100 %).
   static const zoom = 'zoom';
 
@@ -71,6 +75,8 @@ abstract final class Ajuste {
     basculaPrefijo: '20',
     basculaModo: 'peso',
     zoom: '1.15',
+    folioMinimo: '0',
+    simboloMoneda: '\$',
     cajonAbrir: '0',
     cajonImpresora: '',
   };

@@ -51,6 +51,9 @@ class VentasRepo {
         }
       }
       folio = await siguienteNumero(tx, 'ventas', 'folio');
+      final minimo = await tx.query('ajustes', columns: ['valor'], where: 'clave = ?', whereArgs: ['folio_minimo']);
+      final desde = minimo.isEmpty ? 0 : (int.tryParse(minimo.first['valor'] as String) ?? 0);
+      if (desde > folio) folio = desde;
       await guardarFila(tx, 'ventas', {
         'id': id,
         'folio': folio,

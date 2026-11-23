@@ -66,17 +66,28 @@ class _ProductosPageState extends State<ProductosPage> {
     if (ok) avisarCambio();
   }
 
+  /// Elimina el producto seleccionado (o los marcados). Si no hay ninguno,
+  /// lo pide por código o nombre, como en Eleventa.
   Future<void> _eliminar() async {
-    if (_sel.isEmpty || !await _puede()) return;
-    if (!await confirmar(context, 'Eliminar productos', '¿Eliminar ${_sel.length} producto(s) del catálogo? Sus ventas se conservan.',
-        si: 'Eliminar', peligro: true)) {
-      return;
+    if (!await _puede()) return;
+    var ids = _sel.toList();
+    var nombre = ids.length == 1 ? _lista.where((p) => p.id == ids.first).firstOrNull?.descripcion : null;
+    if (ids.isEmpty) {
+      final p = await buscarProducto(context);
+      if (p == null || !mounted) return;
+      ids = [p.id];
+      nombre = p.descripcion;
     }
-    for (final id in _sel) {
+    final texto = ids.length == 1
+        ? '¿Eliminar "${nombre ?? 'el producto'}" del catálogo? Sus ventas pasadas se conservan.'
+        : '¿Eliminar ${ids.length} productos del catálogo? Sus ventas pasadas se conservan.';
+    if (!await confirmar(context, 'Eliminar producto', texto, si: 'Eliminar', peligro: true)) return;
+    for (final id in ids) {
       await repos.productos.eliminar(id);
     }
     _sel.clear();
     avisarCambio();
+    if (mounted) aviso(context, ids.length == 1 ? 'Producto eliminado.' : '${ids.length} productos eliminados.');
   }
 
   Future<void> _cambiarPrecios() async {
@@ -170,7 +181,7 @@ class _ProductosPageState extends State<ProductosPage> {
             final p = await buscarProducto(context);
             if (p != null) await _editar(p);
           }),
-          _boton(Icons.delete_outline, 'Eliminar', _sel.isEmpty ? () => aviso(context, 'Marca los productos a eliminar.') : _eliminar),
+          _boton(Icons.delete_outline, 'Eliminar', _eliminar),
           _boton(Icons.folder_outlined, 'Departamentos', _departamentos),
           _boton(Icons.local_offer_outlined, 'Promociones', _promociones),
           _boton(Icons.price_change_outlined, 'Cambiar precios', _cambiarPrecios),
@@ -268,7 +279,11 @@ class _ProductosPageState extends State<ProductosPage> {
                         ],
                         par: i.isOdd,
                         seleccionada: marcado,
-                        onTap: () => setState(() => marcado ? _sel.remove(p.id) : _sel.add(p.id)),
+                        onTap: () => setState(() {
+                          _sel
+                            ..clear()
+                            ..add(p.id);
+                        }),
                         onDoubleTap: () => _editar(p),
                       );
                     },

@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import 'package:window_manager/window_manager.dart';
 
 import 'core/db.dart';
+import 'core/formato.dart';
 import 'data/repos.dart';
 import 'ui/acceso/acceso_page.dart';
 import 'ui/comun/ex_widgets.dart';
@@ -88,6 +89,8 @@ class _ArranqueState extends State<_Arranque> {
       final db = await AppDb.abrir().timeout(const Duration(seconds: 25));
       repos = Repos(db);
       await repos.ajustes.cargar();
+      final simbolo = repos.ajustes.texto(Ajuste.simboloMoneda);
+      if (simbolo.trim().isNotEmpty) simboloMoneda = simbolo.trim();
       final z = repos.ajustes.numero(Ajuste.zoom);
       if (z >= 0.8 && z <= 2) zoomPantalla.value = z;
       if (mounted) setState(() => _listo = true);
