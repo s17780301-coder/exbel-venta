@@ -1,0 +1,115 @@
+name: Compilar
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: '3.24.5'
+  ORG: mx.exbel
+  PROYECTO: exbel_venta
+
+jobs:
+  pruebas:
+    name: Análisis y pruebas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: SQLite para las pruebas
+        run: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - run: flutter test
+
+  windows:
+    name: Programa e instalador de Windows
+    needs: pruebas
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Generar carpeta de Windows
+        run: flutter create --platforms=windows --org ${{ env.ORG }} --project-name ${{ env.PROYECTO }} .
+      - name: Programa llamado exBelVenta.exe
+        shell: pwsh
+        run: (Get-Content windows/CMakeLists.txt) -replace 'set\(BINARY_NAME "[^"]*"\)', 'set(BINARY_NAME "exBelVenta")' | Set-Content windows/CMakeLists.txt
+      - run: flutter pub get
+      - name: Ícono, título de la ventana y datos del programa
+        shell: pwsh
+        run: |
+          dart run flutter_launcher_icons
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          foreach ($f in "windows/runner/main.cpp", "windows/runner/Runner.rc") {
+            (Get-Content $f) -replace 'exbel_venta', 'exBel venta' -replace 'mx\.exbel', 'exBel' | Set-Content $f
+          }
+          Select-String -Path windows/runner/main.cpp -Pattern 'Create'
+      - name: Compilar
+        run: flutter build windows --release --build-number=${{ github.run_number }}
+      - name: Incluir las librerías de Visual C++ (para equipos que no las tienen)
+        shell: pwsh
+        run: |
+          $destino = "build/windows/x64/runner/Release"
+          foreach ($dll in "msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll") {
+            Copy-Item "$env:WINDIR\System32\$dll" $destino
+          }
+          Get-ChildItem $destino
+      - name: Instalador (crea accesos directos en el escritorio y en Inicio)
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup -y --no-progress
+          }
+          $version = (Select-String -Path pubspec.yaml -Pattern '^version:\s*([0-9.]+)').Matches[0].Groups[1].Value
+          & $iscc "/DVersion=$version.${{ github.run_number }}" "/DOrigen=$PWD\build\windows\x64\runner\Release" "/DIcono=$PWD\windows\runner\resources\app_icon.ico" "/O$PWD\salida" instalador\exbel-venta.iss
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Get-ChildItem salida
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exbel-venta-instalador
+          path: salida/exBel-venta-instalador.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exbel-venta-portable
+          path: build/windows/x64/runner/Release/
+
+  publicar:
+    name: Publicar descargas
+    needs: [windows]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artefactos
+      - name: Preparar archivos
+        run: |
+          cp artefactos/exbel-venta-instalador/exBel-venta-instalador.exe .
+          mkdir "exBel venta" && cp -r artefactos/exbel-venta-portable/. "exBel venta/"
+          zip -qr exBel-venta-portable.zip "exBel venta"
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ultima
+          name: exBel venta (última versión)
+          prerelease: true
+          make_latest: false
+          body: |
+            Compilación automática de `${{ github.sha }}`.
+            - **Instalador:** descarga `exBel-venta-instalador.exe` y ábrelo. Crea el acceso directo en el escritorio.
+            - **Portable:** `exBel-venta-portable.zip`, descomprímelo y abre `exBelVenta.exe`.
+          files: |
+            exBel-venta-instalador.exe
+            exBel-venta-portable.zip

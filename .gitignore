@@ -1,0 +1,30 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock.bak
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+.DS_Store
+
+# Plataformas generadas en la compilación (se crean con `flutter create` en CI)
+/android/
+/windows/
+/ios/
+/linux/
+/macos/
+/web/
+
+# Secretos
+*.jks
+*.keystore
+key.properties
+.env

@@ -1,0 +1,49 @@
+name: exbel_venta
+description: exBel venta — punto de venta para tiendas de abarrotes y comercios. Windows, pantalla completa, funciona sin internet.
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  # Base de datos local (SQLite) para Windows.
+  sqflite_common_ffi: ^2.3.3
+  sqlite3_flutter_libs: ^0.5.24
+  path: ^1.9.0
+  path_provider: ^2.1.3
+  # Tipografías de la marca.
+  google_fonts: ^6.2.1
+  # Logotipo del negocio y exportar a Excel (CSV).
+  file_picker: ^8.1.2
+  # Tickets y reportes: vista previa, imprimir, compartir.
+  pdf: ^3.11.1
+  printing: ^5.13.2
+  # Pantalla completa y control de la ventana.
+  window_manager: ^0.4.2
+  # Claves de cajero (se guardan cifradas).
+  crypto: ^3.0.3
+  # Ticket por WhatsApp.
+  url_launcher: ^6.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.1
+
+flutter:
+  uses-material-design: true
+
+flutter_launcher_icons:
+  android: false
+  ios: false
+  image_path: "assets/icono/exbel.png"
+  windows:
+    generate: true
+    image_path: "assets/icono/exbel.png"
+    icon_size: 256
