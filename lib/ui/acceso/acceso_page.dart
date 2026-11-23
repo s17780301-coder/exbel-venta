@@ -7,6 +7,7 @@ import '../../data/repos.dart';
 import '../../models/modelos.dart';
 import '../comun/dialogos.dart';
 import '../comun/ex_widgets.dart';
+import '../comun/nombre_tienda.dart';
 import '../comun/ventana.dart';
 import '../principal.dart';
 import '../sesion.dart';
@@ -24,7 +25,7 @@ enum _Paso { cargando, primeraVez, entrar, fondo }
 
 class _AccesoPageState extends State<AccesoPage> {
   _Paso _paso = _Paso.cargando;
-  final _tienda = TextEditingController();
+  final _tienda = TextEditingController(text: tiendaPersonalizada);
   final _nombre = TextEditingController();
   final _usuario = TextEditingController();
   final _clave = TextEditingController();
@@ -128,8 +129,9 @@ class _AccesoPageState extends State<AccesoPage> {
               Text(_paso == _Paso.primeraVez ? 'Bienvenido a' : 'Punto de venta de',
                   style: ExTexto.texto(18, color: ExColor.textoClaro2)),
               const SizedBox(height: 6),
-              Text(_paso == _Paso.primeraVez ? 'exBel venta' : negocio,
-                  style: ExTexto.titulo(48, color: ExColor.concreto)),
+              _paso == _Paso.primeraVez
+                  ? Text('exBel venta', style: ExTexto.titulo(48, color: ExColor.concreto))
+                  : NombreTienda(negocio, tamano: 52),
               const SizedBox(height: 16),
               Container(width: 64, height: 6, color: ExColor.acento),
               const SizedBox(height: 16),

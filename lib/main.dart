@@ -89,6 +89,10 @@ class _ArranqueState extends State<_Arranque> {
       final db = await AppDb.abrir().timeout(const Duration(seconds: 25));
       repos = Repos(db);
       await repos.ajustes.cargar();
+      // Versión personalizada: si se quedó el nombre genérico, se pone el de la tienda.
+      if (repos.ajustes.texto(Ajuste.nombreNegocio) == 'Mi tienda') {
+        await repos.ajustes.guardar(Ajuste.nombreNegocio, tiendaPersonalizada);
+      }
       final simbolo = repos.ajustes.texto(Ajuste.simboloMoneda);
       if (simbolo.trim().isNotEmpty) simboloMoneda = simbolo.trim();
       final z = repos.ajustes.numero(Ajuste.zoom);

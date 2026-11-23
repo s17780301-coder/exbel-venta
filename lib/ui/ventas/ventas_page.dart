@@ -624,50 +624,74 @@ class _VentasPageState extends State<VentasPage> {
   }
 
   Widget _barraTickets() {
+    Widget pestana(int i) {
+      final t = _tickets[i];
+      final activa = i == _actual;
+      return Padding(
+        padding: const EdgeInsets.only(right: 6, top: 4),
+        child: Material(
+          color: activa ? ExColor.indigo : ExColor.blanco,
+          shape: RoundedRectangleBorder(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+            side: BorderSide(color: activa ? ExColor.indigo : ExColor.borde, width: 1.4),
+          ),
+          child: InkWell(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+            onTap: () {
+              setState(() => _actual = i);
+              _enfocar();
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(left: 14, right: 2),
+              child: Row(children: [
+                Icon(Icons.receipt_outlined, size: 18, color: activa ? ExColor.blanco : ExColor.indigo),
+                const SizedBox(width: 6),
+                Text(t.nombre,
+                    style: TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w700, color: activa ? ExColor.blanco : ExColor.tinta)),
+                if (t.renglones.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  Text(formatoPesos(t.totalCentavos),
+                      style: ExTexto.mono(13, color: activa ? ExColor.lavanda : ExColor.texto2, peso: FontWeight.w600)),
+                ],
+                IconButton(
+                  tooltip: 'Eliminar ticket',
+                  visualDensity: VisualDensity.compact,
+                  iconSize: 16,
+                  color: activa ? ExColor.blanco : ExColor.texto2,
+                  onPressed: () => _cerrarTicket(i),
+                  icon: const Icon(Icons.close),
+                ),
+              ]),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
-      color: ExColor.blanco,
-      height: 40,
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: const BoxDecoration(
+        color: ExColor.concreto,
+        border: Border(bottom: BorderSide(color: ExColor.indigo, width: 3)),
+      ),
       child: Row(children: [
         Expanded(
           child: ListView(scrollDirection: Axis.horizontal, children: [
-            for (var i = 0; i < _tickets.length; i++)
-              InkWell(
-                onTap: () {
-                  setState(() => _actual = i);
-                  _enfocar();
-                },
-                child: Container(
-                  padding: const EdgeInsets.only(left: 16, right: 4),
-                  decoration: BoxDecoration(
-                    color: i == _actual ? ExColor.concreto : ExColor.blanco,
-                    border: Border(
-                      bottom: BorderSide(color: i == _actual ? ExColor.indigo : ExColor.linea, width: i == _actual ? 3 : 1),
-                      right: const BorderSide(color: ExColor.lineaSuave),
-                    ),
-                  ),
-                  child: Row(children: [
-                    Text(_tickets[i].nombre,
-                        style: TextStyle(fontSize: 15, fontWeight: i == _actual ? FontWeight.w700 : FontWeight.w500)),
-                    if (_tickets[i].renglones.isNotEmpty) ...[
-                      const SizedBox(width: 6),
-                      Text(formatoPesos(_tickets[i].totalCentavos),
-                          style: ExTexto.mono(12, color: ExColor.texto2, peso: FontWeight.w500)),
-                    ],
-                    IconButton(
-                      tooltip: 'Eliminar ticket',
-                      visualDensity: VisualDensity.compact,
-                      iconSize: 16,
-                      onPressed: () => _cerrarTicket(i),
-                      icon: const Icon(Icons.close),
-                    ),
-                  ]),
-                ),
-              ),
+            for (var i = 0; i < _tickets.length; i++) pestana(i),
             if (_tickets.length < maxTickets)
-              TextButton.icon(
-                onPressed: _nuevoTicket,
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Nuevo ticket (F6)'),
+              Padding(
+                padding: const EdgeInsets.only(top: 4, bottom: 2),
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: ExColor.blanco,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  onPressed: _nuevoTicket,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Nuevo ticket (F6)'),
+                ),
               ),
             Center(
               child: Padding(
@@ -763,8 +787,9 @@ class _VentasPageState extends State<VentasPage> {
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              side: const BorderSide(color: ExColor.linea),
+              side: const BorderSide(color: ExColor.borde, width: 1.4),
               backgroundColor: ExColor.blanco,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
             onPressed: f,
             child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -808,7 +833,7 @@ class _VentasPageState extends State<VentasPage> {
     ];
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(color: ExColor.blanco, border: Border.all(color: ExColor.linea)),
+      decoration: BoxDecoration(color: ExColor.blanco, border: Border.all(color: ExColor.borde, width: 1.4)),
       child: Column(children: [
         const EncabezadoTabla(columnas, tamano: 16),
         Expanded(
@@ -881,7 +906,7 @@ class _VentasPageState extends State<VentasPage> {
           minimumSize: const Size(0, 38),
           padding: const EdgeInsets.symmetric(horizontal: 10),
           backgroundColor: ExColor.blanco,
-          side: const BorderSide(color: ExColor.linea),
+          side: const BorderSide(color: ExColor.borde, width: 1.4),
         ),
         onPressed: () {
           f();

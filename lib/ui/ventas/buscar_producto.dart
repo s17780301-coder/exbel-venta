@@ -47,7 +47,8 @@ class _BuscadorState extends State<_Buscador> {
 
   Future<void> _buscar() async {
     final t = _c.text.trim();
-    final r = await repos.productos.buscar(t.length >= 2 || int.tryParse(t) != null ? t : '', porUso: true, limite: 200);
+    // Vacío hasta 2 letras; luego primero los más buscados y vendidos.
+    final r = t.length < 2 ? <Producto>[] : await repos.productos.buscar(t, porUso: true, limite: 200);
     if (mounted) {
       setState(() {
         _lista = r;
@@ -71,7 +72,12 @@ class _BuscadorState extends State<_Buscador> {
 
   void _aceptar() {
     if (_lista.isEmpty) return;
-    Navigator.pop(context, _lista[_sel]);
+    _elegir(_lista[_sel]);
+  }
+
+  void _elegir(Producto p) {
+    repos.productos.registrarBusqueda(p.id);
+    Navigator.pop(context, p);
   }
 
   @override
@@ -115,7 +121,7 @@ class _BuscadorState extends State<_Buscador> {
           ]),
           Expanded(
             child: _lista.isEmpty
-                ? const Center(child: Text('Sin resultados'))
+                ? Center(child: Text(_c.text.trim().length < 2 ? 'Escribe al menos 2 letras del producto' : 'Sin resultados', style: const TextStyle(fontSize: 16, color: ExColor.texto2)))
                 : ListView.builder(
                     itemCount: _lista.length,
                     itemExtent: 44,
@@ -137,7 +143,7 @@ class _BuscadorState extends State<_Buscador> {
                         ],
                         par: i.isOdd,
                         seleccionada: i == _sel,
-                        onTap: () => Navigator.pop(context, p),
+                        onTap: () => _elegir(p),
                       );
                     },
                   ),

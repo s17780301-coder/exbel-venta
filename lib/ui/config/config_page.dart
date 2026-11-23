@@ -23,7 +23,7 @@ import '../sesion.dart';
 import '../tema/tema.dart';
 import '../zoom.dart';
 
-const versionExBel = '0.4.1';
+const versionExBel = '0.5.0';
 
 /// Configuración de la tienda.
 class ConfigPage extends StatefulWidget {
@@ -144,7 +144,7 @@ class _ConfigPageState extends State<ConfigPage> {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
         child: Row(children: [
           OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(backgroundColor: ExColor.blanco, side: const BorderSide(color: ExColor.linea)),
+            style: OutlinedButton.styleFrom(backgroundColor: ExColor.blanco, side: const BorderSide(color: ExColor.borde, width: 1.4)),
             onPressed: abierta == null ? null : () => setState(() => _abierta = null),
             icon: const Icon(Icons.home_outlined, color: ExColor.acento),
             label: const Text('Mostrar todas las opciones'),

@@ -1,5 +1,8 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+/// Versión personalizada para esta tienda.
+const tiendaPersonalizada = 'Miscelánea Karina';
+
 /// Claves de configuración y su valor por omisión.
 abstract final class Ajuste {
   // Negocio y ticket.
@@ -49,7 +52,7 @@ abstract final class Ajuste {
   static const cajonImpresora = 'cajon_impresora';
 
   static const omision = <String, String>{
-    nombreNegocio: 'Mi tienda',
+    nombreNegocio: tiendaPersonalizada,
     logoNegocio: '',
     direccion: '',
     telefono: '',

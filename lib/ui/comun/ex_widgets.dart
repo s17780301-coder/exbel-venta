@@ -279,7 +279,7 @@ class ExBotonIcono extends StatelessWidget {
         color: oscuro ? ExColor.tinta : ExColor.blanco,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(6),
-          side: oscuro ? BorderSide.none : const BorderSide(color: ExColor.linea),
+          side: oscuro ? BorderSide.none : const BorderSide(color: ExColor.borde, width: 1.4),
         ),
         child: InkWell(
           onTap: onPressed,

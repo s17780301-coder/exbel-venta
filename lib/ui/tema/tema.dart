@@ -19,8 +19,11 @@ abstract final class ExColor {
 
   static const concreto = Color(0xFFF5F4FA);
   static const blanco = Color(0xFFFFFFFF);
-  static const linea = Color(0xFFDCDAE8);
-  static const lineaSuave = Color(0xFFEDEBF5);
+  static const linea = Color(0xFFBDB8D6);
+
+  /// Contorno de botones, pestañas y recuadros (bien visible).
+  static const borde = Color(0xFF7F79AE);
+  static const lineaSuave = Color(0xFFDDDAEB);
   static const texto2 = Color(0xFF5A5675);
   static const textoClaro = Color(0xFFCFCBEF);
   static const textoClaro2 = Color(0xFF9E98CC);
@@ -137,7 +140,7 @@ ThemeData temaExBel() {
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: ExColor.tinta,
-        side: const BorderSide(color: ExColor.tinta),
+        side: const BorderSide(color: ExColor.borde, width: 1.4),
         shape: boton,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         textStyle: const TextStyle(fontWeight: FontWeight.w600),

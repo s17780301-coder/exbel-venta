@@ -59,6 +59,11 @@ class _BuscadorState extends State<_Buscador> {
     final n = ++_consulta;
     final t = _c.text.trim();
     final r = <Hallazgo>[];
+    // Vacío hasta que se escriban al menos 2 letras (como pidió la tienda).
+    if (t.length < 2) {
+      if (mounted) setState(() => _r = []);
+      return;
+    }
     final folio = int.tryParse(t);
     if (folio != null) {
       final v = await repos.ventas.porFolio(folio);
@@ -67,10 +72,10 @@ class _BuscadorState extends State<_Buscador> {
     final codigo = t.isEmpty ? null : await repos.productos.porCodigo(t);
     if (codigo != null) r.add(Hallazgo.producto(codigo));
     // Desde 2 letras busca; antes muestra los más vendidos.
-    for (final p in await repos.productos.buscar(t.length >= 2 ? t : '', porUso: true, limite: 60)) {
+    for (final p in await repos.productos.buscar(t, porUso: true, limite: 60)) {
       if (p.id != codigo?.id) r.add(Hallazgo.producto(p));
     }
-    if (t.length >= 2) {
+    {
       for (final c in (await repos.clientes.buscar(t)).take(20)) {
         r.add(Hallazgo.cliente(c));
       }
@@ -97,7 +102,13 @@ class _BuscadorState extends State<_Buscador> {
 
   void _aceptar() {
     if (_r.isEmpty) return;
-    Navigator.pop(context, _r[_sel]);
+    _elegir(_r[_sel]);
+  }
+
+  void _elegir(Hallazgo h) {
+    final p = h.producto;
+    if (p != null) repos.productos.registrarBusqueda(p.id);
+    Navigator.pop(context, h);
   }
 
   Widget _fila(int i) {
@@ -132,7 +143,7 @@ class _BuscadorState extends State<_Buscador> {
       color: sel ? ExColor.lavanda : (i.isOdd ? ExColor.concreto : ExColor.blanco),
       child: InkWell(
         // Un clic basta para elegir.
-        onTap: () => Navigator.pop(context, h),
+        onTap: () => _elegir(h),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           child: Row(children: [
@@ -187,13 +198,13 @@ class _BuscadorState extends State<_Buscador> {
           ),
           Expanded(
             child: _r.isEmpty
-                ? const ExVacio('Sin resultados')
+                ? ExVacio(_c.text.trim().length < 2 ? 'Escribe al menos 2 letras del producto, cliente o folio' : 'Sin resultados')
                 : ListView.builder(itemCount: _r.length, itemBuilder: (_, i) => _fila(i)),
           ),
           Padding(
             padding: const EdgeInsets.all(14),
             child: Row(children: [
-              Text(_c.text.trim().length < 2 ? 'Los más vendidos · escribe 2 letras para buscar' : '${_r.length} resultados · clic o ENTER para elegir',
+              Text(_c.text.trim().length < 2 ? 'Primero salen los más buscados y vendidos' : '${_r.length} resultados · clic o ENTER para elegir',
                   style: const TextStyle(color: ExColor.texto2)),
               const Spacer(),
               TextButton(onPressed: () => Navigator.pop(context), child: const Text('ESC - Cancelar')),

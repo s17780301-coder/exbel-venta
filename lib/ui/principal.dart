@@ -13,6 +13,7 @@ import 'productos/producto_form.dart';
 import 'ventas/ventas_dia.dart';
 import 'comun/dialogos.dart';
 import 'comun/ex_widgets.dart';
+import 'comun/nombre_tienda.dart';
 import 'comun/ventana.dart';
 import 'config/config_page.dart';
 import 'cortes/corte_page.dart';
@@ -206,8 +207,8 @@ class _PrincipalState extends State<Principal> {
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-            const ExMarca(oscuro: true, tamano: 13),
-            const SizedBox(height: 4),
+            const ExMarca(oscuro: true, tamano: 11),
+            const SizedBox(height: 2),
             Tooltip(
               message: 'Cambiar el nombre o el logotipo de la tienda',
               child: InkWell(
@@ -225,8 +226,7 @@ class _PrincipalState extends State<Principal> {
                   ],
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 300),
-                    child: Text(negocio,
-                        overflow: TextOverflow.ellipsis, style: ExTexto.titulo(24, color: ExColor.concreto)),
+                    child: NombreTienda(negocio, tamano: 26),
                   ),
                 ]),
               ),

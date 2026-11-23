@@ -137,7 +137,7 @@ class _ProductosPageState extends State<ProductosPage> {
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(0, 46),
           backgroundColor: ExColor.blanco,
-          side: const BorderSide(color: ExColor.linea),
+          side: const BorderSide(color: ExColor.borde, width: 1.4),
         ),
         onPressed: f,
         icon: Icon(i, size: 20, color: ExColor.indigo),

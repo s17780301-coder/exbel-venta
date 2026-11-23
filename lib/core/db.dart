@@ -12,7 +12,7 @@ import 'texto.dart';
 class AppDb {
   AppDb._();
 
-  static const version = 4;
+  static const version = 5;
 
   /// Carpeta de datos de exBel venta (base, respaldos, logotipo).
   static Future<Directory> carpeta() async {
@@ -37,7 +37,7 @@ class AppDb {
         onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
         onCreate: (db, _) async {
           final b = db.batch();
-          for (final sql in [...esquema, ...migracionV2, ...migracionV3, ...migracionV4]) {
+          for (final sql in [...esquema, ...migracionV2, ...migracionV3, ...migracionV4, ...migracionV5]) {
             b.execute(sql);
           }
           await b.commit(noResult: true);
@@ -64,6 +64,11 @@ class AppDb {
                   where: 'id = ?', whereArgs: [f['id']]);
             }
             await b.commit(noResult: true);
+          }
+          if (antes < 5) {
+            for (final sql in migracionV5) {
+              await db.execute(sql);
+            }
           }
         },
       ),
@@ -268,6 +273,11 @@ const migracionV3 = <String>[
 const migracionV4 = <String>[
   "ALTER TABLE productos ADD COLUMN busqueda TEXT NOT NULL DEFAULT ''",
   'CREATE INDEX IF NOT EXISTS idx_detalle_producto ON venta_detalle(producto_id)',
+];
+
+/// v5: cuántas veces se eligió cada producto en el buscador.
+const migracionV5 = <String>[
+  'ALTER TABLE productos ADD COLUMN busquedas INTEGER NOT NULL DEFAULT 0',
 ];
 
 /// Actualiza la fila si existe; si no, la inserta.

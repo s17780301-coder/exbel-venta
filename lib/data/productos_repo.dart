@@ -94,7 +94,7 @@ class ProductosRepo {
     if (porUso) {
       final primera = palabras.isEmpty ? '' : palabras.first;
       orden = 'CASE WHEN p.codigo = ? THEN 0 WHEN p.busqueda LIKE ? THEN 1 WHEN p.busqueda LIKE ? THEN 2 ELSE 3 END, '
-          '(SELECT COUNT(*) FROM venta_detalle vd WHERE vd.producto_id = p.id) DESC, p.favorito DESC, p.descripcion';
+          '(p.busquedas + (SELECT COUNT(*) FROM venta_detalle vd WHERE vd.producto_id = p.id)) DESC, p.favorito DESC, p.descripcion';
       ordenArgs
         ..add(limpio)
         ..add('$primera%')
@@ -104,6 +104,11 @@ class ProductosRepo {
         '$_selectProducto WHERE ${where.join(' AND ')} ORDER BY $orden LIMIT $limite', [...args, ...ordenArgs]);
     return f.map(Producto.desdeMapa).toList();
   }
+
+  /// Suma uno a las veces que se eligió en el buscador (los más buscados
+  /// salen primero).
+  Future<void> registrarBusqueda(String id) =>
+      db.rawUpdate('UPDATE productos SET busquedas = busquedas + 1 WHERE id = ?', [id]);
 
   Future<int> contar() async =>
       (await db.rawQuery('SELECT COUNT(*) AS n FROM productos WHERE activo = 1')).first['n'] as int;
