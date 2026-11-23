@@ -113,6 +113,19 @@ class _FormState extends State<_Form> {
     });
   }
 
+  Future<void> _eliminar() async {
+    final prod = p;
+    if (prod == null) return;
+    if (!await confirmar(context, 'Eliminar producto',
+        '¿Eliminar "${prod.descripcion}" del catálogo? Sus ventas pasadas se conservan.',
+        si: 'Eliminar', peligro: true)) {
+      return;
+    }
+    await repos.productos.eliminar(prod.id);
+    avisarCambio();
+    if (mounted) Navigator.pop(context, true);
+  }
+
   Future<void> _guardar() async {
     if (_tipo == 'kit' && _componentes.isEmpty) return aviso(context, 'Agrega los productos que lleva el paquete.');
     final nuevo = Producto(
@@ -291,6 +304,13 @@ class _FormState extends State<_Form> {
         ),
       ),
       actions: [
+        if (p != null)
+          TextButton.icon(
+            style: TextButton.styleFrom(foregroundColor: ExColor.rojo),
+            onPressed: _eliminar,
+            icon: const Icon(Icons.delete_outline),
+            label: const Text('Eliminar producto'),
+          ),
         TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
         FilledButton(onPressed: _guardar, child: const Text('Guardar producto')),
       ],

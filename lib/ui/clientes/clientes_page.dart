@@ -4,6 +4,7 @@ import '../../core/formato.dart';
 import '../../core/ids.dart';
 import '../../core/tickets.dart';
 import '../../data/clientes_repo.dart';
+import '../../data/ajustes_repo.dart';
 import '../../data/repos.dart';
 import '../../models/modelos.dart';
 import '../comun/csv.dart';
@@ -212,8 +213,12 @@ class _ClientesPageState extends State<ClientesPage> {
                             leading: ExAvatar(c.nombre),
                             title: Text(c.nombre),
                             subtitle: Text('No. ${c.numero}${c.telefono.isEmpty ? '' : ' · ${c.telefono}'}'),
-                            trailing: Text(formatoPesos(c.saldoCentavos),
-                                style: ExTexto.mono(14, color: c.saldoCentavos > 0 ? ExColor.rojo : ExColor.texto2)),
+                            trailing: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.end, children: [
+                              Text(formatoPesos(c.saldoCentavos),
+                                  style: ExTexto.mono(14, color: c.saldoCentavos > 0 ? ExColor.rojo : ExColor.texto2)),
+                              if (c.alertaCredito(porcentajeAvisoCredito(repos.ajustes)).isNotEmpty)
+                                _EtiquetaTope(c.alertaCredito(porcentajeAvisoCredito(repos.ajustes)) == 'alcanzado'),
+                            ]),
                             onTap: () => _elegir(c),
                           );
                         },
@@ -270,9 +275,14 @@ class _ClientesPageState extends State<ClientesPage> {
           const SizedBox(width: 12),
           Expanded(
               child: ExKpi(
-                  nombre: 'Límite de crédito',
-                  valor: c.tieneLimite ? formatoPesos(c.limiteCentavos) : 'Sin límite',
-                  nota: c.tieneLimite ? 'Disponible ${formatoPesos(c.disponibleCentavos)}' : null)),
+                  nombre: 'Tope de crédito',
+                  valor: c.tieneLimite ? formatoPesos(c.limiteCentavos) : 'Sin tope',
+                  alerta: c.alertaCredito(porcentajeAvisoCredito(repos.ajustes)).isNotEmpty,
+                  nota: c.tieneLimite
+                      ? (c.alertaCredito(porcentajeAvisoCredito(repos.ajustes)) == 'alcanzado'
+                          ? 'Tope alcanzado (${c.usoCredito} %)'
+                          : 'Disponible ${formatoPesos(c.disponibleCentavos)} · usado ${c.usoCredito} %')
+                      : null)),
           const SizedBox(width: 12),
           Expanded(
               child: ExKpi(
@@ -368,7 +378,7 @@ class _FormClienteState extends State<_FormCliente> {
           const SizedBox(height: 12),
           TextField(controller: _dir, decoration: const InputDecoration(labelText: 'Dirección')),
           const SizedBox(height: 12),
-          CampoNumero(controller: _limite, etiqueta: 'Límite de crédito (\$)', ayuda: 'Vacío = sin límite'),
+          CampoNumero(controller: _limite, etiqueta: 'Tope de crédito (\$)', ayuda: 'Lo máximo que puede deber. Vacío = sin tope. Se avisa al acercarse.'),
           if (c == null) ...[
             const SizedBox(height: 12),
             CampoNumero(controller: _anterior, etiqueta: 'Saldo anterior (\$)', ayuda: 'Lo que ya debía (de la libreta o de otro sistema)'),
@@ -450,4 +460,22 @@ class _AbonoState extends State<_Abono> {
       ],
     );
   }
+}
+
+class _EtiquetaTope extends StatelessWidget {
+  const _EtiquetaTope(this.alcanzado);
+  final bool alcanzado;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.only(top: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+        decoration: BoxDecoration(
+          color: (alcanzado ? ExColor.rojo : ExColor.naranja).withOpacity(0.15),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: alcanzado ? ExColor.rojo : ExColor.naranja),
+        ),
+        child: Text(alcanzado ? 'Tope alcanzado' : 'Cerca del tope',
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: alcanzado ? ExColor.rojo : const Color(0xFF8A5A2B))),
+      );
 }

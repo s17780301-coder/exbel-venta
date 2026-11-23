@@ -161,12 +161,33 @@ class _CobroState extends State<_Cobro> {
     }
   }
 
-  void _terminar(bool imprimir) {
+  Future<void> _terminar(bool imprimir) async {
     final (pago, error) = _armarPago();
     if (pago == null) return aviso(context, error!);
     final c = _cliente;
-    if (pago.creditoCentavos > 0 && c != null && c.tieneLimite && c.saldoCentavos + pago.creditoCentavos > c.limiteCentavos) {
-      return aviso(context, '${c.nombre} excede su límite de crédito. Disponible: ${formatoPesos(c.disponibleCentavos)}.');
+    if (pago.creditoCentavos > 0 && c != null && c.tieneLimite) {
+      final nuevo = c.saldoCentavos + pago.creditoCentavos;
+      if (nuevo > c.limiteCentavos) {
+        final ok = await confirmar(
+            context,
+            'Tope de crédito rebasado',
+            '${c.nombre} tiene un tope de ${formatoPesos(c.limiteCentavos)} y ya debe ${formatoPesos(c.saldoCentavos)}.\n'
+                'Con esta venta debería ${formatoPesos(nuevo)}: se pasa por ${formatoPesos(nuevo - c.limiteCentavos)}.\n\n'
+                'Solo un supervisor puede autorizarlo.',
+            si: 'Autorizar',
+            peligro: true);
+        if (!ok || !mounted || !await autorizar(context, Permiso.clientes)) return;
+      } else if (c.alertaCredito(porcentajeAvisoCredito(repos.ajustes), extraCentavos: pago.creditoCentavos).isNotEmpty) {
+        final pct = (nuevo * 100 / c.limiteCentavos).round();
+        final ok = await confirmar(
+            context,
+            '${c.nombre} está por llegar a su tope',
+            'Con esta venta deberá ${formatoPesos(nuevo)} de su tope de ${formatoPesos(c.limiteCentavos)} ($pct %).\n'
+                'Le quedarán ${formatoPesos(c.limiteCentavos - nuevo)} de crédito.',
+            si: 'Continuar');
+        if (!ok) return;
+      }
+      if (!mounted) return;
     }
     final usd = _forma == _Forma.dolares ? _usdAPesos(_dolares.text) : 0;
     Navigator.pop(
@@ -353,8 +374,13 @@ class _CobroState extends State<_Cobro> {
               : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(c.nombre, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17)),
                   Text('Debe ${formatoPesos(c.saldoCentavos)}'
-                      '${c.tieneLimite ? ' · Disponible ${formatoPesos(c.disponibleCentavos)}' : ' · Sin límite'}',
+                      '${c.tieneLimite ? ' de ${formatoPesos(c.limiteCentavos)} · Disponible ${formatoPesos(c.disponibleCentavos)}' : ' · Sin tope'}',
                       style: const TextStyle(color: ExColor.texto2)),
+                  if (c.alertaCredito(porcentajeAvisoCredito(repos.ajustes)).isNotEmpty)
+                    Text(c.alertaCredito(porcentajeAvisoCredito(repos.ajustes)) == 'alcanzado'
+                        ? 'Ya llegó a su tope de crédito'
+                        : 'Cerca de su tope de crédito (${c.usoCredito} %)',
+                        style: const TextStyle(color: ExColor.rojo, fontWeight: FontWeight.w700)),
                 ]),
         ),
         OutlinedButton(onPressed: _elegirCliente, child: Text(c == null ? 'Elegir cliente' : 'Cambiar')),

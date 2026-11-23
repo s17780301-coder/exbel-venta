@@ -25,7 +25,7 @@ import '../sesion.dart';
 import '../tema/tema.dart';
 import '../zoom.dart';
 
-const versionExBel = '0.6.1';
+const versionExBel = '0.6.2';
 
 /// Configuración de la tienda.
 class ConfigPage extends StatefulWidget {
@@ -446,6 +446,7 @@ class _FormasPago extends StatelessWidget {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       _titulo('Formas de pago', 'Efectivo, tarjeta, transferencia y pago mixto siempre están disponibles.'),
       const _Interruptor(Ajuste.usarCredito, 'Crédito (fiado)'),
+      const _Campo(Ajuste.avisoCredito, 'Avisar al llegar a este % del tope de crédito', ayuda: 'Ej. 80 = avisa cuando el cliente ya usó el 80 % de su tope', numero: true),
       const _Interruptor(Ajuste.aceptarVales, 'Vales de despensa'),
       const _Interruptor(Ajuste.aceptarDolares, 'Dólares'),
       const _Campo(Ajuste.tipoCambio, 'Tipo de cambio (pesos por dólar)', pesos: true),

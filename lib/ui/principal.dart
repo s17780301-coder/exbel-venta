@@ -248,7 +248,7 @@ class _PrincipalState extends State<Principal> {
                 Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(cajero.nombre, style: const TextStyle(color: ExColor.concreto, fontWeight: FontWeight.w600, fontSize: 16)),
                   Text(turno == null ? cajaLocal.nombreCaja : '${turno.caja} · Turno ${turno.numero}',
-                      style: const TextStyle(color: ExColor.textoClaro2, fontSize: 13)),
+                      style: const TextStyle(color: ExColor.textoClaro, fontSize: 13)),
                 ]),
               ]),
             ),

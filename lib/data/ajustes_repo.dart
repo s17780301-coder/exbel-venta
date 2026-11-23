@@ -24,6 +24,9 @@ abstract final class Ajuste {
   static const venderSinExistencia = 'vender_sin_existencia';
   static const permitirComun = 'permitir_comun';
   static const usarCredito = 'usar_credito';
+
+  /// Avisar cuando el cliente use este porcentaje de su tope de crédito.
+  static const avisoCredito = 'aviso_credito_porcentaje';
   static const permitirCobroMenor = 'permitir_cobro_menor';
   static const impresion = 'impresion'; // preguntar | siempre | nunca
   static const tipoCambio = 'tipo_cambio_centavos';
@@ -74,6 +77,7 @@ abstract final class Ajuste {
     venderSinExistencia: '1',
     permitirComun: '1',
     usarCredito: '1',
+    avisoCredito: '80',
     permitirCobroMenor: '0',
     impresion: 'preguntar',
     tipoCambio: '1800',
@@ -162,3 +166,6 @@ Future<void> guardarConfigBascula(AjustesRepo a, ConfigBascula? c) async {
   await a.guardar(Ajuste.basculaFormato, c.formato);
   await a.guardar(Ajuste.basculaPedido, c.pedido.isEmpty ? '-' : c.pedido);
 }
+
+/// Porcentaje del tope de crédito en el que se avisa (1 a 100).
+int porcentajeAvisoCredito(AjustesRepo a) => (int.tryParse(a.texto(Ajuste.avisoCredito)) ?? 80).clamp(1, 100);

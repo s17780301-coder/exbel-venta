@@ -786,7 +786,7 @@ class _VentasPageState extends State<VentasPage> {
           padding: const EdgeInsets.only(right: 6),
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               side: const BorderSide(color: ExColor.borde, width: 1.4),
               backgroundColor: ExColor.blanco,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -923,7 +923,7 @@ class _VentasPageState extends State<VentasPage> {
         ? 0
         : (pago.recibidoCentavos > pago.efectivoCentavos ? pago.recibidoCentavos - pago.efectivoCentavos : (pago.efectivoCentavos < 0 ? -pago.efectivoCentavos : 0));
     Widget dato(String t, int c) => Row(mainAxisSize: MainAxisSize.min, children: [
-          SizedBox(width: 92, child: Text(t, style: const TextStyle(fontSize: 16, color: ExColor.texto2))),
+          SizedBox(width: 100, child: Text(t, style: const TextStyle(fontSize: 16, color: ExColor.tinta, fontWeight: FontWeight.w600))),
           SizedBox(
             width: 150,
             child: Text(formatoPesos(c), textAlign: TextAlign.right, style: ExTexto.titulo(24, color: ExColor.tinta)),
@@ -943,13 +943,11 @@ class _VentasPageState extends State<VentasPage> {
             Wrap(spacing: 6, runSpacing: 6, children: [
               _chico(Icons.sync_alt, 'F5 - Cambiar', _siguienteTicket),
               _chico(Icons.add_box_outlined, 'F6 - Pendiente', _nuevoTicket),
-              _chico(Icons.delete_outline, 'Eliminar', () => _cerrarTicket(_actual)),
-              _chico(Icons.person_add_alt, 'Asignar cliente', _elegirCliente),
-              _chico(Icons.add, '+ Cantidad', () => _sumar(1)),
-              _chico(Icons.remove, '− Cantidad', () => _sumar(-1)),
-              _chico(Icons.undo, 'Devolución', _ventasDelDia),
-              _chico(Icons.print_outlined, 'Reimprimir último ticket', _reimprimir),
-              _chico(Icons.receipt_long_outlined, 'Ventas del día y devoluciones', _ventasDelDia),
+              _chico(Icons.delete_outline, 'Eliminar ticket', () => _cerrarTicket(_actual)),
+              _chico(Icons.add, 'Cant. (+)', () => _sumar(1)),
+              _chico(Icons.remove, 'Cant. (−)', () => _sumar(-1)),
+              _chico(Icons.print_outlined, 'Reimprimir', _reimprimir),
+              _chico(Icons.undo, 'Devoluciones', _ventasDelDia),
             ]),
           ]),
         ),
@@ -958,9 +956,9 @@ class _VentasPageState extends State<VentasPage> {
           margin: const EdgeInsets.only(right: 16),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           decoration: BoxDecoration(
-            color: ExColor.blanco,
+            color: const Color(0xFFE4E2F1),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: ExColor.linea),
+            border: Border.all(color: ExColor.borde, width: 1.4),
           ),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
             dato('Pagó con:', pagoCon),

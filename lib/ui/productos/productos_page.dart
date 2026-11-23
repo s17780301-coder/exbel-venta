@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/formato.dart';
 import '../../core/ids.dart';
@@ -133,14 +134,15 @@ class _ProductosPageState extends State<ProductosPage> {
     await importarDesdeArchivo(context);
   }
 
-  Widget _boton(IconData i, String t, VoidCallback f) => OutlinedButton.icon(
+  Widget _boton(IconData i, String t, VoidCallback f, {bool peligro = false}) => OutlinedButton.icon(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(0, 46),
           backgroundColor: ExColor.blanco,
-          side: const BorderSide(color: ExColor.borde, width: 1.4),
+          foregroundColor: peligro ? ExColor.rojo : null,
+          side: BorderSide(color: peligro ? ExColor.rojo : ExColor.borde, width: 1.4),
         ),
         onPressed: f,
-        icon: Icon(i, size: 20, color: ExColor.indigo),
+        icon: Icon(i, size: 20, color: peligro ? ExColor.rojo : ExColor.indigo),
         label: Text(t, style: const TextStyle(fontSize: 15)),
       );
 
@@ -163,6 +165,17 @@ class _ProductosPageState extends State<ProductosPage> {
 
   @override
   Widget build(BuildContext context) {
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.delete): () {
+          if (_sel.isNotEmpty) _eliminar();
+        },
+      },
+      child: Focus(autofocus: true, child: _contenido(context)),
+    );
+  }
+
+  Widget _contenido(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -181,7 +194,7 @@ class _ProductosPageState extends State<ProductosPage> {
             final p = await buscarProducto(context);
             if (p != null) await _editar(p);
           }),
-          _boton(Icons.delete_outline, 'Eliminar', _eliminar),
+          _boton(Icons.delete_outline, 'Eliminar (Supr)', _eliminar, peligro: true),
           _boton(Icons.folder_outlined, 'Departamentos', _departamentos),
           _boton(Icons.local_offer_outlined, 'Promociones', _promociones),
           _boton(Icons.price_change_outlined, 'Cambiar precios', _cambiarPrecios),

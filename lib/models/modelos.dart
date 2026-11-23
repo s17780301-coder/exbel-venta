@@ -266,6 +266,18 @@ class Cliente {
   bool get tieneLimite => limiteCentavos > 0;
   int get disponibleCentavos => tieneLimite ? max(0, limiteCentavos - saldoCentavos) : 0;
 
+  /// Porcentaje del tope que ya usó (0 si no tiene tope).
+  int get usoCredito => tieneLimite ? (saldoCentavos * 100 / limiteCentavos).round() : 0;
+
+  /// 'alcanzado', 'cerca' o '' según el porcentaje de aviso.
+  String alertaCredito(int porcentajeAviso, {int extraCentavos = 0}) {
+    if (!tieneLimite) return '';
+    final s = saldoCentavos + extraCentavos;
+    if (s >= limiteCentavos) return 'alcanzado';
+    if (s * 100 >= limiteCentavos * porcentajeAviso) return 'cerca';
+    return '';
+  }
+
   factory Cliente.desdeMapa(Map<String, Object?> m) => Cliente(
         id: m['id'] as String,
         numero: m['numero'] as int,
