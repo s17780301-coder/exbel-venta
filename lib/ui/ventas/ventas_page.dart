@@ -224,7 +224,12 @@ class _VentasPageState extends State<VentasPage> {
     if (i < 0 || i >= _t.renglones.length) return;
     final r = _t.renglones[i];
     final nueva = r.cantidad + d;
-    if (nueva <= 0) return _borrarSeleccion();
+    // Con "−" no se borra el producto: se queda en lo mínimo. Para quitarlo
+    // está SUPR / "Borrar art.".
+    if (nueva < 1 && d < 0) {
+      aviso(context, 'Ya está en lo mínimo. Para quitar el producto usa SUPR o "Borrar art.".');
+      return;
+    }
     if (!_hayExistencia(r, nueva)) return;
     setState(() => r.cantidad = nueva);
   }
