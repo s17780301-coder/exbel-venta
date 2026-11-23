@@ -200,10 +200,8 @@ class _VentasPageState extends State<VentasPage> {
       _mover(-1);
     } else if (k == LogicalKeyboardKey.arrowDown) {
       _mover(1);
-    } else if (k == LogicalKeyboardKey.numpadAdd || k == LogicalKeyboardKey.add) {
-      if (_codigo.text.isEmpty) _sumar(1);
-    } else if (k == LogicalKeyboardKey.numpadSubtract || k == LogicalKeyboardKey.minus) {
-      if (_codigo.text.isEmpty) _sumar(-1);
+    } else if (esMasOMenos(e) != 0) {
+      if (_codigo.text.isEmpty) _sumar(esMasOMenos(e));
     } else if (ctrl && k == LogicalKeyboardKey.keyP) {
       _comun();
     } else if (ctrl && k == LogicalKeyboardKey.keyD) {

@@ -137,8 +137,7 @@ class _BuscadorState extends State<_Buscador> {
                         ],
                         par: i.isOdd,
                         seleccionada: i == _sel,
-                        onTap: () => setState(() => _sel = i),
-                        onDoubleTap: () => Navigator.pop(context, p),
+                        onTap: () => Navigator.pop(context, p),
                       );
                     },
                   ),

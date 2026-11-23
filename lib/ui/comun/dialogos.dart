@@ -292,7 +292,9 @@ class EncabezadoTabla extends StatelessWidget {
 }
 
 /// Fila de tabla.
-class FilaTabla extends StatelessWidget {
+/// Fila de tabla. El clic responde al instante: el doble clic se detecta a
+/// mano (con InkWell.onDoubleTap cada clic esperaba ~0.3 s).
+class FilaTabla extends StatefulWidget {
   const FilaTabla(this.celdas, {super.key, this.seleccionada = false, this.onTap, this.onDoubleTap, this.color, this.par = false});
   final List<(Widget, int, bool)> celdas;
   final bool seleccionada;
@@ -302,16 +304,34 @@ class FilaTabla extends StatelessWidget {
   final VoidCallback? onDoubleTap;
 
   @override
+  State<FilaTabla> createState() => _FilaTablaState();
+}
+
+class _FilaTablaState extends State<FilaTabla> {
+  DateTime? _ultimo;
+
+  void _toque() {
+    final ahora = DateTime.now();
+    final doble = _ultimo != null && ahora.difference(_ultimo!) < const Duration(milliseconds: 400);
+    _ultimo = doble ? null : ahora;
+    if (doble && widget.onDoubleTap != null) {
+      widget.onDoubleTap!();
+    } else {
+      widget.onTap?.call();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final w = widget;
     return Material(
-      color: seleccionada ? ExColor.lavanda : (color ?? (par ? ExColor.concreto : ExColor.blanco)),
+      color: w.seleccionada ? ExColor.lavanda : (w.color ?? (w.par ? ExColor.concreto : ExColor.blanco)),
       child: InkWell(
-        onTap: onTap,
-        onDoubleTap: onDoubleTap,
+        onTap: w.onTap == null && w.onDoubleTap == null ? null : _toque,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           child: Row(children: [
-            for (final c in celdas)
+            for (final c in w.celdas)
               Expanded(flex: c.$2, child: Align(alignment: c.$3 ? Alignment.centerRight : Alignment.centerLeft, child: c.$1)),
           ]),
         ),

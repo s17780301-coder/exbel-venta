@@ -131,8 +131,8 @@ class _BuscadorState extends State<_Buscador> {
     return Material(
       color: sel ? ExColor.lavanda : (i.isOdd ? ExColor.concreto : ExColor.blanco),
       child: InkWell(
-        onTap: () => setState(() => _sel = i),
-        onDoubleTap: () => Navigator.pop(context, h),
+        // Un clic basta para elegir.
+        onTap: () => Navigator.pop(context, h),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           child: Row(children: [
@@ -193,7 +193,7 @@ class _BuscadorState extends State<_Buscador> {
           Padding(
             padding: const EdgeInsets.all(14),
             child: Row(children: [
-              Text(_c.text.trim().length < 2 ? 'Los más vendidos · escribe 2 letras para buscar' : '${_r.length} resultados · ↑ ↓ para moverte · ENTER para elegir',
+              Text(_c.text.trim().length < 2 ? 'Los más vendidos · escribe 2 letras para buscar' : '${_r.length} resultados · clic o ENTER para elegir',
                   style: const TextStyle(color: ExColor.texto2)),
               const Spacer(),
               TextButton(onPressed: () => Navigator.pop(context), child: const Text('ESC - Cancelar')),

@@ -26,6 +26,15 @@ import 'ventas/ventas_page.dart';
 /// Teclas que la pantalla de ventas atiende cuando está a la vista.
 final teclasVentas = ValueNotifier<KeyEvent?>(null);
 
+/// +1 / −1 si la tecla escribe "+" o "-" (en cualquier teclado: con Shift en
+/// laptops, la tecla junto al Enter o el teclado numérico); 0 si no.
+int esMasOMenos(KeyEvent e) {
+  final c = e.character;
+  if (c == '+' || e.logicalKey == LogicalKeyboardKey.numpadAdd || e.logicalKey == LogicalKeyboardKey.add) return 1;
+  if (c == '-' || e.logicalKey == LogicalKeyboardKey.numpadSubtract || e.logicalKey == LogicalKeyboardKey.minus) return -1;
+  return 0;
+}
+
 /// Lo pone Ventas: si el campo de código está vacío, + y − cambian la cantidad.
 bool Function() codigoVentasVacio = () => true;
 
@@ -116,9 +125,7 @@ class _PrincipalState extends State<Principal> {
           LogicalKeyboardKey.insert, LogicalKeyboardKey.delete, LogicalKeyboardKey.arrowUp,
           LogicalKeyboardKey.arrowDown,
         ].contains(k) ||
-        ([LogicalKeyboardKey.numpadAdd, LogicalKeyboardKey.numpadSubtract, LogicalKeyboardKey.add, LogicalKeyboardKey.minus]
-                .contains(k) &&
-            codigoVentasVacio()) ||
+        (esMasOMenos(e) != 0 && codigoVentasVacio()) ||
         (ctrl && [LogicalKeyboardKey.keyP, LogicalKeyboardKey.keyD, LogicalKeyboardKey.keyB, LogicalKeyboardKey.keyF].contains(k));
   }
 
