@@ -22,6 +22,9 @@ import 'cobro_dialogo.dart';
 import 'dialogos_venta.dart';
 import 'ventas_dia.dart';
 
+/// Máximo de tickets abiertos a la vez (Ticket 1 a Ticket 5).
+const maxTickets = 5;
+
 /// Un ticket en curso. Se pueden tener varios (pendientes).
 class Ticket {
   Ticket(this.nombre);
@@ -45,7 +48,6 @@ class VentasPage extends StatefulWidget {
 class _VentasPageState extends State<VentasPage> {
   final _tickets = <Ticket>[Ticket('Ticket 1')];
   int _actual = 0;
-  int _consecutivo = 1;
   final _codigo = TextEditingController();
   final _focoCodigo = FocusNode();
   final _scroll = ScrollController();
@@ -79,7 +81,6 @@ class _VentasPageState extends State<VentasPage> {
 
   Future<void> _guardarTickets() async {
     final datos = {
-      'consecutivo': _consecutivo,
       'actual': _actual,
       'tickets': [
         for (final t in _tickets)
@@ -112,7 +113,7 @@ class _VentasPageState extends State<VentasPage> {
     try {
       final d = jsonDecode(texto) as Map<String, dynamic>;
       final lista = <Ticket>[];
-      for (final tm in d['tickets'] as List) {
+      for (final tm in (d['tickets'] as List).take(maxTickets)) {
         final tk = Ticket(tm['nombre'] as String);
         final cid = tm['cliente'] as String?;
         if (cid != null) tk.cliente = await repos.clientes.porId(cid);
@@ -136,10 +137,12 @@ class _VentasPageState extends State<VentasPage> {
       }
       if (lista.isEmpty || !mounted) return;
       setState(() {
+        for (var n = 0; n < lista.length; n++) {
+          lista[n].nombre = 'Ticket ${n + 1}';
+        }
         _tickets
           ..clear()
           ..addAll(lista);
-        _consecutivo = (d['consecutivo'] as int?) ?? lista.length;
         _actual = ((d['actual'] as int?) ?? 0).clamp(0, lista.length - 1);
       });
     } catch (_) {}
@@ -434,16 +437,26 @@ class _VentasPageState extends State<VentasPage> {
 
   // ---------------- Tickets ----------------
 
-  Future<void> _nuevoTicket() async {
-    if (_t.renglones.isNotEmpty) {
-      final nombre = await pedirTexto(context, 'Dejar ticket pendiente',
-          etiqueta: 'Nombre (opcional)', inicial: _t.nombre, ayuda: 'Ej. "Señora de azul". F5 para regresar a él.');
-      if (nombre == null) return _enfocar();
-      if (nombre.trim().isNotEmpty) _t.nombre = nombre.trim();
+  /// "Ticket 1" a "Ticket 5": el primer número libre.
+  String _nombreLibre() {
+    for (var n = 1; n <= maxTickets; n++) {
+      if (!_tickets.any((t) => t.nombre == 'Ticket $n')) return 'Ticket $n';
+    }
+    return 'Ticket ${_tickets.length + 1}';
+  }
+
+  /// F6: deja el ticket actual pendiente y abre otro (máximo 5).
+  void _nuevoTicket() {
+    if (_tickets.length >= maxTickets) {
+      aviso(context, 'Ya hay $maxTickets tickets abiertos. Cobra o elimina uno para abrir otro.');
+      return _enfocar();
+    }
+    if (_t.renglones.isEmpty) {
+      aviso(context, 'Este ticket está vacío; úsalo para la siguiente persona.');
+      return _enfocar();
     }
     setState(() {
-      _consecutivo++;
-      _tickets.add(Ticket('Ticket $_consecutivo'));
+      _tickets.add(Ticket(_nombreLibre()));
       _actual = _tickets.length - 1;
     });
     _enfocar();
@@ -455,20 +468,24 @@ class _VentasPageState extends State<VentasPage> {
     _enfocar();
   }
 
+  /// Elimina el ticket. Si es el único, solo lo vacía.
   Future<void> _cerrarTicket(int i) async {
     final t = _tickets[i];
     if (t.renglones.isNotEmpty &&
-        !await confirmar(context, 'Borrar ticket', '¿Descartar "${t.nombre}" con ${t.renglones.length} artículos?',
-            si: 'Descartar', peligro: true)) {
-      return;
+        !await confirmar(context, 'Eliminar ticket', '¿Borrar "${t.nombre}" con ${t.renglones.length} artículos?',
+            si: 'Eliminar', peligro: true)) {
+      return _enfocar();
     }
     setState(() {
-      _tickets.removeAt(i);
-      if (_tickets.isEmpty) {
-        _consecutivo++;
-        _tickets.add(Ticket('Ticket $_consecutivo'));
+      if (_tickets.length == 1) {
+        t.renglones.clear();
+        t.cliente = null;
+        t.seleccion = -1;
+      } else {
+        _tickets.removeAt(i);
+        if (_actual > i) _actual--;
+        if (_actual >= _tickets.length) _actual = _tickets.length - 1;
       }
-      _actual = _actual.clamp(0, _tickets.length - 1);
     });
     _enfocar();
   }
@@ -502,10 +519,7 @@ class _VentasPageState extends State<VentasPage> {
       setState(() {
         _ultima = venta;
         _tickets.remove(cerrado);
-        if (_tickets.isEmpty) {
-          _consecutivo++;
-          _tickets.add(Ticket('Ticket $_consecutivo'));
-        }
+        if (_tickets.isEmpty) _tickets.add(Ticket('Ticket 1'));
         _actual = _actual.clamp(0, _tickets.length - 1);
       });
       avisarCambio();
@@ -633,7 +647,7 @@ class _VentasPageState extends State<VentasPage> {
                           style: ExTexto.mono(12, color: ExColor.texto2, peso: FontWeight.w500)),
                     ],
                     IconButton(
-                      tooltip: 'Descartar ticket',
+                      tooltip: 'Eliminar ticket',
                       visualDensity: VisualDensity.compact,
                       iconSize: 16,
                       onPressed: () => _cerrarTicket(i),
@@ -642,12 +656,18 @@ class _VentasPageState extends State<VentasPage> {
                   ]),
                 ),
               ),
-            TextButton.icon(
-              onPressed: _nuevoTicket,
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('F6 Pendiente / nuevo ticket'),
+            if (_tickets.length < maxTickets)
+              TextButton.icon(
+                onPressed: _nuevoTicket,
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Nuevo ticket (F6)'),
+              ),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text('${_tickets.length} de $maxTickets tickets', style: const TextStyle(color: ExColor.texto2)),
+              ),
             ),
-            if (_tickets.length > 1) TextButton(onPressed: _siguienteTicket, child: const Text('F5 Cambiar')),
           ]),
         ),
       ]),
