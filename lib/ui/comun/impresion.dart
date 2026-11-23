@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 
 import '../../data/repos.dart';
+import '../zoom.dart';
 import '../tema/tema.dart';
 import 'dialogos.dart';
 
@@ -74,7 +75,7 @@ Future<void> vistaPrevia(BuildContext context, Uint8List pdf, {String titulo = '
       clipBehavior: Clip.antiAlias,
       child: SizedBox(
         width: 460,
-        height: 720,
+        height: altoDialogo(context, 760),
         child: Column(children: [
           Container(
             color: ExColor.tinta,

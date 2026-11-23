@@ -6,6 +6,7 @@ import '../../data/ajustes_repo.dart';
 import '../../data/repos.dart';
 import '../../models/modelos.dart';
 import '../comun/dialogos.dart';
+import '../zoom.dart';
 import '../tema/tema.dart';
 import 'dialogos_venta.dart';
 
@@ -191,8 +192,9 @@ class _CobroState extends State<_Cobro> {
       child: Dialog(
         clipBehavior: Clip.antiAlias,
         child: SizedBox(
-          width: 760,
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          width: anchoDialogo(context, 800),
+          child: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Container(
               color: ExColor.tinta,
               padding: const EdgeInsets.fromLTRB(28, 20, 28, 20),
@@ -268,6 +270,7 @@ class _CobroState extends State<_Cobro> {
               ]),
             ),
           ]),
+          ),
         ),
       ),
     );

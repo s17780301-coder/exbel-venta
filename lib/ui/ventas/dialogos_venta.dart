@@ -5,6 +5,7 @@ import '../../data/repos.dart';
 import '../../models/modelos.dart';
 import '../comun/dialogos.dart';
 import '../comun/ex_widgets.dart';
+import '../zoom.dart';
 import '../tema/tema.dart';
 
 /// Granel: cantidad (0.250 = 250 g) o importe ($20 de jamón).
@@ -411,8 +412,8 @@ class _ElegirClienteState extends State<_ElegirCliente> {
     return Dialog(
       clipBehavior: Clip.antiAlias,
       child: SizedBox(
-        width: 640,
-        height: 560,
+        width: anchoDialogo(context, 640),
+        height: altoDialogo(context, 560),
         child: Column(children: [
           Padding(
             padding: const EdgeInsets.all(20),

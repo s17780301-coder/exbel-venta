@@ -31,7 +31,7 @@ class _AccesoPageState extends State<AccesoPage> {
   final _clave2 = TextEditingController();
   final _fondo = TextEditingController();
   final _focoClave = FocusNode();
-  bool _ejemplo = true;
+  bool _ejemplo = false;
   bool _ocupado = false;
   Cajero? _cajero;
   List<Cajero> _cajeros = [];

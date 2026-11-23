@@ -159,7 +159,7 @@ class _PrincipalState extends State<Principal> {
     final cajero = sesion.cajero;
     final turno = sesion.turno;
     return Container(
-      height: 66,
+      height: 92,
       color: ExColor.tinta,
       padding: const EdgeInsets.only(left: 14),
       child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -167,8 +167,8 @@ class _PrincipalState extends State<Principal> {
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-            const ExMarca(oscuro: true, tamano: 10),
-            const SizedBox(height: 3),
+            const ExMarca(oscuro: true, tamano: 13),
+            const SizedBox(height: 4),
             Tooltip(
               message: 'Cambiar el nombre o el logotipo de la tienda',
               child: InkWell(
@@ -180,21 +180,21 @@ class _PrincipalState extends State<Principal> {
                   if (archivo != null && archivo.existsSync()) ...[
                     ClipRRect(
                       borderRadius: BorderRadius.circular(6),
-                      child: Image.file(archivo, height: 26, width: 26, fit: BoxFit.contain),
+                      child: Image.file(archivo, height: 34, width: 34, fit: BoxFit.contain),
                     ),
                     const SizedBox(width: 8),
                   ],
                   ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 260),
+                    constraints: const BoxConstraints(maxWidth: 300),
                     child: Text(negocio,
-                        overflow: TextOverflow.ellipsis, style: ExTexto.titulo(20, color: ExColor.concreto)),
+                        overflow: TextOverflow.ellipsis, style: ExTexto.titulo(24, color: ExColor.concreto)),
                   ),
                 ]),
               ),
             ),
           ]),
         ),
-        const SizedBox(width: 20),
+        const SizedBox(width: 24),
         for (var i = 0; i < _secciones.length; i++) _pestana(i),
         const Spacer(),
         if (cajero != null)
@@ -203,12 +203,12 @@ class _PrincipalState extends State<Principal> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(children: [
-                ExAvatar(cajero.nombre, size: 30),
+                ExAvatar(cajero.nombre, size: 38),
                 const SizedBox(width: 8),
                 Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(cajero.nombre, style: const TextStyle(color: ExColor.concreto, fontWeight: FontWeight.w600)),
+                  Text(cajero.nombre, style: const TextStyle(color: ExColor.concreto, fontWeight: FontWeight.w600, fontSize: 16)),
                   Text(turno == null ? 'Sin turno' : 'Turno ${turno.numero}',
-                      style: const TextStyle(color: ExColor.textoClaro2, fontSize: 12)),
+                      style: const TextStyle(color: ExColor.textoClaro2, fontSize: 13)),
                 ]),
               ]),
             ),
@@ -224,18 +224,19 @@ class _PrincipalState extends State<Principal> {
     return InkWell(
       onTap: () => _ir(i),
       child: Container(
+        constraints: const BoxConstraints(minWidth: 96),
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
           color: activa ? ExColor.concreto : Colors.transparent,
           border: Border(top: BorderSide(color: activa ? ExColor.acento : Colors.transparent, width: 3)),
         ),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(s.icono, size: 22, color: activa ? ExColor.tinta : ExColor.textoClaro),
-          const SizedBox(height: 3),
+          Icon(s.icono, size: 34, color: activa ? ExColor.indigo : ExColor.textoClaro),
+          const SizedBox(height: 5),
           Text(
             s.tecla == null ? s.nombre : '${s.tecla} ${s.nombre}',
             style: TextStyle(
-              fontSize: 12.5,
+              fontSize: 14.5,
               fontWeight: activa ? FontWeight.w700 : FontWeight.w500,
               color: activa ? ExColor.tinta : ExColor.textoClaro,
             ),

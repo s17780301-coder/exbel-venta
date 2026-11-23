@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:window_manager/window_manager.dart';
 
+import '../../core/cajon.dart';
 import '../../core/db.dart';
 import '../../core/formato.dart';
 import '../../core/tickets.dart';
 import '../../data/ajustes_repo.dart';
+import '../../data/importador.dart';
 import '../../data/repos.dart';
 import '../../models/modelos.dart';
 import '../comun/dialogos.dart';
@@ -16,8 +18,9 @@ import '../comun/ex_widgets.dart';
 import '../comun/impresion.dart';
 import '../sesion.dart';
 import '../tema/tema.dart';
+import '../zoom.dart';
 
-const versionExBel = '0.1.0';
+const versionExBel = '0.2.0';
 
 /// Configuración de la tienda.
 class ConfigPage extends StatefulWidget {
@@ -29,11 +32,13 @@ class ConfigPage extends StatefulWidget {
 
 const _secciones = [
   ('Tienda y ticket', Icons.storefront_outlined),
+  ('Pantalla', Icons.zoom_in),
   ('Ventas y cobro', Icons.point_of_sale),
   ('Productos e impuestos', Icons.inventory_2_outlined),
   ('Cajeros y permisos', Icons.badge_outlined),
   ('Corte de caja', Icons.calculate_outlined),
   ('Báscula', Icons.scale_outlined),
+  ('Cajón de dinero', Icons.inbox_outlined),
   ('Respaldos', Icons.backup_outlined),
   ('Acerca de exBel venta', Icons.info_outline),
 ];
@@ -87,12 +92,14 @@ class _ConfigPageState extends State<ConfigPage> {
             constraints: const BoxConstraints(maxWidth: 820),
             child: switch (_sec) {
               0 => const _Tienda(),
-              1 => const _Ventas(),
-              2 => const _Productos(),
-              3 => const _Cajeros(),
-              4 => const _Corte(),
-              5 => const _Bascula(),
-              6 => const _Respaldos(),
+              1 => const _Pantalla(),
+              2 => const _Ventas(),
+              3 => const _Productos(),
+              4 => const _Cajeros(),
+              5 => const _Corte(),
+              6 => const _Bascula(),
+              7 => const _Cajon(),
+              8 => const _Respaldos(),
               _ => const _Acerca(),
             },
           ),
@@ -422,6 +429,76 @@ class _BasculaState extends State<_Bascula> {
   }
 }
 
+class _Pantalla extends StatefulWidget {
+  const _Pantalla();
+
+  @override
+  State<_Pantalla> createState() => _PantallaState();
+}
+
+class _PantallaState extends State<_Pantalla> {
+  @override
+  Widget build(BuildContext context) {
+    const opciones = [(1.0, 'Normal'), (1.15, 'Grande'), (1.3, 'Más grande'), (1.5, 'Muy grande')];
+    final actual = zoomPantalla.value;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _titulo('Tamaño de la pantalla', 'Agranda letras, botones y tablas. "Grande" se parece al tamaño de Eleventa.'),
+      Wrap(spacing: 10, runSpacing: 10, children: [
+        for (final o in opciones)
+          ChoiceChip(
+            label: Padding(padding: const EdgeInsets.all(6), child: Text('${o.$2} (${(o.$1 * 100).round()} %)')),
+            selected: (actual - o.$1).abs() < 0.01,
+            onSelected: (_) async {
+              zoomPantalla.value = o.$1;
+              await repos.ajustes.guardar(Ajuste.zoom, '${o.$1}');
+              setState(() {});
+            },
+          ),
+      ]),
+      const SizedBox(height: 14),
+      const Text('Si en tu monitor algo no cabe, elige un tamaño menor.', style: TextStyle(color: ExColor.texto2)),
+    ]);
+  }
+}
+
+class _Cajon extends StatefulWidget {
+  const _Cajon();
+
+  @override
+  State<_Cajon> createState() => _CajonState();
+}
+
+class _CajonState extends State<_Cajon> {
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      _titulo('Cajón de dinero', 'Para cajones conectados a la impresora de tickets con cable de teléfono (RJ11).'),
+      const _Interruptor(Ajuste.cajonAbrir, 'Abrir el cajón al cobrar con efectivo',
+          'También aparece el botón "Abrir cajón" en Ventas.'),
+      const _Campo(Ajuste.cajonImpresora, 'Nombre compartido de la impresora de tickets',
+          ayuda: 'Ej. TICKETS. Ver pasos abajo.'),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: OutlinedButton.icon(
+          onPressed: () async {
+            final e = await abrirCajon();
+            if (context.mounted) aviso(context, e ?? 'Listo: se mandó la orden de abrir el cajón.');
+          },
+          icon: const Icon(Icons.inbox_outlined),
+          label: const Text('Probar: abrir cajón'),
+        ),
+      ),
+      const SizedBox(height: 18),
+      const Text('Cómo compartir la impresora en Windows', style: TextStyle(fontWeight: FontWeight.w700)),
+      const SizedBox(height: 6),
+      const Text('1. Abre Configuración de Windows → Bluetooth y dispositivos → Impresoras y escáneres.\n'
+          '2. Elige tu impresora de tickets → Propiedades de impresora → pestaña Compartir.\n'
+          '3. Marca "Compartir esta impresora" y ponle un nombre corto sin espacios, por ejemplo TICKETS.\n'
+          '4. Escribe ese mismo nombre aquí arriba y prueba.'),
+    ]);
+  }
+}
+
 class _Respaldos extends StatelessWidget {
   const _Respaldos();
 
@@ -459,6 +536,19 @@ class _Respaldos extends StatelessWidget {
     }
   }
 
+  Future<void> _borrar(BuildContext context) async {
+    if (!sesion.puede(Permiso.configuracion)) return aviso(context, 'Solo el administrador puede borrar datos.');
+    final r = await showDialog<(bool, bool, bool)>(context: context, builder: (_) => const _Borrar());
+    if (r == null || !context.mounted) return;
+    final ok = await intentar(context, () async {
+      await borrarDatos(productos: r.$1, clientes: r.$2, ventas: r.$3, turnoActualId: sesion.turno?.id);
+    });
+    if (ok && context.mounted) {
+      avisarCambio();
+      aviso(context, 'Listo. Se guardó un respaldo antes de borrar.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -485,7 +575,77 @@ class _Respaldos extends StatelessWidget {
           ]),
         ]),
       ),
+      const SizedBox(height: 16),
+      ExSeccion(
+        titulo: 'Empezar de cero',
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Borra los productos de prueba, clientes o ventas antes de meter el inventario real '
+              '(por ejemplo, el que traes de Eleventa). Los cajeros y la configuración se conservan.'),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(backgroundColor: ExColor.rojo),
+            onPressed: () => _borrar(context),
+            icon: const Icon(Icons.delete_forever_outlined),
+            label: const Text('Borrar datos…'),
+          ),
+        ]),
+      ),
     ]);
+  }
+}
+
+class _Borrar extends StatefulWidget {
+  const _Borrar();
+
+  @override
+  State<_Borrar> createState() => _BorrarState();
+}
+
+class _BorrarState extends State<_Borrar> {
+  bool _productos = true;
+  bool _clientes = true;
+  bool _ventas = true;
+  final _confirmar = TextEditingController();
+
+  @override
+  void dispose() {
+    _confirmar.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final listo = _confirmar.text.trim().toUpperCase() == 'BORRAR' && (_productos || _clientes || _ventas);
+    return AlertDialog(
+      title: const Text('Borrar datos'),
+      content: SizedBox(
+        width: 480,
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          CheckboxListTile(
+              value: _productos,
+              onChanged: (v) => setState(() => _productos = v ?? false),
+              title: const Text('Productos, departamentos e inventario')),
+          CheckboxListTile(
+              value: _clientes, onChanged: (v) => setState(() => _clientes = v ?? false), title: const Text('Clientes y créditos')),
+          CheckboxListTile(
+              value: _ventas,
+              onChanged: (v) => setState(() => _ventas = v ?? false),
+              title: const Text('Ventas, cortes y movimientos de caja')),
+          const SizedBox(height: 10),
+          const Text('Esto no se puede deshacer (solo restaurando el respaldo). Escribe BORRAR para confirmar.'),
+          const SizedBox(height: 8),
+          TextField(controller: _confirmar, autofocus: true, onChanged: (_) => setState(() {})),
+        ]),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: ExColor.rojo),
+          onPressed: listo ? () => Navigator.pop(context, (_productos, _clientes, _ventas)) : null,
+          child: const Text('Borrar'),
+        ),
+      ],
+    );
   }
 }
 

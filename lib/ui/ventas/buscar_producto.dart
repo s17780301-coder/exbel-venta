@@ -8,6 +8,7 @@ import '../../data/repos.dart';
 import '../../models/modelos.dart';
 import '../comun/dialogos.dart';
 import '../comun/ex_widgets.dart';
+import '../zoom.dart';
 import '../tema/tema.dart';
 
 /// F10: buscar producto por nombre o código. Enter agrega el seleccionado.
@@ -77,8 +78,8 @@ class _BuscadorState extends State<_Buscador> {
     return Dialog(
       clipBehavior: Clip.antiAlias,
       child: SizedBox(
-        width: 900,
-        height: 620,
+        width: anchoDialogo(context, 960),
+        height: altoDialogo(context, 640),
         child: Column(children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),

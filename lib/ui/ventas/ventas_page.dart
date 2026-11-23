@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/cajon.dart';
 import '../../core/errores.dart';
 import '../../core/formato.dart';
 import '../../core/tickets.dart';
@@ -233,7 +234,7 @@ class _VentasPageState extends State<VentasPage> {
 
   void _alFinal() => WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_scroll.hasClients) {
-          final alto = 46.0 * _t.seleccion;
+          final alto = 52.0 * _t.seleccion;
           _scroll.animateTo(alto.clamp(0.0, _scroll.position.maxScrollExtent),
               duration: const Duration(milliseconds: 120), curve: Curves.easeOut);
         }
@@ -409,6 +410,8 @@ class _VentasPageState extends State<VentasPage> {
         _actual = _actual.clamp(0, _tickets.length - 1);
       });
       avisarCambio();
+      abrirCajonAlCobrar(
+          conEfectivo: r.pago.efectivoCentavos != 0 || r.pago.recibidoCentavos > 0 || r.pago.dolaresCentavos > 0);
       if (r.imprimir && mounted) {
         final pdf = await ticketVenta(venta, await repos.ventas.detalle(venta.id));
         if (!mounted) return;
@@ -449,6 +452,13 @@ class _VentasPageState extends State<VentasPage> {
     _enfocar();
   }
 
+  Future<void> _abrirCajon() async {
+    if (!await autorizar(context, Permiso.entradasSalidas) || !mounted) return _enfocar();
+    final error = await abrirCajon();
+    if (error != null && mounted) aviso(context, error);
+    _enfocar();
+  }
+
   Future<void> _movimientoCaja(String tipo) async {
     final turno = sesion.turno;
     if (turno == null) return;
@@ -481,7 +491,7 @@ class _VentasPageState extends State<VentasPage> {
   Widget _barraTickets() {
     return Container(
       color: ExColor.blanco,
-      height: 40,
+      height: 46,
       child: Row(children: [
         Expanded(
           child: ListView(scrollDirection: Axis.horizontal, children: [
@@ -502,7 +512,7 @@ class _VentasPageState extends State<VentasPage> {
                   ),
                   child: Row(children: [
                     Text(_tickets[i].nombre,
-                        style: TextStyle(fontWeight: i == _actual ? FontWeight.w700 : FontWeight.w500)),
+                        style: TextStyle(fontSize: 15, fontWeight: i == _actual ? FontWeight.w700 : FontWeight.w500)),
                     if (_tickets[i].renglones.isNotEmpty) ...[
                       const SizedBox(width: 6),
                       Text(formatoPesos(_tickets[i].totalCentavos),
@@ -534,38 +544,42 @@ class _VentasPageState extends State<VentasPage> {
     final cliente = _t.cliente;
     return Container(
       color: ExColor.concreto,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       child: Row(children: [
-        Text('Código del producto:', style: ExTexto.titulo(16)),
+        Text('Código del producto:', style: ExTexto.titulo(20)),
         const SizedBox(width: 12),
         Expanded(
           child: TextField(
             controller: _codigo,
             focusNode: _focoCodigo,
             autofocus: true,
-            style: ExTexto.mono(20, peso: FontWeight.w600),
+            style: ExTexto.mono(24, peso: FontWeight.w600),
             decoration: InputDecoration(
               hintText: 'Escanea o escribe el código · 3*código para varias piezas · o escribe el nombre',
-              hintStyle: const TextStyle(fontSize: 14, color: ExColor.texto2),
+              hintStyle: const TextStyle(fontSize: 15, color: ExColor.texto2),
               prefixIcon: const Icon(Icons.qr_code_scanner),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(28)),
               enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(28), borderSide: const BorderSide(color: ExColor.linea)),
               focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(28), borderSide: const BorderSide(color: ExColor.indigo, width: 2)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
             ),
             onSubmitted: _capturar,
           ),
         ),
         const SizedBox(width: 12),
-        FilledButton.icon(
-          onPressed: () => _capturar(_codigo.text),
-          icon: const Icon(Icons.keyboard_return),
-          label: const Text('ENTER Agregar'),
+        SizedBox(
+          height: 60,
+          child: FilledButton.icon(
+            onPressed: () => _capturar(_codigo.text),
+            icon: const Icon(Icons.keyboard_return),
+            label: const Text('ENTER - Agregar Producto', style: TextStyle(fontSize: 15)),
+          ),
         ),
         const SizedBox(width: 12),
         OutlinedButton.icon(
+          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 60)),
           onPressed: _elegirCliente,
           icon: const Icon(Icons.person_outline),
           label: Text(cliente == null ? 'Cliente' : cliente.nombre, overflow: TextOverflow.ellipsis),
@@ -576,7 +590,7 @@ class _VentasPageState extends State<VentasPage> {
 
   Widget _barraFavoritos() {
     return Container(
-      height: 46,
+      height: 52,
       color: ExColor.concreto,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: ListView.separated(
@@ -594,7 +608,7 @@ class _VentasPageState extends State<VentasPage> {
                 backgroundColor: ExColor.blanco,
               ),
               onPressed: () => _agregar(p),
-              child: Text('${p.descripcion}  ${formatoPesos(p.precioCentavos)}', style: const TextStyle(fontSize: 13)),
+              child: Text('${p.descripcion}  ${formatoPesos(p.precioCentavos)}', style: const TextStyle(fontSize: 15)),
             ),
           );
         },
@@ -607,16 +621,16 @@ class _VentasPageState extends State<VentasPage> {
           padding: const EdgeInsets.only(right: 6),
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
               side: const BorderSide(color: ExColor.linea),
               backgroundColor: ExColor.blanco,
             ),
             onPressed: f,
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              if (icono != null) ...[Icon(icono, size: 16), const SizedBox(width: 6)],
-              Text(tecla, style: ExTexto.mono(11, color: ExColor.indigo)),
+              if (icono != null) ...[Icon(icono, size: 20), const SizedBox(width: 6)],
+              Text(tecla, style: ExTexto.mono(13, color: ExColor.indigo)),
               const SizedBox(width: 6),
-              Text(texto, style: const TextStyle(fontSize: 13)),
+              Text(texto, style: const TextStyle(fontSize: 15)),
             ]),
           ),
         );
@@ -636,6 +650,7 @@ class _VentasPageState extends State<VentasPage> {
           b('SUPR', 'Borrar art.', _borrarSeleccion),
           b('F9', 'Verificador', _verificador),
           b('CTRL+B', 'Ventas del día', _ventasDelDia),
+          if (repos.ajustes.si(Ajuste.cajonAbrir)) b('', 'Abrir cajón', _abrirCajon, icono: Icons.inbox_outlined),
         ]),
       ),
     );
@@ -654,7 +669,7 @@ class _VentasPageState extends State<VentasPage> {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(color: ExColor.blanco, border: Border.all(color: ExColor.linea)),
       child: Column(children: [
-        const EncabezadoTabla(columnas),
+        const EncabezadoTabla(columnas, tamano: 16),
         Expanded(
           child: _t.renglones.isEmpty
               ? Center(
@@ -669,7 +684,7 @@ class _VentasPageState extends State<VentasPage> {
               : ListView.builder(
                   controller: _scroll,
                   itemCount: _t.renglones.length,
-                  itemExtent: 46,
+                  itemExtent: 52,
                   itemBuilder: (_, i) {
                     final r = _t.renglones[i];
                     final etiquetas = [
@@ -680,10 +695,10 @@ class _VentasPageState extends State<VentasPage> {
                     ];
                     return FilaTabla(
                       [
-                        (celda(r.codigo, mono: true), 3, false),
+                        (celda(r.codigo, mono: true, tamano: 17), 3, false),
                         (
                           Row(children: [
-                            Flexible(child: celda(r.descripcion)),
+                            Flexible(child: celda(r.descripcion, tamano: 17)),
                             for (final e in etiquetas)
                               Container(
                                 margin: const EdgeInsets.only(left: 6),
@@ -695,12 +710,12 @@ class _VentasPageState extends State<VentasPage> {
                           8,
                           false
                         ),
-                        (celda(formatoPesos(r.precioUnitarioCentavos), mono: true), 3, true),
-                        (celda(formatoCantidad(r.cantidad), mono: true, negrita: true), 2, true),
-                        (celda(formatoPesos(r.importeCentavos), mono: true, negrita: true), 3, true),
+                        (celda(formatoPesos(r.precioUnitarioCentavos), mono: true, tamano: 17), 3, true),
+                        (celda(formatoCantidad(r.cantidad), mono: true, negrita: true, tamano: 17), 2, true),
+                        (celda(formatoPesos(r.importeCentavos), mono: true, negrita: true, tamano: 17), 3, true),
                         (
                           celda(r.existencia == null ? '—' : formatoCantidad(r.existencia! - r.cantidad),
-                              mono: true, color: r.faltaExistencia ? ExColor.rojo : ExColor.texto2),
+                              mono: true, tamano: 17, color: r.faltaExistencia ? ExColor.rojo : ExColor.texto2),
                           2,
                           true
                         ),
@@ -721,68 +736,82 @@ class _VentasPageState extends State<VentasPage> {
   }
 
   Widget _pie() {
-    final ultima = _ultima;
-    final pago = ultima?.pago;
+    final pago = _ultima?.pago;
+    final pagoCon = pago == null ? 0 : (pago.recibidoCentavos > 0 ? pago.recibidoCentavos : pago.totalCentavos);
+    final cambio = pago == null
+        ? 0
+        : (pago.recibidoCentavos > pago.efectivoCentavos ? pago.recibidoCentavos - pago.efectivoCentavos : (pago.efectivoCentavos < 0 ? -pago.efectivoCentavos : 0));
+    Widget dato(String t, int c) => Row(mainAxisSize: MainAxisSize.min, children: [
+          SizedBox(width: 92, child: Text(t, style: const TextStyle(fontSize: 16, color: ExColor.texto2))),
+          SizedBox(
+            width: 150,
+            child: Text(formatoPesos(c), textAlign: TextAlign.right, style: ExTexto.titulo(24, color: ExColor.tinta)),
+          ),
+        ]);
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 14),
       child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
             Text('${formatoCantidad(_t.piezas)} productos en la venta actual',
-                style: const TextStyle(fontWeight: FontWeight.w600)),
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 17)),
             if (_t.ahorroCentavos > 0)
               Text('El cliente ahorra ${formatoPesos(_t.ahorroCentavos)}',
-                  style: const TextStyle(color: ExColor.verde, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            Row(children: [
+                  style: const TextStyle(color: ExColor.verde, fontWeight: FontWeight.w600, fontSize: 15)),
+            const SizedBox(height: 10),
+            Wrap(spacing: 8, runSpacing: 8, children: [
               OutlinedButton.icon(
-                  onPressed: _reimprimir, icon: const Icon(Icons.print_outlined, size: 18), label: const Text('Reimprimir último ticket')),
-              const SizedBox(width: 8),
+                  style: OutlinedButton.styleFrom(minimumSize: const Size(0, 50)),
+                  onPressed: _reimprimir,
+                  icon: const Icon(Icons.print_outlined),
+                  label: const Text('Reimprimir último ticket', style: TextStyle(fontSize: 15))),
               OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(minimumSize: const Size(0, 50)),
                   onPressed: _ventasDelDia,
-                  icon: const Icon(Icons.receipt_long_outlined, size: 18),
-                  label: const Text('Ventas del día y devoluciones')),
+                  icon: const Icon(Icons.receipt_long_outlined),
+                  label: const Text('Ventas del día y devoluciones', style: TextStyle(fontSize: 15))),
             ]),
           ]),
         ),
-        if (ultima != null && pago != null)
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(color: ExColor.verdeSuave, borderRadius: BorderRadius.circular(12)),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
-              Text('Última venta · folio ${ultima.folio}', style: const TextStyle(fontSize: 12, color: ExColor.texto2)),
-              if (pago.recibidoCentavos > 0)
-                Text('Pagó con ${formatoPesos(pago.recibidoCentavos)}', style: const TextStyle(fontSize: 13)),
-              Text(
-                  pago.recibidoCentavos > pago.efectivoCentavos
-                      ? 'Cambio ${formatoPesos(pago.recibidoCentavos - pago.efectivoCentavos)}'
-                      : pago.descripcion,
-                  style: ExTexto.titulo(20, color: ExColor.verde)),
-            ]),
-          ),
+        // Como Eleventa: siempre a la vista lo que pagó y su cambio.
         Container(
-          padding: const EdgeInsets.fromLTRB(22, 10, 10, 10),
-          decoration: BoxDecoration(color: ExColor.tinta, borderRadius: BorderRadius.circular(16)),
+          margin: const EdgeInsets.only(right: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          decoration: BoxDecoration(
+            color: ExColor.blanco,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: ExColor.linea),
+          ),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
+            dato('Pagó con:', pagoCon),
+            const SizedBox(height: 4),
+            dato('Su cambio:', cambio),
+            if (_ultima != null)
+              Text('Folio ${_ultima!.folio} · ${pago!.descripcion}', style: const TextStyle(fontSize: 12, color: ExColor.texto2)),
+          ]),
+        ),
+        Container(
+          padding: const EdgeInsets.fromLTRB(26, 12, 12, 12),
+          decoration: BoxDecoration(color: ExColor.tinta, borderRadius: BorderRadius.circular(18)),
           child: Row(children: [
             Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
-              const Text('TOTAL', style: TextStyle(color: ExColor.textoClaro2, fontSize: 12, letterSpacing: 1.5)),
-              Text(formatoPesos(_t.totalCentavos), style: ExTexto.titulo(44, color: ExColor.concreto)),
+              const Text('TOTAL', style: TextStyle(color: ExColor.textoClaro2, fontSize: 14, letterSpacing: 2)),
+              Text(formatoPesos(_t.totalCentavos), style: ExTexto.titulo(60, color: ExColor.concreto)),
             ]),
-            const SizedBox(width: 18),
+            const SizedBox(width: 20),
             SizedBox(
-              height: 72,
+              height: 96,
               child: FilledButton(
                 style: FilledButton.styleFrom(
                   backgroundColor: ExColor.acento,
                   foregroundColor: ExColor.tinta,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  padding: const EdgeInsets.symmetric(horizontal: 26),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
                 ),
                 onPressed: _t.renglones.isEmpty ? null : _cobrar,
                 child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Text('F12', style: ExTexto.mono(12, color: ExColor.tinta)),
-                  Text('Cobrar', style: ExTexto.titulo(22, color: ExColor.tinta)),
+                  Text('F12', style: ExTexto.mono(15, color: ExColor.tinta)),
+                  Text('Cobrar', style: ExTexto.titulo(28, color: ExColor.tinta)),
                 ]),
               ),
             ),

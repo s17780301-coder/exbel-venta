@@ -72,6 +72,21 @@ class ClientesRepo {
       (await db.rawQuery('SELECT COALESCE(SUM(saldo_centavos), 0) AS s FROM clientes WHERE activo = 1'))
           .first['s'] as int;
 
+  /// Deuda que el cliente ya traía (de Eleventa u otro sistema, o de la
+  /// libreta). Se suma a su saldo y aparece en el estado de cuenta.
+  Future<void> fijarSaldoAnterior(String clienteId, int montoCentavos) async {
+    if (montoCentavos < 0) throw const ErrorNegocio('El saldo anterior no puede ser negativo.');
+    await db.transaction((tx) async {
+      final f = await tx.query('clientes', columns: ['saldo_anterior_centavos'], where: 'id = ?', whereArgs: [clienteId]);
+      if (f.isEmpty) throw const ErrorNegocio('No se encontró el cliente.');
+      final antes = f.first['saldo_anterior_centavos'] as int;
+      await tx.rawUpdate(
+          'UPDATE clientes SET saldo_anterior_centavos = ?, saldo_anterior_fecha = COALESCE(saldo_anterior_fecha, ?), '
+          'saldo_centavos = saldo_centavos + ?, actualizado = ?, sincronizado = 0 WHERE id = ?',
+          [montoCentavos, ahoraLocal(), montoCentavos - antes, ahoraUtc(), clienteId]);
+    });
+  }
+
   /// Recibe un abono. Si no se indica venta, se aplica a la cuenta general.
   Future<void> abonar({
     required String clienteId,
@@ -121,6 +136,16 @@ class ClientesRepo {
   /// acumulado, del más antiguo al más reciente.
   Future<List<MovimientoCuenta>> estadoDeCuenta(String clienteId) async {
     final movs = <MovimientoCuenta>[];
+    final cl = await db.query('clientes',
+        columns: ['saldo_anterior_centavos', 'saldo_anterior_fecha'], where: 'id = ?', whereArgs: [clienteId]);
+    if (cl.isNotEmpty && (cl.first['saldo_anterior_centavos'] as int) > 0) {
+      movs.add(MovimientoCuenta(
+        fecha: DateTime.tryParse((cl.first['saldo_anterior_fecha'] as String?) ?? '') ?? DateTime(2000),
+        concepto: 'Saldo anterior',
+        cargoCentavos: cl.first['saldo_anterior_centavos'] as int,
+        abonoCentavos: 0,
+      ));
+    }
     for (final v in await db.query('ventas',
         where: 'cliente_id = ? AND credito_centavos > 0', whereArgs: [clienteId])) {
       movs.add(MovimientoCuenta(

@@ -37,6 +37,13 @@ abstract final class Ajuste {
   static const basculaPrefijo = 'bascula_prefijo';
   static const basculaModo = 'bascula_modo'; // peso | precio
 
+  // Pantalla: tamaño de todo (1 = 100 %).
+  static const zoom = 'zoom';
+
+  // Cajón de dinero conectado a la impresora de tickets.
+  static const cajonAbrir = 'cajon_abrir';
+  static const cajonImpresora = 'cajon_impresora';
+
   static const omision = <String, String>{
     nombreNegocio: 'Mi tienda',
     logoNegocio: '',
@@ -63,6 +70,9 @@ abstract final class Ajuste {
     fondoSugerido: '50000',
     basculaPrefijo: '20',
     basculaModo: 'peso',
+    zoom: '1.15',
+    cajonAbrir: '0',
+    cajonImpresora: '',
   };
 }
 

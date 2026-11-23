@@ -8,6 +8,7 @@ import '../comun/dialogos.dart';
 import '../comun/ex_widgets.dart';
 import '../comun/impresion.dart';
 import '../sesion.dart';
+import '../zoom.dart';
 import '../tema/tema.dart';
 
 /// Ventas del día y devoluciones (como en Eleventa).
@@ -134,8 +135,8 @@ class _VentasDiaState extends State<_VentasDia> {
     return Dialog(
       clipBehavior: Clip.antiAlias,
       child: SizedBox(
-        width: 1180,
-        height: 720,
+        width: anchoDialogo(context, 1180),
+        height: altoDialogo(context, 720),
         child: Column(children: [
           Container(
             color: ExColor.tinta,

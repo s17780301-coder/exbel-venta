@@ -484,7 +484,7 @@ class ExMarcaTexto extends StatelessWidget {
   }
 }
 
-/// Arriba a la izquierda: el logo exBel pegado a su nombre.
+/// Marca exBel™ en texto, sencilla (como en la muestra B): sin ícono.
 class ExMarca extends StatelessWidget {
   const ExMarca({super.key, this.oscuro = false, this.tamano = 16});
   final bool oscuro;
@@ -492,11 +492,11 @@ class ExMarca extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      ExLogo(size: tamano * 1.5, conBorde: !oscuro),
-      SizedBox(width: tamano * 0.22),
-      ExMarcaTexto(tamano: tamano, oscuro: oscuro),
-    ]);
+    final color = oscuro ? ExColor.textoClaro : ExColor.tinta;
+    return Text.rich(TextSpan(children: [
+      TextSpan(text: 'exBel', style: ExTexto.marca(tamano, color: color, peso: FontWeight.w600)),
+      TextSpan(text: simboloMarca, style: ExTexto.texto(tamano * 0.55, color: color)),
+    ]));
   }
 }
 

@@ -6,7 +6,9 @@ import '../../core/tickets.dart';
 import '../../data/clientes_repo.dart';
 import '../../data/repos.dart';
 import '../../models/modelos.dart';
+import '../comun/csv.dart';
 import '../comun/dialogos.dart';
+import '../comun/importar_dialogo.dart';
 import '../comun/ex_widgets.dart';
 import '../comun/impresion.dart';
 import '../sesion.dart';
@@ -68,13 +70,30 @@ class _ClientesPageState extends State<ClientesPage> {
 
   Future<void> _editar([Cliente? c]) async {
     if (!await autorizar(context, Permiso.clientes) || !mounted) return;
-    final r = await showDialog<Cliente>(context: context, builder: (_) => _FormCliente(c));
+    final r = await showDialog<(Cliente, int)>(context: context, builder: (_) => _FormCliente(c));
     if (r == null || !mounted) return;
     await intentar(context, () async {
-      final g = await repos.clientes.guardar(r);
+      var g = await repos.clientes.guardar(r.$1);
+      if (c == null && r.$2 > 0) {
+        await repos.clientes.fijarSaldoAnterior(g.id, r.$2);
+        g = (await repos.clientes.porId(g.id))!;
+      }
       avisarCambio();
       await _elegir(g);
     });
+  }
+
+  Future<void> _exportarSaldos() async {
+    final todos = await repos.clientes.buscar('');
+    if (!mounted) return;
+    await guardarCsv(context, 'saldos-clientes', [
+      ['numero', 'nombre', 'telefono', 'direccion', 'limite', 'saldo'],
+      for (final c in todos)
+        [
+          '${c.numero}', c.nombre, c.telefono, c.direccion,
+          (c.limiteCentavos / 100).toStringAsFixed(2), (c.saldoCentavos / 100).toStringAsFixed(2),
+        ],
+    ]);
   }
 
   Future<void> _eliminar() async {
@@ -144,6 +163,23 @@ class _ClientesPageState extends State<ClientesPage> {
                       },
                     ),
                     const Spacer(),
+                    PopupMenuButton<String>(
+                      tooltip: 'Más',
+                      onSelected: (v) async {
+                        if (v == 'imp') {
+                          if (await autorizar(context, Permiso.clientes) && context.mounted) {
+                            await importarDesdeArchivo(context, clientes: true);
+                          }
+                        } else {
+                          await _exportarSaldos();
+                        }
+                      },
+                      itemBuilder: (_) => const [
+                        PopupMenuItem(value: 'imp', child: Text('Importar clientes (Eleventa o Excel)')),
+                        PopupMenuItem(value: 'exp', child: Text('Exportar saldos a Excel')),
+                      ],
+                      icon: const Icon(Icons.more_vert),
+                    ),
                     FilledButton.icon(onPressed: () => _editar(), icon: const Icon(Icons.add), label: const Text('Nuevo cliente')),
                   ]),
                 ]),
@@ -282,12 +318,13 @@ class _FormClienteState extends State<_FormCliente> {
   late final _nombre = TextEditingController(text: widget.c?.nombre ?? '');
   late final _tel = TextEditingController(text: widget.c?.telefono ?? '');
   late final _dir = TextEditingController(text: widget.c?.direccion ?? '');
+  final _anterior = TextEditingController();
   late final _limite = TextEditingController(
       text: (widget.c?.limiteCentavos ?? 0) > 0 ? (widget.c!.limiteCentavos / 100).toStringAsFixed(2) : '');
 
   @override
   void dispose() {
-    for (final c in [_nombre, _tel, _dir, _limite]) {
+    for (final c in [_nombre, _tel, _dir, _limite, _anterior]) {
       c.dispose();
     }
     super.dispose();
@@ -312,6 +349,10 @@ class _FormClienteState extends State<_FormCliente> {
           TextField(controller: _dir, decoration: const InputDecoration(labelText: 'Dirección')),
           const SizedBox(height: 12),
           CampoNumero(controller: _limite, etiqueta: 'Límite de crédito (\$)', ayuda: 'Vacío = sin límite'),
+          if (c == null) ...[
+            const SizedBox(height: 12),
+            CampoNumero(controller: _anterior, etiqueta: 'Saldo anterior (\$)', ayuda: 'Lo que ya debía (de la libreta o de otro sistema)'),
+          ],
         ]),
       ),
       actions: [
@@ -319,7 +360,7 @@ class _FormClienteState extends State<_FormCliente> {
         FilledButton(
           onPressed: () => Navigator.pop(
             context,
-            Cliente(
+            (Cliente(
               id: c?.id ?? nuevoId(),
               numero: c?.numero ?? 0,
               nombre: _nombre.text,
@@ -327,7 +368,7 @@ class _FormClienteState extends State<_FormCliente> {
               direccion: _dir.text.trim(),
               limiteCentavos: leerPesos(_limite.text) ?? 0,
               saldoCentavos: c?.saldoCentavos ?? 0,
-            ),
+            ), leerPesos(_anterior.text) ?? 0),
           ),
           child: const Text('Guardar'),
         ),

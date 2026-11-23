@@ -7,6 +7,7 @@ import '../../data/repos.dart';
 import '../../models/modelos.dart';
 import '../comun/csv.dart';
 import '../comun/dialogos.dart';
+import '../comun/importar_dialogo.dart';
 import '../comun/ex_widgets.dart';
 import '../sesion.dart';
 import '../tema/tema.dart';
@@ -117,54 +118,17 @@ class _ProductosPageState extends State<ProductosPage> {
 
   Future<void> _importar() async {
     if (!await _puede()) return;
-    final filas = await abrirCsv(context);
-    if (filas == null || filas.length < 2 || !mounted) return;
-    final enc = filas.first.map((x) => x.trim().toLowerCase()).toList();
-    int col(String n) => enc.indexOf(n);
-    final iCod = col('codigo'), iDesc = col('descripcion'), iPrecio = col('precio');
-    if (iDesc < 0 || iPrecio < 0) {
-      return aviso(context, 'El archivo necesita al menos las columnas "descripcion" y "precio".');
-    }
-    final deps = {for (final d in await repos.productos.departamentos()) d.nombre.toLowerCase(): d.id};
-    var nuevos = 0, actualizados = 0, errores = 0;
-    String v(List<String> f, int i) => i >= 0 && i < f.length ? f[i].trim() : '';
-    for (final f in filas.skip(1)) {
-      try {
-        final codigo = v(f, iCod);
-        final existente = codigo.isEmpty ? null : await repos.productos.porCodigo(codigo);
-        final depNombre = v(f, col('departamento'));
-        String? depId;
-        if (depNombre.isNotEmpty) {
-          depId = deps[depNombre.toLowerCase()] ??= (await repos.productos.guardarDepartamento(nombre: depNombre)).id;
-        }
-        final tipo = v(f, col('tipo'));
-        final p = Producto(
-          id: existente?.id ?? nuevoId(),
-          codigo: codigo,
-          descripcion: v(f, iDesc),
-          departamentoId: depId ?? existente?.departamentoId,
-          tipo: ['unidad', 'granel', 'kit'].contains(tipo) ? tipo : (existente?.tipo ?? 'unidad'),
-          costoCentavos: leerPesos(v(f, col('costo'))) ?? existente?.costoCentavos ?? 0,
-          precioCentavos: leerPesos(v(f, iPrecio)) ?? 0,
-          mayoreoCentavos: leerPesos(v(f, col('mayoreo'))) ?? existente?.mayoreoCentavos ?? 0,
-          mayoreoDesde: leerCantidad(v(f, col('mayoreo_desde'))) ?? existente?.mayoreoDesde ?? 0,
-          minimo: leerCantidad(v(f, col('minimo'))) ?? existente?.minimo ?? 0,
-          maximo: leerCantidad(v(f, col('maximo'))) ?? existente?.maximo ?? 0,
-          iva: leerCantidad(v(f, col('iva'))) ?? existente?.iva ?? 0,
-          ieps: leerCantidad(v(f, col('ieps'))) ?? existente?.ieps ?? 0,
-        );
-        final exist = leerCantidad(v(f, col('existencia')));
-        await repos.productos.guardar(p, existenciaInicial: existente == null ? (exist ?? 0) : 0, cajeroId: sesion.cajero?.id);
-        if (existente != null && exist != null) {
-          await repos.productos.ajustarInventario(p.id, exist, motivo: 'Importación', cajeroId: sesion.cajero?.id);
-        }
-        existente == null ? nuevos++ : actualizados++;
-      } catch (_) {
-        errores++;
+    await importarDesdeArchivo(context);
+  }
+
+  Future<void> _marcarTodos() async {
+    setState(() {
+      if (_sel.length == _lista.length) {
+        _sel.clear();
+      } else {
+        _sel.addAll(_lista.map((p) => p.id));
       }
-    }
-    avisarCambio();
-    if (mounted) aviso(context, 'Importados: $nuevos nuevos, $actualizados actualizados${errores > 0 ? ', $errores con error' : ''}.');
+    });
   }
 
   Future<void> _ejemplo() async {
@@ -200,6 +164,7 @@ class _ProductosPageState extends State<ProductosPage> {
               'precios' => _cambiarPrecios(),
               'exp' => _exportar(),
               'imp' => _importar(),
+              'todos' => _marcarTodos(),
               _ => _ejemplo(),
             },
             itemBuilder: (_) => const [
@@ -207,7 +172,8 @@ class _ProductosPageState extends State<ProductosPage> {
               PopupMenuItem(value: 'promo', child: Text('Promociones (N por \$)')),
               PopupMenuItem(value: 'precios', child: Text('Cambiar precios de los marcados')),
               PopupMenuItem(value: 'exp', child: Text('Exportar a Excel (CSV)')),
-              PopupMenuItem(value: 'imp', child: Text('Importar desde Excel (CSV)')),
+              PopupMenuItem(value: 'todos', child: Text('Marcar todos los mostrados')),
+              PopupMenuItem(value: 'imp', child: Text('Importar desde Eleventa o Excel')),
               PopupMenuItem(value: 'ej', child: Text('Cargar productos de ejemplo')),
             ],
             child: const Padding(

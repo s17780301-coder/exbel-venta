@@ -11,7 +11,7 @@ import 'ids.dart';
 class AppDb {
   AppDb._();
 
-  static const version = 1;
+  static const version = 2;
 
   /// Carpeta de datos de exBel venta (base, respaldos, logotipo).
   static Future<Directory> carpeta() async {
@@ -36,10 +36,17 @@ class AppDb {
         onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
         onCreate: (db, _) async {
           final b = db.batch();
-          for (final sql in esquema) {
+          for (final sql in [...esquema, ...migracionV2]) {
             b.execute(sql);
           }
           await b.commit(noResult: true);
+        },
+        onUpgrade: (db, antes, _) async {
+          if (antes < 2) {
+            for (final sql in migracionV2) {
+              await db.execute(sql);
+            }
+          }
         },
       ),
     );
@@ -226,6 +233,12 @@ const esquema = <String>[
   )''',
   'CREATE INDEX idx_movinv_producto ON movimientos_inventario(producto_id, fecha)',
   'CREATE INDEX idx_movinv_fecha ON movimientos_inventario(fecha)',
+];
+
+/// v2: saldo anterior de clientes migrados de otro sistema.
+const migracionV2 = <String>[
+  'ALTER TABLE clientes ADD COLUMN saldo_anterior_centavos INTEGER NOT NULL DEFAULT 0',
+  'ALTER TABLE clientes ADD COLUMN saldo_anterior_fecha TEXT',
 ];
 
 /// Actualiza la fila si existe; si no, la inserta.

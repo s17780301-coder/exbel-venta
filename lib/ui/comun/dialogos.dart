@@ -267,7 +267,8 @@ class CampoNumero extends StatelessWidget {
 
 /// Encabezado de tabla (cuadrado, oscuro).
 class EncabezadoTabla extends StatelessWidget {
-  const EncabezadoTabla(this.columnas, {super.key});
+  const EncabezadoTabla(this.columnas, {super.key, this.tamano = 13});
+  final double tamano;
 
   /// (texto, flex, alineado a la derecha)
   final List<(String, int, bool)> columnas;
@@ -276,14 +277,14 @@ class EncabezadoTabla extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: ExColor.tinta,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: tamano * 0.75),
       child: Row(children: [
         for (final c in columnas)
           Expanded(
             flex: c.$2,
             child: Text(c.$1,
                 textAlign: c.$3 ? TextAlign.right : TextAlign.left,
-                style: const TextStyle(color: ExColor.concreto, fontWeight: FontWeight.w600, fontSize: 13)),
+                style: TextStyle(color: ExColor.concreto, fontWeight: FontWeight.w600, fontSize: tamano)),
           ),
       ]),
     );
@@ -320,11 +321,11 @@ class FilaTabla extends StatelessWidget {
 }
 
 /// Texto simple para celdas.
-Widget celda(String t, {bool negrita = false, Color? color, bool mono = false}) => Text(
+Widget celda(String t, {bool negrita = false, Color? color, bool mono = false, double tamano = 14}) => Text(
       t,
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
       style: mono
-          ? ExTexto.mono(13, color: color, peso: negrita ? FontWeight.w700 : FontWeight.w500)
-          : TextStyle(fontSize: 14, fontWeight: negrita ? FontWeight.w700 : FontWeight.w400, color: color),
+          ? ExTexto.mono(tamano - 1, color: color, peso: negrita ? FontWeight.w700 : FontWeight.w500)
+          : TextStyle(fontSize: tamano, fontWeight: negrita ? FontWeight.w700 : FontWeight.w400, color: color),
     );

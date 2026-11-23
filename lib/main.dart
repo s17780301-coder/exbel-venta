@@ -12,6 +12,8 @@ import 'data/repos.dart';
 import 'ui/acceso/acceso_page.dart';
 import 'ui/comun/ex_widgets.dart';
 import 'ui/tema/tema.dart';
+import 'ui/zoom.dart';
+import 'data/ajustes_repo.dart';
 
 Future<void> main() async {
   runZonedGuarded(() async {
@@ -57,6 +59,7 @@ class ExBelVenta extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      builder: (context, child) => ZoomPantalla(child: child ?? const SizedBox.shrink()),
       home: const _Arranque(),
     );
   }
@@ -85,6 +88,8 @@ class _ArranqueState extends State<_Arranque> {
       final db = await AppDb.abrir().timeout(const Duration(seconds: 25));
       repos = Repos(db);
       await repos.ajustes.cargar();
+      final z = repos.ajustes.numero(Ajuste.zoom);
+      if (z >= 0.8 && z <= 2) zoomPantalla.value = z;
       if (mounted) setState(() => _listo = true);
     } catch (e, s) {
       await _registrarError('$e\n$s');
