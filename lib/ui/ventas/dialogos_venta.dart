@@ -5,6 +5,7 @@ import '../../data/repos.dart';
 import '../../models/modelos.dart';
 import '../comun/dialogos.dart';
 import '../comun/ex_widgets.dart';
+import '../sesion.dart';
 import '../zoom.dart';
 import '../tema/tema.dart';
 
@@ -355,20 +356,41 @@ class _MovCajaState extends State<_MovCaja> {
       title: Text(entrada ? 'Entrada de efectivo' : 'Salida de efectivo'),
       content: SizedBox(
         width: 440,
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           CampoNumero(controller: _monto, etiqueta: 'Cantidad (\$)', autofocus: true),
           const SizedBox(height: 14),
           TextField(
             controller: _concepto,
             decoration: InputDecoration(
-                labelText: 'Concepto', hintText: entrada ? 'Ej. cambio, morralla' : 'Ej. pago al proveedor de refrescos'),
+                labelText: entrada ? 'Comentarios' : 'Razón o proveedor', hintText: entrada ? 'Ej. cambio, morralla' : 'Ej. pago al proveedor de refrescos'),
             onSubmitted: (_) => _aceptar(),
+          ),
+          const SizedBox(height: 16),
+          Text(entrada ? 'Entradas de este turno' : 'Salidas de este turno', style: const TextStyle(fontWeight: FontWeight.w700)),
+          FutureBuilder<List<MovimientoCaja>>(
+            future: sesion.turno == null ? Future.value(<MovimientoCaja>[]) : repos.caja.movimientosCaja([sesion.turno!.id]),
+            builder: (_, s) {
+              final l = (s.data ?? []).where((m) => m.tipo == widget.tipo && !m.cancelado).toList();
+              if (l.isEmpty) return const Padding(padding: EdgeInsets.all(8), child: Text('- Ninguna -', style: TextStyle(color: ExColor.texto2)));
+              return ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 200),
+                child: ListView(shrinkWrap: true, children: [
+                  for (final m in l)
+                    ListTile(
+                      dense: true,
+                      title: Text(m.concepto.isEmpty ? '(sin concepto)' : m.concepto),
+                      subtitle: Text(formatoFechaHora(m.fecha)),
+                      trailing: Text(formatoPesos(m.montoCentavos), style: ExTexto.mono(14)),
+                    ),
+                ]),
+              );
+            },
           ),
         ]),
       ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-        FilledButton(onPressed: _aceptar, child: const Text('Registrar')),
+        FilledButton(onPressed: _aceptar, child: const Text('Guardar')),
       ],
     );
   }

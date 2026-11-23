@@ -127,6 +127,7 @@ class CajaRepo {
              COALESCE(SUM(total_centavos), 0) AS total,
              COALESCE(SUM(efectivo_centavos), 0) AS efectivo,
              COALESCE(SUM(tarjeta_centavos), 0) AS tarjeta,
+             COALESCE(SUM(transferencia_centavos), 0) AS transferencia,
              COALESCE(SUM(vales_centavos), 0) AS vales,
              COALESCE(SUM(dolares_centavos), 0) AS dolares,
              COALESCE(SUM(credito_centavos), 0) AS credito
@@ -184,6 +185,7 @@ class CajaRepo {
       gananciaCentavos: ganancia,
       efectivoCentavos: v['efectivo'] as int,
       tarjetaCentavos: v['tarjeta'] as int,
+      transferenciaCentavos: v['transferencia'] as int,
       valesCentavos: v['vales'] as int,
       dolaresCentavos: v['dolares'] as int,
       creditoCentavos: v['credito'] as int,

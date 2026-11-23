@@ -13,6 +13,10 @@ import '../comun/ex_widgets.dart';
 import '../comun/impresion.dart';
 import '../sesion.dart';
 import '../tema/tema.dart';
+import '../ventas/ventas_dia.dart';
+
+/// El buscador universal (F10) pide abrir un cliente aquí.
+final clienteParaAbrir = ValueNotifier<String?>(null);
 
 /// F2: clientes y crédito.
 class ClientesPage extends StatefulWidget {
@@ -35,11 +39,21 @@ class _ClientesPageState extends State<ClientesPage> {
   void initState() {
     super.initState();
     cambiosDatos.addListener(_cargar);
+    clienteParaAbrir.addListener(_abrirPedido);
     _cargar();
+    _abrirPedido();
+  }
+
+  Future<void> _abrirPedido() async {
+    final id = clienteParaAbrir.value;
+    if (id == null) return;
+    clienteParaAbrir.value = null;
+    await _elegir(await repos.clientes.porId(id));
   }
 
   @override
   void dispose() {
+    clienteParaAbrir.removeListener(_abrirPedido);
     cambiosDatos.removeListener(_cargar);
     _buscar.dispose();
     super.dispose();
@@ -271,6 +285,12 @@ class _ClientesPageState extends State<ClientesPage> {
         Row(children: [
           Text('Estado de cuenta', style: ExTexto.titulo(18)),
           const Spacer(),
+          OutlinedButton.icon(
+            onPressed: () => mostrarVentasDelDia(context, clienteId: c.id, clienteNombre: c.nombre),
+            icon: const Icon(Icons.receipt_long_outlined),
+            label: const Text('Historial de compras'),
+          ),
+          const SizedBox(width: 8),
           OutlinedButton(onPressed: () => _abonar(liquidar: true), child: const Text('Liquidar adeudo')),
           const SizedBox(width: 8),
           FilledButton.icon(onPressed: _abonar, icon: const Icon(Icons.payments_outlined), label: const Text('Abonar')),

@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -13,6 +16,7 @@ import '../comun/impresion.dart';
 import '../principal.dart';
 import '../sesion.dart';
 import '../tema/tema.dart';
+import '../comun/buscador_universal.dart';
 import 'buscar_producto.dart';
 import 'cobro_dialogo.dart';
 import 'dialogos_venta.dart';
@@ -50,18 +54,102 @@ class _VentasPageState extends State<VentasPage> {
   bool _ocupado = false;
 
   Ticket get _t => _tickets[_actual];
+  Timer? _guardado;
+
+  static const _claveTickets = 'tickets_pendientes';
 
   @override
   void initState() {
     super.initState();
     teclasVentas.addListener(_alTeclear);
     cambiosDatos.addListener(_cargarFavoritos);
+    codigoVentasVacio = () => _codigo.text.isEmpty;
     _cargarFavoritos();
+    _restaurarTickets();
+  }
+
+  /// Cada cambio guarda los tickets abiertos: si se cierra el programa o se
+  /// va la luz, al volver siguen ahí.
+  @override
+  void setState(VoidCallback fn) {
+    super.setState(fn);
+    _guardado?.cancel();
+    _guardado = Timer(const Duration(milliseconds: 400), _guardarTickets);
+  }
+
+  Future<void> _guardarTickets() async {
+    final datos = {
+      'consecutivo': _consecutivo,
+      'actual': _actual,
+      'tickets': [
+        for (final t in _tickets)
+          {
+            'nombre': t.nombre,
+            'cliente': t.cliente?.id,
+            'renglones': [
+              for (final r in t.renglones)
+                {
+                  'p': r.producto?.id,
+                  'cod': r.codigo,
+                  'd': r.descripcion,
+                  'c': r.cantidad,
+                  'pr': r.precioNormalCentavos,
+                  'pm': r.precioManualCentavos,
+                  'm': r.mayoreoManual,
+                },
+            ],
+          },
+      ],
+    };
+    try {
+      await repos.ajustes.guardar(_claveTickets, jsonEncode(datos));
+    } catch (_) {}
+  }
+
+  Future<void> _restaurarTickets() async {
+    final texto = repos.ajustes.texto(_claveTickets);
+    if (texto.isEmpty) return;
+    try {
+      final d = jsonDecode(texto) as Map<String, dynamic>;
+      final lista = <Ticket>[];
+      for (final tm in d['tickets'] as List) {
+        final tk = Ticket(tm['nombre'] as String);
+        final cid = tm['cliente'] as String?;
+        if (cid != null) tk.cliente = await repos.clientes.porId(cid);
+        for (final rm in tm['renglones'] as List) {
+          final pid = rm['p'] as String?;
+          final p = pid == null ? null : await repos.productos.porId(pid);
+          final cant = (rm['c'] as num).toDouble();
+          final r = p != null && p.activo
+              ? Renglon.deProducto(p, cantidad: cant, promocion: await repos.productos.promocionDe(p.id))
+              : Renglon(
+                  descripcion: rm['d'] as String,
+                  codigo: (rm['cod'] as String?) ?? '',
+                  cantidad: cant,
+                  precioNormalCentavos: rm['pr'] as int,
+                );
+          r.precioManualCentavos = rm['pm'] as int?;
+          r.mayoreoManual = rm['m'] == true;
+          tk.renglones.add(r);
+        }
+        lista.add(tk);
+      }
+      if (lista.isEmpty || !mounted) return;
+      setState(() {
+        _tickets
+          ..clear()
+          ..addAll(lista);
+        _consecutivo = (d['consecutivo'] as int?) ?? lista.length;
+        _actual = ((d['actual'] as int?) ?? 0).clamp(0, lista.length - 1);
+      });
+    } catch (_) {}
   }
 
   @override
   void dispose() {
     teclasVentas.removeListener(_alTeclear);
+    _guardado?.cancel();
+    _guardarTickets();
     cambiosDatos.removeListener(_cargarFavoritos);
     _codigo.dispose();
     _focoCodigo.dispose();
@@ -109,10 +197,10 @@ class _VentasPageState extends State<VentasPage> {
       _mover(-1);
     } else if (k == LogicalKeyboardKey.arrowDown) {
       _mover(1);
-    } else if (k == LogicalKeyboardKey.numpadAdd) {
-      _sumar(1);
-    } else if (k == LogicalKeyboardKey.numpadSubtract) {
-      _sumar(-1);
+    } else if (k == LogicalKeyboardKey.numpadAdd || k == LogicalKeyboardKey.add) {
+      if (_codigo.text.isEmpty) _sumar(1);
+    } else if (k == LogicalKeyboardKey.numpadSubtract || k == LogicalKeyboardKey.minus) {
+      if (_codigo.text.isEmpty) _sumar(-1);
     } else if (ctrl && k == LogicalKeyboardKey.keyP) {
       _comun();
     } else if (ctrl && k == LogicalKeyboardKey.keyD) {
@@ -128,6 +216,9 @@ class _VentasPageState extends State<VentasPage> {
   }
 
   void _sumar(int d) {
+    if ((_t.seleccion < 0 || _t.seleccion >= _t.renglones.length) && _t.renglones.isNotEmpty) {
+      _t.seleccion = _t.renglones.length - 1;
+    }
     final i = _t.seleccion;
     if (i < 0 || i >= _t.renglones.length) return;
     final r = _t.renglones[i];
@@ -240,13 +331,21 @@ class _VentasPageState extends State<VentasPage> {
         }
       });
 
+  /// F10: buscador universal. Producto → se agrega; cliente → se asigna al
+  /// ticket; folio → se abre la venta.
   Future<void> _buscar() async {
-    final p = await buscarProducto(context);
+    final h = await buscarUniversal(context, titulo: 'Búsqueda');
+    if (!mounted) return;
+    final p = h?.producto, c = h?.cliente, v = h?.venta;
     if (p != null) {
       await _agregar(p);
-    } else {
-      _enfocar();
+    } else if (c != null) {
+      setState(() => _t.cliente = c);
+      aviso(context, 'Cliente asignado al ticket: ${c.nombre}');
+    } else if (v != null) {
+      await mostrarVentasDelDia(context, venta: v);
     }
+    _enfocar();
   }
 
   Future<void> _comun() async {
@@ -389,7 +488,7 @@ class _VentasPageState extends State<VentasPage> {
     if (turno == null || cajero == null) return;
     _ocupado = true;
     try {
-      final r = await cobrar(context, _t.totalCentavos, cliente: _t.cliente);
+      final r = await cobrar(context, _t.totalCentavos, cliente: _t.cliente, articulos: _t.piezas);
       if (r == null || !mounted) return;
       final venta = await repos.ventas.registrar(
         renglones: _t.renglones,
@@ -479,10 +578,25 @@ class _VentasPageState extends State<VentasPage> {
   @override
   Widget build(BuildContext context) {
     return Column(children: [
-      _barraTickets(),
+      // Banda como en Eleventa: "VENTA - Ticket 3".
+      Container(
+        width: double.infinity,
+        color: ExColor.indigo,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        child: Row(children: [
+          Text('VENTA - ${_t.nombre}', style: ExTexto.titulo(20, color: ExColor.blanco)),
+          if (_t.cliente != null) ...[
+            const SizedBox(width: 16),
+            const Icon(Icons.person, color: ExColor.lavanda, size: 20),
+            const SizedBox(width: 4),
+            Text(_t.cliente!.nombre, style: const TextStyle(color: ExColor.lavanda, fontSize: 16)),
+          ],
+        ]),
+      ),
       _captura(),
       if (_favoritos.isNotEmpty) _barraFavoritos(),
       _botones(),
+      _barraTickets(),
       Expanded(child: _tabla()),
       _pie(),
     ]);
@@ -735,6 +849,21 @@ class _VentasPageState extends State<VentasPage> {
     );
   }
 
+  Widget _chico(IconData i, String t, VoidCallback f) => OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(0, 42),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          backgroundColor: ExColor.blanco,
+          side: const BorderSide(color: ExColor.linea),
+        ),
+        onPressed: () {
+          f();
+          _enfocar();
+        },
+        icon: Icon(i, size: 18),
+        label: Text(t, style: const TextStyle(fontSize: 14)),
+      );
+
   Widget _pie() {
     final pago = _ultima?.pago;
     final pagoCon = pago == null ? 0 : (pago.recibidoCentavos > 0 ? pago.recibidoCentavos : pago.totalCentavos);
@@ -759,6 +888,16 @@ class _VentasPageState extends State<VentasPage> {
               Text('El cliente ahorra ${formatoPesos(_t.ahorroCentavos)}',
                   style: const TextStyle(color: ExColor.verde, fontWeight: FontWeight.w600, fontSize: 15)),
             const SizedBox(height: 10),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              _chico(Icons.sync_alt, 'F5 - Cambiar', _siguienteTicket),
+              _chico(Icons.add_box_outlined, 'F6 - Pendiente', _nuevoTicket),
+              _chico(Icons.delete_outline, 'Eliminar', () => _cerrarTicket(_actual)),
+              _chico(Icons.person_add_alt, 'Asignar cliente', _elegirCliente),
+              _chico(Icons.add, '+ Cantidad', () => _sumar(1)),
+              _chico(Icons.remove, '− Cantidad', () => _sumar(-1)),
+              _chico(Icons.undo, 'Devolución', _ventasDelDia),
+            ]),
+            const SizedBox(height: 8),
             Wrap(spacing: 8, runSpacing: 8, children: [
               OutlinedButton.icon(
                   style: OutlinedButton.styleFrom(minimumSize: const Size(0, 50)),

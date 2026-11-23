@@ -375,11 +375,12 @@ class Renglon {
 /// Cómo se pagó una venta. Los montos suman el total (el efectivo ya sin
 /// el cambio).
 class Pago {
-  Pago({this.efectivoCentavos = 0, this.tarjetaCentavos = 0, this.valesCentavos = 0,
+  Pago({this.efectivoCentavos = 0, this.tarjetaCentavos = 0, this.transferenciaCentavos = 0, this.valesCentavos = 0,
       this.dolaresCentavos = 0, this.creditoCentavos = 0, this.recibidoCentavos = 0,
       this.referencia = ''});
   final int efectivoCentavos;
   final int tarjetaCentavos;
+  final int transferenciaCentavos;
   final int valesCentavos;
 
   /// En pesos (ya convertidos con el tipo de cambio).
@@ -391,12 +392,13 @@ class Pago {
   final String referencia;
 
   int get totalCentavos =>
-      efectivoCentavos + tarjetaCentavos + valesCentavos + dolaresCentavos + creditoCentavos;
+      efectivoCentavos + tarjetaCentavos + transferenciaCentavos + valesCentavos + dolaresCentavos + creditoCentavos;
 
   String get descripcion {
     final partes = <String>[
       if (efectivoCentavos > 0) 'Efectivo',
       if (tarjetaCentavos > 0) 'Tarjeta',
+      if (transferenciaCentavos > 0) 'Transferencia',
       if (valesCentavos > 0) 'Vales',
       if (dolaresCentavos > 0) 'Dólares',
       if (creditoCentavos > 0) 'Crédito',
@@ -408,7 +410,7 @@ class Pago {
 class Venta {
   Venta({required this.id, required this.folio, required this.fecha, required this.totalCentavos,
       required this.estado, required this.pago, required this.cajeroId, required this.turnoId,
-      this.cajeroNombre, this.clienteId, this.clienteNombre, this.notas = ''});
+      this.cajeroNombre, this.clienteId, this.clienteNombre, this.notas = '', this.articulos = 0});
   final String id;
   final int folio;
   final DateTime fecha;
@@ -421,6 +423,7 @@ class Venta {
   final String? clienteId;
   final String? clienteNombre;
   final String notas;
+  final double articulos;
 
   bool get cancelada => estado == 'cancelada';
   bool get aCredito => pago.creditoCentavos > 0;
@@ -437,9 +440,11 @@ class Venta {
         clienteId: m['cliente_id'] as String?,
         clienteNombre: m['cliente_nombre'] as String?,
         notas: (m['notas'] as String?) ?? '',
+        articulos: ((m['articulos'] as num?) ?? 0).toDouble(),
         pago: Pago(
           efectivoCentavos: m['efectivo_centavos'] as int,
           tarjetaCentavos: m['tarjeta_centavos'] as int,
+          transferenciaCentavos: (m['transferencia_centavos'] as int?) ?? 0,
           valesCentavos: m['vales_centavos'] as int,
           dolaresCentavos: m['dolares_centavos'] as int,
           creditoCentavos: m['credito_centavos'] as int,
@@ -506,6 +511,7 @@ class Corte {
     required this.numeroVentas,
     required this.efectivoCentavos,
     required this.tarjetaCentavos,
+    this.transferenciaCentavos = 0,
     required this.valesCentavos,
     required this.dolaresCentavos,
     required this.creditoCentavos,
@@ -529,6 +535,7 @@ class Corte {
   final int numeroVentas;
   final int efectivoCentavos;
   final int tarjetaCentavos;
+  final int transferenciaCentavos;
   final int valesCentavos;
   final int dolaresCentavos;
   final int creditoCentavos;

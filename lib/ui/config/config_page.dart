@@ -20,7 +20,7 @@ import '../sesion.dart';
 import '../tema/tema.dart';
 import '../zoom.dart';
 
-const versionExBel = '0.2.0';
+const versionExBel = '0.3.0';
 
 /// Configuración de la tienda.
 class ConfigPage extends StatefulWidget {
@@ -821,8 +821,8 @@ class _Acerca extends StatelessWidget {
       const SizedBox(height: 8),
       const Text('F1 Ventas · F2 Clientes · F3 Productos · F4 Inventario\n'
           'En ventas: F5 cambiar ticket · F6 pendiente · F7 entradas · F8 salidas · F9 verificador · '
-          'F10 buscar · F11 mayoreo · F12 cobrar · INS varios · Ctrl+P artículo común · Ctrl+D descuento · '
-          'Ctrl+B ventas del día · Supr borrar · + / − del teclado numérico cambian la cantidad\n'
+          'F10 buscador universal (productos, clientes y folios, en cualquier pantalla) · F11 mayoreo · F12 cobrar · INS varios · Ctrl+P artículo común · Ctrl+D descuento · '
+          'Ctrl+B ventas del día · Supr borrar · + y − cambian la cantidad del artículo seleccionado\n'
           'Al cobrar: F1 cobrar e imprimir · F2 solo cobrar · Esc cancelar'),
     ]);
   }

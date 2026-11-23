@@ -225,6 +225,7 @@ class _CortePageState extends State<CortePage> {
               child: Column(children: [
                 fila('Efectivo', c.efectivoCentavos),
                 fila('Tarjeta', c.tarjetaCentavos),
+                fila('Transferencia', c.transferenciaCentavos),
                 fila('Vales de despensa', c.valesCentavos),
                 fila('Dólares', c.dolaresCentavos),
                 fila('A crédito', c.creditoCentavos),

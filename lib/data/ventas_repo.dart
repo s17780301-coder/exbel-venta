@@ -7,7 +7,8 @@ import '../core/ids.dart';
 import '../models/modelos.dart';
 
 const _selectVenta = '''
-  SELECT v.*, c.nombre AS cajero_nombre, cl.nombre AS cliente_nombre
+  SELECT v.*, c.nombre AS cajero_nombre, cl.nombre AS cliente_nombre,
+    (SELECT COALESCE(SUM(d.cantidad), 0) FROM venta_detalle d WHERE d.venta_id = v.id) AS articulos
   FROM ventas v
   LEFT JOIN cajeros c ON c.id = v.cajero_id
   LEFT JOIN clientes cl ON cl.id = v.cliente_id''';
@@ -60,6 +61,7 @@ class VentasRepo {
         'total_centavos': total,
         'efectivo_centavos': pago.efectivoCentavos,
         'tarjeta_centavos': pago.tarjetaCentavos,
+        'transferencia_centavos': pago.transferenciaCentavos,
         'vales_centavos': pago.valesCentavos,
         'dolares_centavos': pago.dolaresCentavos,
         'credito_centavos': pago.creditoCentavos,
@@ -139,7 +141,7 @@ class VentasRepo {
   }
 
   Future<List<Venta>> listar({DateTime? desde, DateTime? hasta, String? cajeroId, String? turnoId,
-      String? clienteId, bool soloCredito = false, int limite = 2000}) async {
+      String? clienteId, bool soloCredito = false, String texto = '', int limite = 2000}) async {
     final where = <String>['1 = 1'];
     final args = <Object?>[];
     if (desde != null) {
@@ -163,6 +165,11 @@ class VentasRepo {
       args.add(clienteId);
     }
     if (soloCredito) where.add('v.credito_centavos > 0');
+    final t = texto.trim();
+    if (t.isNotEmpty) {
+      where.add('(CAST(v.folio AS TEXT) = ? OR cl.nombre LIKE ? OR v.notas LIKE ?)');
+      args..add(t)..add('%$t%')..add('%$t%');
+    }
     final f = await db.rawQuery(
         '$_selectVenta WHERE ${where.join(' AND ')} ORDER BY v.fecha DESC LIMIT $limite', args);
     return f.map(Venta.desdeMapa).toList();

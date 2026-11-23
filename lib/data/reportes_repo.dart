@@ -71,13 +71,14 @@ class ReportesRepo {
     final args = <Object?>[];
     final w = _rango(args, desde, hasta);
     final m = (await db.rawQuery('''
-      SELECT COALESCE(SUM(efectivo_centavos), 0) AS ef, COALESCE(SUM(tarjeta_centavos), 0) AS ta,
+      SELECT COALESCE(SUM(efectivo_centavos), 0) AS ef, COALESCE(SUM(tarjeta_centavos), 0) AS ta, COALESCE(SUM(transferencia_centavos), 0) AS tr,
              COALESCE(SUM(vales_centavos), 0) AS va, COALESCE(SUM(dolares_centavos), 0) AS dl,
              COALESCE(SUM(credito_centavos), 0) AS cr, COUNT(*) AS n
       FROM ventas v WHERE $w''', args)).first;
     return [
       FilaReporte('Efectivo', 0, m['ef'] as int, 0),
       FilaReporte('Tarjeta', 0, m['ta'] as int, 0),
+      FilaReporte('Transferencia', 0, m['tr'] as int, 0),
       FilaReporte('Vales de despensa', 0, m['va'] as int, 0),
       FilaReporte('Dólares', 0, m['dl'] as int, 0),
       FilaReporte('Crédito', 0, m['cr'] as int, 0),

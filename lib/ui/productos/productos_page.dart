@@ -11,6 +11,7 @@ import '../comun/importar_dialogo.dart';
 import '../comun/ex_widgets.dart';
 import '../sesion.dart';
 import '../tema/tema.dart';
+import '../ventas/buscar_producto.dart';
 import 'producto_form.dart';
 
 /// F3: catálogo de productos.
@@ -121,6 +122,17 @@ class _ProductosPageState extends State<ProductosPage> {
     await importarDesdeArchivo(context);
   }
 
+  Widget _boton(IconData i, String t, VoidCallback f) => OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(0, 46),
+          backgroundColor: ExColor.blanco,
+          side: const BorderSide(color: ExColor.linea),
+        ),
+        onPressed: f,
+        icon: Icon(i, size: 20, color: ExColor.indigo),
+        label: Text(t, style: const TextStyle(fontSize: 15)),
+      );
+
   Future<void> _marcarTodos() async {
     setState(() {
       if (_sel.length == _lista.length) {
@@ -148,39 +160,24 @@ class _ProductosPageState extends State<ProductosPage> {
           const SizedBox(width: 12),
           Text('$_total en el catálogo', style: const TextStyle(color: ExColor.texto2)),
           const Spacer(),
-          FilledButton.icon(onPressed: () => _editar(), icon: const Icon(Icons.add), label: const Text('Nuevo producto')),
-          const SizedBox(width: 8),
-          OutlinedButton(
-              onPressed: _sel.length == 1 ? () => _editar(_lista.firstWhere((p) => p.id == _sel.first)) : null,
-              child: const Text('Modificar')),
-          const SizedBox(width: 8),
-          OutlinedButton(onPressed: _sel.isEmpty ? null : _eliminar, child: const Text('Eliminar')),
-          const SizedBox(width: 8),
-          PopupMenuButton<String>(
-            tooltip: 'Más opciones',
-            onSelected: (v) => switch (v) {
-              'dep' => _departamentos(),
-              'promo' => _promociones(),
-              'precios' => _cambiarPrecios(),
-              'exp' => _exportar(),
-              'imp' => _importar(),
-              'todos' => _marcarTodos(),
-              _ => _ejemplo(),
-            },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'dep', child: Text('Departamentos')),
-              PopupMenuItem(value: 'promo', child: Text('Promociones (N por \$)')),
-              PopupMenuItem(value: 'precios', child: Text('Cambiar precios de los marcados')),
-              PopupMenuItem(value: 'exp', child: Text('Exportar a Excel (CSV)')),
-              PopupMenuItem(value: 'todos', child: Text('Marcar todos los mostrados')),
-              PopupMenuItem(value: 'imp', child: Text('Importar desde Eleventa o Excel')),
-              PopupMenuItem(value: 'ej', child: Text('Cargar productos de ejemplo')),
-            ],
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              child: Row(children: [Text('Más'), Icon(Icons.arrow_drop_down)]),
-            ),
-          ),
+        ]),
+        const SizedBox(height: 10),
+        // Barra de botones como en Eleventa.
+        Wrap(spacing: 6, runSpacing: 6, children: [
+          _boton(Icons.add_circle_outline, 'Nuevo', () => _editar()),
+          _boton(Icons.edit_outlined, 'Modificar', () async {
+            if (_sel.length == 1) return _editar(_lista.firstWhere((p) => p.id == _sel.first));
+            final p = await buscarProducto(context);
+            if (p != null) await _editar(p);
+          }),
+          _boton(Icons.delete_outline, 'Eliminar', _sel.isEmpty ? () => aviso(context, 'Marca los productos a eliminar.') : _eliminar),
+          _boton(Icons.folder_outlined, 'Departamentos', _departamentos),
+          _boton(Icons.local_offer_outlined, 'Promociones', _promociones),
+          _boton(Icons.price_change_outlined, 'Cambiar precios', _cambiarPrecios),
+          _boton(Icons.file_download_outlined, 'Importar', _importar),
+          _boton(Icons.file_upload_outlined, 'Exportar', _exportar),
+          _boton(Icons.checklist, 'Marcar todos', _marcarTodos),
+          _boton(Icons.science_outlined, 'Productos de ejemplo', _ejemplo),
         ]),
         const SizedBox(height: 12),
         Row(children: [

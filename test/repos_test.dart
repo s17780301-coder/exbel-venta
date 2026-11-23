@@ -167,4 +167,21 @@ void main() {
     expect(iva, 1600);
     expect(ieps, 0);
   });
+
+  test('pago mixto con transferencia: corte, folio y artículos', () async {
+    final leche = (await repos.productos.porCodigo('1010'))!;
+    final v = await repos.ventas.registrar(
+      renglones: [Renglon.deProducto(leche, cantidad: 3)],
+      pago: Pago(efectivoCentavos: 2700, recibidoCentavos: 5000, transferenciaCentavos: 6000),
+      turnoId: turno.id,
+      cajeroId: admin.id,
+    );
+    expect(v.pago.transferenciaCentavos, 6000);
+    expect(v.pago.descripcion, 'Mixto (Efectivo, Transferencia)');
+    final c = await repos.caja.corteTurno(turno.id);
+    expect(c.transferenciaCentavos, 6000);
+    expect(c.esperadoCentavos, 50000 + 2700);
+    final porFolio = await repos.ventas.listar(texto: '${v.folio}');
+    expect(porFolio.single.articulos, 3);
+  });
 }

@@ -8,6 +8,9 @@ import '../data/repos.dart';
 import '../models/modelos.dart';
 import 'acceso/acceso_page.dart';
 import 'clientes/clientes_page.dart';
+import 'comun/buscador_universal.dart';
+import 'productos/producto_form.dart';
+import 'ventas/ventas_dia.dart';
 import 'comun/dialogos.dart';
 import 'comun/ex_widgets.dart';
 import 'comun/ventana.dart';
@@ -22,6 +25,9 @@ import 'ventas/ventas_page.dart';
 
 /// Teclas que la pantalla de ventas atiende cuando está a la vista.
 final teclasVentas = ValueNotifier<KeyEvent?>(null);
+
+/// Lo pone Ventas: si el campo de código está vacío, + y − cambian la cantidad.
+bool Function() codigoVentasVacio = () => true;
 
 class _Seccion {
   const _Seccion(this.nombre, this.tecla, this.icono, this.permiso);
@@ -84,6 +90,11 @@ class _PrincipalState extends State<Principal> {
       _ir(i);
       return true;
     }
+    // F10 en cualquier pantalla: buscador universal.
+    if (e.logicalKey == LogicalKeyboardKey.f10 && _actual != 0) {
+      _buscarUniversal();
+      return true;
+    }
     if (_actual == 0) {
       teclasVentas.value = e;
       return _teclaDeVentas(e);
@@ -99,8 +110,11 @@ class _PrincipalState extends State<Principal> {
           LogicalKeyboardKey.f5, LogicalKeyboardKey.f6, LogicalKeyboardKey.f7, LogicalKeyboardKey.f8,
           LogicalKeyboardKey.f9, LogicalKeyboardKey.f10, LogicalKeyboardKey.f11, LogicalKeyboardKey.f12,
           LogicalKeyboardKey.insert, LogicalKeyboardKey.delete, LogicalKeyboardKey.arrowUp,
-          LogicalKeyboardKey.arrowDown, LogicalKeyboardKey.numpadAdd, LogicalKeyboardKey.numpadSubtract,
+          LogicalKeyboardKey.arrowDown,
         ].contains(k) ||
+        ([LogicalKeyboardKey.numpadAdd, LogicalKeyboardKey.numpadSubtract, LogicalKeyboardKey.add, LogicalKeyboardKey.minus]
+                .contains(k) &&
+            codigoVentasVacio()) ||
         (ctrl && [LogicalKeyboardKey.keyP, LogicalKeyboardKey.keyD, LogicalKeyboardKey.keyB].contains(k));
   }
 
@@ -111,6 +125,20 @@ class _PrincipalState extends State<Principal> {
       _actual = i;
       _visitadas.add(i);
     });
+  }
+
+  Future<void> _buscarUniversal() async {
+    final h = await buscarUniversal(context);
+    if (h == null || !mounted) return;
+    final p = h.producto, c = h.cliente, v = h.venta;
+    if (p != null) {
+      if (await autorizar(context, Permiso.productos) && mounted && await editarProducto(context, p)) avisarCambio();
+    } else if (c != null) {
+      clienteParaAbrir.value = c.id;
+      await _ir(1);
+    } else if (v != null) {
+      await mostrarVentasDelDia(context, venta: v);
+    }
   }
 
   Future<void> _cambiarCajero() async {
