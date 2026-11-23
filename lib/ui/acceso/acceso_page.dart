@@ -7,6 +7,7 @@ import '../../data/repos.dart';
 import '../../models/modelos.dart';
 import '../comun/dialogos.dart';
 import '../comun/ex_widgets.dart';
+import '../comun/multicaja_ui.dart';
 import '../comun/nombre_tienda.dart';
 import '../comun/ventana.dart';
 import '../principal.dart';
@@ -198,6 +199,12 @@ class _AccesoPageState extends State<AccesoPage> {
           ),
           const SizedBox(height: 16),
           FilledButton(onPressed: _ocupado ? null : _crearAdministrador, child: const Text('Crear y entrar')),
+          const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed: () => conectarACajaPrincipal(context),
+            icon: const Icon(Icons.lan_outlined),
+            label: const Text('¿Es una caja adicional? Conectar a la caja principal'),
+          ),
         ]);
       case _Paso.entrar:
         return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [

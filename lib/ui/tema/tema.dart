@@ -1,37 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Colores de la marca exBel (familia exBel Dental): índigo profundo,
-/// índigo de marca y coral.
+/// Colores de la marca exBel en tonos suaves (poco saturados) para estar
+/// muchas horas frente a la pantalla sin cansar la vista.
 abstract final class ExColor {
   /// Índigo casi negro: texto principal y paneles oscuros.
   static const tinta = Color(0xFF1A1640);
-  static const tinta2 = Color(0xFF2E2868);
+  static const tinta2 = Color(0xFF34315A);
 
   /// Índigo del logotipo.
-  static const indigo = Color(0xFF4535C9);
+  static const indigo = Color(0xFF4A4789);
 
   /// Lavanda del "ex" del logotipo.
-  static const lavanda = Color(0xFFC9C3F5);
+  static const lavanda = Color(0xFFC7C4E0);
 
   /// Coral: botones principales y lo que está activo (texto en [tinta]).
-  static const acento = Color(0xFFFF6B5B);
+  static const acento = Color(0xFFD9897C);
 
   static const concreto = Color(0xFFF5F4FA);
-  static const blanco = Color(0xFFFFFFFF);
+  static const blanco = Color(0xFFFBFBFC);
   static const linea = Color(0xFFBDB8D6);
 
   /// Contorno de botones, pestañas y recuadros (bien visible).
   static const borde = Color(0xFF7F79AE);
   static const lineaSuave = Color(0xFFDDDAEB);
   static const texto2 = Color(0xFF5A5675);
-  static const textoClaro = Color(0xFFCFCBEF);
-  static const textoClaro2 = Color(0xFF9E98CC);
-  static const naranja = Color(0xFFFFA34D);
-  static const rojo = Color(0xFFC8281E);
-  static const verde = Color(0xFF13803B);
-  static const verdeSuave = Color(0xFFE3F5E9);
-  static const amarillo = Color(0xFFF5C400);
+  static const textoClaro = Color(0xFFD2D0E2);
+  static const textoClaro2 = Color(0xFF9C99B8);
+  static const naranja = Color(0xFFD6A16A);
+  static const rojo = Color(0xFFAE4A40);
+  static const verde = Color(0xFF3D7A55);
+  static const verdeSuave = Color(0xFFE7EFEA);
+  static const amarillo = Color(0xFFD4B455);
   static const gris = Color(0xFFBDB9D4);
 }
 

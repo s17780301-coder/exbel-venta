@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'ids.dart';
+import 'red/db_remota.dart';
 import 'texto.dart';
 
 /// Base de datos local de la tienda (SQLite). Todas las tablas llevan
@@ -12,7 +13,7 @@ import 'texto.dart';
 class AppDb {
   AppDb._();
 
-  static const version = 5;
+  static const version = 6;
 
   /// Carpeta de datos de exBel venta (base, respaldos, logotipo).
   static Future<Directory> carpeta() async {
@@ -37,7 +38,7 @@ class AppDb {
         onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
         onCreate: (db, _) async {
           final b = db.batch();
-          for (final sql in [...esquema, ...migracionV2, ...migracionV3, ...migracionV4, ...migracionV5]) {
+          for (final sql in [...esquema, ...migracionV2, ...migracionV3, ...migracionV4, ...migracionV5, ...migracionV6]) {
             b.execute(sql);
           }
           await b.commit(noResult: true);
@@ -67,6 +68,11 @@ class AppDb {
           }
           if (antes < 5) {
             for (final sql in migracionV5) {
+              await db.execute(sql);
+            }
+          }
+          if (antes < 6) {
+            for (final sql in migracionV6) {
               await db.execute(sql);
             }
           }
@@ -280,6 +286,11 @@ const migracionV5 = <String>[
   'ALTER TABLE productos ADD COLUMN busquedas INTEGER NOT NULL DEFAULT 0',
 ];
 
+/// v6: multicaja, cada turno es de una caja.
+const migracionV6 = <String>[
+  "ALTER TABLE turnos ADD COLUMN caja TEXT NOT NULL DEFAULT 'Caja 1'",
+];
+
 /// Actualiza la fila si existe; si no, la inserta.
 Future<void> guardarFila(DatabaseExecutor ex, String tabla, Map<String, Object?> valores) async {
   final fila = {...valores, 'actualizado': ahoraUtc(), 'sincronizado': 0};
@@ -344,6 +355,8 @@ Future<String> respaldarBase(Database db, String carpetaDestino) async {
 
 /// Respaldo automático en la carpeta de la app; conserva los últimos 10.
 Future<void> respaldoAutomatico(Database db) async {
+  // Las cajas conectadas no respaldan: la base está en la caja principal.
+  if (db is DatabaseRemota) return;
   try {
     final carpeta = p.join((await AppDb.carpeta()).path, 'respaldos');
     await respaldarBase(db, carpeta);

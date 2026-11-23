@@ -7,7 +7,10 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:path/path.dart' as p;
 import 'package:window_manager/window_manager.dart';
 
+import 'core/caja_local.dart';
 import 'core/db.dart';
+import 'core/red/db_remota.dart';
+import 'core/red/servidor.dart';
 import 'core/formato.dart';
 import 'data/repos.dart';
 import 'ui/acceso/acceso_page.dart';
@@ -86,9 +89,18 @@ class _ArranqueState extends State<_Arranque> {
   Future<void> _abrir() async {
     setState(() => _error = null);
     try {
-      final db = await AppDb.abrir().timeout(const Duration(seconds: 25));
-      repos = Repos(db);
+      await cajaLocal.cargar(await AppDb.carpeta());
+      if (cajaLocal.esSecundaria) {
+        // Caja adicional: usa la base de datos de la caja principal.
+        final remota = DatabaseRemota(cajaLocal.servidor, cajaLocal.clave);
+        await remota.ping();
+        repos = Repos(remota);
+      } else {
+        final db = await AppDb.abrir().timeout(const Duration(seconds: 25));
+        repos = Repos(db);
+      }
       await repos.ajustes.cargar();
+      await iniciarServidorSiToca();
       // Versión personalizada: si se quedó el nombre genérico, se pone el de la tienda.
       if (repos.ajustes.texto(Ajuste.nombreNegocio) == 'Mi tienda') {
         await repos.ajustes.guardar(Ajuste.nombreNegocio, tiendaPersonalizada);
@@ -118,7 +130,7 @@ class _ArranqueState extends State<_Arranque> {
           if (_error == null)
             const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(color: ExColor.acento))
           else ...[
-            Text('exBel venta no pudo abrir su base de datos',
+            Text(cajaLocal.esSecundaria ? 'No se pudo conectar con la caja principal' : 'exBel venta no pudo abrir su base de datos',
                 style: ExTexto.titulo(20, color: ExColor.concreto)),
             const SizedBox(height: 8),
             SizedBox(
@@ -133,6 +145,18 @@ class _ArranqueState extends State<_Arranque> {
                 onPressed: _abrir,
                 child: const Text('Intentar de nuevo'),
               ),
+              if (cajaLocal.esSecundaria) ...[
+                const SizedBox(width: 12),
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                      foregroundColor: ExColor.concreto, side: const BorderSide(color: ExColor.textoClaro2)),
+                  onPressed: () async {
+                    await cajaLocal.cambiar(modo: 'principal');
+                    _abrir();
+                  },
+                  child: const Text('Usar esta computadora sola (caja principal)'),
+                ),
+              ],
               const SizedBox(width: 12),
               OutlinedButton(
                 style: OutlinedButton.styleFrom(
@@ -145,5 +169,23 @@ class _ArranqueState extends State<_Arranque> {
         ]),
       ),
     );
+  }
+}
+
+/// En la caja principal con la red activada, abre el servidor para las
+/// demás cajas.
+Future<void> iniciarServidorSiToca() async {
+  if (cajaLocal.esSecundaria || !cajaLocal.redActiva) return;
+  if (repos.db is DatabaseRemota) return;
+  final clave = await cajaLocal.claveDeRed();
+  servidorCaja ??= ServidorCaja(
+    repos.db,
+    clave: clave,
+    descripcion: () => '${repos.ajustes.texto(Ajuste.nombreNegocio)} | ${cajaLocal.nombreCaja}',
+  );
+  try {
+    await servidorCaja!.iniciar();
+  } catch (_) {
+    // Si el puerto está ocupado, la caja sigue funcionando sola.
   }
 }

@@ -220,9 +220,10 @@ class Cajero {
 class Turno {
   Turno({required this.id, required this.numero, required this.cajeroId, required this.abierto,
       required this.fondoCentavos, required this.estado, this.cajeroNombre, this.cerrado,
-      this.contadoCentavos, this.esperadoCentavos});
+      this.contadoCentavos, this.esperadoCentavos, this.caja = 'Caja 1'});
   final String id;
   final int numero;
+  final String caja;
   final String cajeroId;
   final String? cajeroNombre;
   final DateTime abierto;
@@ -245,6 +246,7 @@ class Turno {
         contadoCentavos: m['contado_centavos'] as int?,
         esperadoCentavos: m['esperado_centavos'] as int?,
         estado: m['estado'] as String,
+        caja: (m['caja'] as String?) ?? 'Caja 1',
       );
 }
 

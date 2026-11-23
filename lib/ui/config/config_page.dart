@@ -17,13 +17,14 @@ import '../../models/modelos.dart';
 import '../comun/dialogos.dart';
 import '../comun/ex_widgets.dart';
 import '../comun/impresion.dart';
+import '../comun/multicaja_ui.dart';
 import '../comun/importar_dialogo.dart';
 
 import '../sesion.dart';
 import '../tema/tema.dart';
 import '../zoom.dart';
 
-const versionExBel = '0.5.2';
+const versionExBel = '0.6.0';
 
 /// Configuración de la tienda.
 class ConfigPage extends StatefulWidget {
@@ -42,9 +43,9 @@ class _Opcion {
   final Widget pagina;
 }
 
-const _verde = Color(0xFF13803B);
-const _naranja = Color(0xFFE07A10);
-const _azul = Color(0xFF2F6FD6);
+const _verde = Color(0xFF3D7A55);
+const _naranja = Color(0xFFB9824A);
+const _azul = Color(0xFF4F6E9E);
 
 /// Como en Eleventa: íconos por grupo.
 final _grupos = <(String, List<_Opcion>)>[
@@ -58,6 +59,7 @@ final _grupos = <(String, List<_Opcion>)>[
       _Opcion('Facturación', Icons.receipt_long_outlined, ExColor.texto2, _Proximamente('Facturación',
           'Facturar (CFDI 4.0) requiere contratar un PAC que timbre las facturas. Se agregará en una próxima versión.')),
       _Opcion('Modificar Folios', Icons.format_list_numbered, ExColor.indigo, _Folios()),
+      _Opcion('Multicaja', Icons.lan_outlined, _verde, SeccionMulticaja()),
     ]
   ),
   (
@@ -891,6 +893,17 @@ class _Respaldos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (esCajaConectada) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        _titulo('Respaldos'),
+        const Text('Esta es una caja conectada: la información y los respaldos están en la caja principal.',
+            style: TextStyle(fontSize: 16)),
+      ]);
+    }
+    return _construir(context);
+  }
+
+  Widget _construir(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       _titulo('Respaldos', 'exBel venta guarda un respaldo automático cada vez que se cierra un turno (los últimos 10).'),
       ExSeccion(

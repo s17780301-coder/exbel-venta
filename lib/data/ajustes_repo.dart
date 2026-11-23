@@ -1,5 +1,7 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import '../core/caja_local.dart';
+
 /// Versión personalizada para esta tienda.
 const tiendaPersonalizada = 'Miscelánea Karina';
 
@@ -85,6 +87,19 @@ abstract final class Ajuste {
   };
 }
 
+/// Ajustes que son de cada computadora (no se comparten entre cajas).
+const ajustesDeCaja = <String>{
+  Ajuste.zoom,
+  Ajuste.cajonAbrir,
+  Ajuste.cajonImpresora,
+  Ajuste.ticketAncho,
+  Ajuste.impresion,
+  Ajuste.basculaPrefijo,
+  Ajuste.basculaModo,
+  'impresora_tickets',
+  'tickets_pendientes',
+};
+
 class AjustesRepo {
   AjustesRepo(this.db);
   final Database db;
@@ -100,12 +115,15 @@ class AjustesRepo {
     }
   }
 
-  String texto(String clave) => _cache[clave] ?? Ajuste.omision[clave] ?? '';
+  String texto(String clave) => ajustesDeCaja.contains(clave)
+      ? (cajaLocal.ajuste(clave) ?? _cache[clave] ?? Ajuste.omision[clave] ?? '')
+      : (_cache[clave] ?? Ajuste.omision[clave] ?? '');
   bool si(String clave) => texto(clave) == '1';
   int entero(String clave) => int.tryParse(texto(clave)) ?? 0;
   double numero(String clave) => double.tryParse(texto(clave)) ?? 0;
 
   Future<void> guardar(String clave, String valor) async {
+    if (ajustesDeCaja.contains(clave)) return cajaLocal.guardarAjuste(clave, valor);
     _cache[clave] = valor;
     await db.insert('ajustes', {'clave': clave, 'valor': valor},
         conflictAlgorithm: ConflictAlgorithm.replace);

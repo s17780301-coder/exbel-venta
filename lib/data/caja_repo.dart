@@ -1,5 +1,6 @@
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import '../core/caja_local.dart';
 import '../core/db.dart';
 import '../core/errores.dart';
 import '../core/ids.dart';
@@ -13,14 +14,16 @@ class CajaRepo {
     SELECT t.*, c.nombre AS cajero_nombre FROM turnos t
     LEFT JOIN cajeros c ON c.id = t.cajero_id''';
 
-  /// El turno abierto de esta caja (hay uno a la vez).
-  Future<Turno?> turnoAbierto() async {
-    final f = await db.rawQuery("$_selectTurno WHERE t.estado = 'abierto' ORDER BY t.abierto DESC LIMIT 1");
+  /// El turno abierto de esta caja (uno a la vez por caja).
+  Future<Turno?> turnoAbierto({String? caja}) async {
+    final f = await db.rawQuery("$_selectTurno WHERE t.estado = 'abierto' AND t.caja = ? ORDER BY t.abierto DESC LIMIT 1",
+        [caja ?? cajaLocal.nombreCaja]);
     return f.isEmpty ? null : Turno.desdeMapa(f.first);
   }
 
-  Future<Turno> abrirTurno(String cajeroId, int fondoCentavos) async {
-    if (await turnoAbierto() != null) throw const ErrorNegocio('Ya hay un turno abierto.');
+  Future<Turno> abrirTurno(String cajeroId, int fondoCentavos, {String? caja}) async {
+    final nombreCaja = caja ?? cajaLocal.nombreCaja;
+    if (await turnoAbierto(caja: nombreCaja) != null) throw ErrorNegocio('Ya hay un turno abierto en $nombreCaja.');
     if (fondoCentavos < 0) throw const ErrorNegocio('El fondo no puede ser negativo.');
     final id = nuevoId();
     await db.transaction((tx) async {
@@ -31,6 +34,7 @@ class CajaRepo {
         'abierto': ahoraLocal(),
         'fondo_centavos': fondoCentavos,
         'estado': 'abierto',
+        'caja': nombreCaja,
       });
     });
     final f = await db.rawQuery('$_selectTurno WHERE t.id = ?', [id]);
@@ -107,7 +111,7 @@ class CajaRepo {
     final f = await db.rawQuery('$_selectTurno WHERE t.id = ?', [turnoId]);
     if (f.isEmpty) throw const ErrorNegocio('No se encontró el turno.');
     final t = Turno.desdeMapa(f.first);
-    return _corte([turnoId], t.fondoCentavos, 'Turno ${t.numero} · ${t.cajeroNombre ?? ''}', turno: t);
+    return _corte([turnoId], t.fondoCentavos, '${t.caja} · Turno ${t.numero} · ${t.cajeroNombre ?? ''}', turno: t);
   }
 
   /// Todos los turnos que se abrieron ese día.
