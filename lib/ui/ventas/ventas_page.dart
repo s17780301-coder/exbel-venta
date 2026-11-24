@@ -711,6 +711,10 @@ class _VentasPageState extends State<VentasPage> {
     if (r == null) return _enfocar();
     if (!mounted) return;
     final ok = await intentar(context, () => repos.caja.registrarMovimiento(turno.id, tipo, r.$1, r.$2));
+    if (ok) {
+      // Entrada o salida de efectivo: se abre el cajón para meter o sacar el dinero.
+      unawaited(abrirCajonAlCobrar(conEfectivo: true).catchError((_) {}));
+    }
     if (ok && mounted) {
       aviso(context, '${tipo == 'entrada' ? 'Entrada' : 'Salida'} de ${formatoPesos(r.$1)} registrada.');
       avisarCambio();
