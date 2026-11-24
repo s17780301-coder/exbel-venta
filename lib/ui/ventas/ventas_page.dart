@@ -12,6 +12,7 @@ import '../../data/ajustes_repo.dart';
 import '../../data/repos.dart';
 import '../../models/modelos.dart';
 import '../comun/dialogos.dart';
+import '../config/config_page.dart' show versionExBel;
 import '../comun/impresion.dart';
 import '../principal.dart';
 import '../sesion.dart';
@@ -946,8 +947,6 @@ class _VentasPageState extends State<VentasPage> {
               _chico(Icons.delete_outline, 'Eliminar ticket', () => _cerrarTicket(_actual)),
               _chico(Icons.add, 'Cant. (+)', () => _sumar(1)),
               _chico(Icons.remove, 'Cant. (−)', () => _sumar(-1)),
-              _chico(Icons.print_outlined, 'Reimprimir', _reimprimir),
-              _chico(Icons.undo, 'Devoluciones', _ventasDelDia),
             ]),
           ]),
         ),
@@ -968,35 +967,101 @@ class _VentasPageState extends State<VentasPage> {
               Text('Folio ${_ultima!.folio} · ${pago!.descripcion}', style: const TextStyle(fontSize: 12, color: ExColor.texto2)),
           ]),
         ),
-        Container(
-          padding: const EdgeInsets.fromLTRB(26, 12, 12, 12),
-          decoration: BoxDecoration(
-              color: ExColor.banda, borderRadius: BorderRadius.circular(18), border: Border.all(color: ExColor.borde, width: 1.4)),
-          child: Row(children: [
-            Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
-              const Text('TOTAL', style: TextStyle(color: ExColor.texto2, fontSize: 14, letterSpacing: 2, fontWeight: FontWeight.w600)),
-              Text(formatoPesos(_t.totalCentavos), style: ExTexto.titulo(52, color: ExColor.bandaTexto)),
-            ]),
-            const SizedBox(width: 20),
+        // Cobrar y total, con la barra clara debajo del importe.
+        Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
             SizedBox(
-              height: 84,
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: ExColor.acento,
-                  foregroundColor: ExColor.tinta,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
+              width: 210,
+              height: 74,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: ExColor.blanco,
+                  side: const BorderSide(color: ExColor.borde, width: 1.4),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                onPressed: _t.renglones.isEmpty ? null : _cobrar,
-                child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Text('F12', style: ExTexto.mono(15, color: ExColor.tinta)),
-                  Text('Cobrar', style: ExTexto.titulo(28, color: ExColor.tinta)),
-                ]),
+                onPressed: _cobrar,
+                icon: const Icon(Icons.point_of_sale, size: 30, color: ExColor.verde),
+                label: Text('F12 - Cobrar', style: ExTexto.titulo(24, color: ExColor.indigo, peso: FontWeight.w600)),
               ),
             ),
+            const SizedBox(width: 16),
+            SizedBox(
+              width: 280,
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(formatoPesos(_t.totalCentavos),
+                      style: ExTexto.titulo(60, color: ExColor.indigo, peso: FontWeight.w500)),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  height: 9,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD5DBF3),
+                    borderRadius: BorderRadius.circular(3),
+                    border: Border.all(color: const Color(0xFFB9C3EA)),
+                  ),
+                ),
+              ]),
+            ),
           ]),
-        ),
+          const SizedBox(height: 8),
+          Row(children: [
+            SizedBox(
+              width: 210,
+              child: _chico(Icons.print_outlined, 'Reimprimir Último Ticket', _reimprimir),
+            ),
+            const SizedBox(width: 16),
+            SizedBox(
+              width: 280,
+              child: _chico(Icons.receipt_long_outlined, 'Ventas del día y Devoluciones', _ventasDelDia),
+            ),
+          ]),
+          const SizedBox(height: 4),
+          const _Reloj(),
+        ]),
       ]),
     );
+  }
+}
+
+/// Abajo a la derecha: versión, fecha y hora.
+class _Reloj extends StatefulWidget {
+  const _Reloj();
+
+  @override
+  State<_Reloj> createState() => _RelojState();
+}
+
+class _RelojState extends State<_Reloj> {
+  Timer? _t;
+
+  @override
+  void initState() {
+    super.initState();
+    _t = Timer.periodic(const Duration(seconds: 20), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _t?.cancel();
+    super.dispose();
+  }
+
+  static const _meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+  @override
+  Widget build(BuildContext context) {
+    final a = DateTime.now();
+    final h = a.hour % 12 == 0 ? 12 : a.hour % 12;
+    final hora = '$h:${a.minute.toString().padLeft(2, '0')} ${a.hour < 12 ? 'am' : 'pm'}';
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Text('exBel venta $versionExBel', style: const TextStyle(color: ExColor.texto2, fontSize: 12)),
+      const SizedBox(width: 18),
+      Text('${a.day} - ${_meses[a.month - 1]}   $hora', style: ExTexto.titulo(18, color: ExColor.texto2, peso: FontWeight.w500)),
+    ]);
   }
 }
