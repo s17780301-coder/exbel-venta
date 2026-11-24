@@ -147,7 +147,7 @@ void main() {
       ['5', 'Arroz', '\$30.00', '9.75', 'Abarrotes sueltos'],
     ];
     final (fila, cols) = detectarColumnas(filas, camposProducto);
-    final d = {for (final x in departamentosDelArchivo(filas, fila, cols)) x.\$1: x.\$4};
+    final d = {for (final x in departamentosDelArchivo(filas, fila, cols)) x.$1: x.$4};
     expect(d['croquetas'], isTrue);
     expect(d['REFRESCOS'], isFalse);
     expect(d['Abarrotes sueltos'], isTrue);

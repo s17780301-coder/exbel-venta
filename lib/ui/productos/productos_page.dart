@@ -115,8 +115,7 @@ class _ProductosPageState extends State<ProductosPage> {
       context: context,
       builder: (c) => AlertDialog(
         title: Text('¿Cómo se venden estos ${_sel.length} productos?'),
-        content: const Text('A granel: al cobrar piden la cantidad y aceptan decimales (.5 = medio kilo).
-'
+        content: const Text('A granel: al cobrar piden la cantidad y aceptan decimales (.5 = medio kilo).\n'
             'Por pieza: se agregan de 1 en 1 y solo con cantidades enteras.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cancelar')),
