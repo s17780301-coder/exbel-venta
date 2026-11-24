@@ -403,16 +403,16 @@ class _VentasPageState extends State<VentasPage> {
     if (!_t.renglones.contains(r) || (r.cantidad - _vivoPeso).abs() > 0.0005) return _fijarVivo();
     // Báscula vacía: se queda con el último peso.
     if (v <= 0.002) return _fijarVivo();
-    // Solo sube: al quitar el producto la báscula va bajando poco a poco y
-    // eso no debe cambiar lo cobrado. Y solo con el peso ya quieto (medio
-    // segundo sin cambiar), para no tomar el "brinco" al echar producto.
-    if (v <= r.cantidad + 0.0005) return;
+    // Sigue a la báscula (sube y baja) pero solo cuando el peso ya está
+    // quieto 0.7 s. Al levantar el producto la báscula pasa rápido por pesos
+    // intermedios hasta llegar a cero: esos no se toman y se queda el último
+    // peso estable.
+    if ((v - r.cantidad).abs() < 0.0005) return;
     _vivoEspera?.cancel();
-    _vivoEspera = Timer(const Duration(milliseconds: 500), () {
+    _vivoEspera = Timer(const Duration(milliseconds: 700), () {
       final ahora = LectorBascula.instancia.peso.value;
-      if (!mounted || _vivo != r || ahora == null || (ahora - v).abs() > 0.002) return;
+      if (!mounted || _vivo != r || ahora == null || (ahora - v).abs() > 0.002 || ahora <= 0.002) return;
       if (!_t.renglones.contains(r) || (r.cantidad - _vivoPeso).abs() > 0.0005) return _fijarVivo();
-      if (ahora <= r.cantidad + 0.0005) return;
       setState(() {
         r.cantidad = ahora;
         _vivoPeso = ahora;
