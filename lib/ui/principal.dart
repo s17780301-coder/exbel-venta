@@ -11,6 +11,7 @@ import 'acceso/acceso_page.dart';
 import 'clientes/clientes_page.dart';
 import 'comun/buscador_universal.dart';
 import 'productos/producto_form.dart';
+import 'productos/productos_rapido.dart';
 import 'ventas/ventas_dia.dart';
 import 'comun/dialogos.dart';
 import 'comun/licencia_ui.dart';
@@ -54,7 +55,7 @@ class _Seccion {
 const _secciones = <_Seccion>[
   _Seccion('Ventas', 'F1', Icons.point_of_sale_rounded, null, Tono.lavanda),
   _Seccion('Clientes', 'F2', Icons.people_alt_rounded, null, Tono.coral),
-  _Seccion('Productos', 'F3', Icons.inventory_2_rounded, null, Tono.verde),
+  _Seccion('Productos', null, Icons.inventory_2_rounded, null, Tono.verde),
   _Seccion('Inventario', 'F4', Icons.warehouse_rounded, null, Tono.ambar),
   _Seccion('Corte', null, Icons.calculate_rounded, null, Tono.azul),
   _Seccion('Reportes', null, Icons.bar_chart_rounded, Permiso.reportes, Tono.rosa),
@@ -104,9 +105,13 @@ class _PrincipalState extends State<Principal> {
     final mapa = {
       LogicalKeyboardKey.f1: 0,
       LogicalKeyboardKey.f2: 1,
-      LogicalKeyboardKey.f3: 2,
       LogicalKeyboardKey.f4: 3,
     };
+    // F3: ventana rápida para agregar o eliminar productos.
+    if (e.logicalKey == LogicalKeyboardKey.f3) {
+      productosRapido(context);
+      return true;
+    }
     final i = mapa[e.logicalKey];
     if (i != null) {
       _ir(i);
