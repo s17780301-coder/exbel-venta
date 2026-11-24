@@ -24,24 +24,37 @@ int compararVersiones(String a, String b) {
   return 0;
 }
 
+/// Último motivo por el que no se pudo revisar (para mostrarlo).
+String? errorActualizacion;
+
 /// ¿Hay una versión más nueva que [actual]? null si no o si no hay internet.
+/// Pregunta a GitHub y, si no responde, a la nube de exBel (Supabase).
 Future<VersionNueva?> buscarActualizacion(String actual) async {
-  final t = await descargarTexto(urlVersion);
-  if (t == null) return null;
-  try {
-    final m = jsonDecode(t) as Map;
-    final v = '${m['version']}';
-    if (compararVersiones(v, actual) <= 0) return null;
-    return VersionNueva(v, '${m['url']}');
-  } catch (_) {
+  errorActualizacion = null;
+  Map? m;
+  final t = await descargarTexto(urlVersion, limite: const Duration(seconds: 15));
+  if (t != null) {
+    try {
+      m = jsonDecode(t) as Map;
+    } catch (_) {}
+  }
+  if (m == null) {
+    final r = await nubeRpc('exbel_version', {});
+    if (r is Map) m = r;
+  }
+  if (m == null) {
+    errorActualizacion = 'No se pudo consultar si hay versión nueva. Revisa el internet.';
     return null;
   }
+  final v = '${m['version']}';
+  if (compararVersiones(v, actual) <= 0) return null;
+  return VersionNueva(v, '${m['url']}');
 }
 
 /// Descarga el instalador. [avance] de 0 a 1.
 Future<File> descargarInstalador(VersionNueva v, void Function(double) avance) async {
   final destino = File(p.join(Directory.systemTemp.path, 'exBel-venta-${v.version}.exe'));
-  final cliente = HttpClient()..connectionTimeout = const Duration(seconds: 15);
+  final cliente = HttpClient()..connectionTimeout = const Duration(seconds: 30);
   try {
     final res = await (await cliente.getUrl(Uri.parse(v.url))).close();
     if (res.statusCode >= 300) throw HttpException('Código ${res.statusCode}');

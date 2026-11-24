@@ -31,7 +31,7 @@ import '../sesion.dart';
 import '../tema/tema.dart';
 import '../zoom.dart';
 
-const versionExBel = '0.12.4';
+const versionExBel = '0.12.5';
 
 /// Configuración de la tienda.
 class ConfigPage extends StatefulWidget {
@@ -714,7 +714,7 @@ class _Actualizaciones extends StatelessWidget {
           onPressed: () async {
             final v = await buscarActualizacion(versionExBel);
             if (!context.mounted) return;
-            if (v == null) return aviso(context, 'Ya tienes la versión más nueva (o no hay internet).');
+            if (v == null) return aviso(context, errorActualizacion ?? 'Ya tienes la versión más nueva ($versionExBel).');
             await actualizarAhora(context, v);
           },
           icon: const Icon(Icons.system_update_alt_rounded),
