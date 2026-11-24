@@ -1,7 +1,7 @@
 name: exbel_venta
 description: exBel venta — punto de venta para tiendas de abarrotes y comercios. Windows, pantalla completa, funciona sin internet.
 publish_to: 'none'
-version: 0.8.2+24
+version: 0.8.3+25
 
 environment:
   sdk: '>=3.4.0 <4.0.0'

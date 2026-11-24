@@ -55,9 +55,6 @@ class _VentasPageState extends State<VentasPage> {
   final _scroll = ScrollController();
   List<Producto> _favoritos = [];
   Venta? _ultima;
-
-  /// Cantidad escrita antes de escanear (".5*"): se usa en el siguiente producto.
-  double? _pendiente;
   bool _ocupado = false;
 
   Ticket get _t => _tickets[_actual];
@@ -262,16 +259,6 @@ class _VentasPageState extends State<VentasPage> {
       return;
     }
     double? cantidad;
-    // ".5*" o "3*": cantidad para el siguiente producto que se escanee.
-    if (texto.endsWith('*')) {
-      final c = leerCantidad(texto.substring(0, texto.length - 1));
-      if (c == null || c <= 0) {
-        aviso(context, 'Escribe la cantidad antes del *. Ejemplo: .5* para medio kilo.');
-      } else {
-        setState(() => _pendiente = c);
-      }
-      return _enfocar();
-    }
     final estrella = texto.indexOf('*');
     if (estrella == 0) texto = texto.substring(1).trim();
     if (estrella > 0) {
@@ -300,9 +287,6 @@ class _VentasPageState extends State<VentasPage> {
           rg.cantidad = c;
           _t.seleccion = i;
         });
-      } else {
-        // Sin productos todavía: queda para el siguiente que se escanee.
-        setState(() => _pendiente = c);
       }
       return _enfocar();
     }
@@ -320,8 +304,6 @@ class _VentasPageState extends State<VentasPage> {
       if (elegido == null) return _enfocar();
       p = elegido;
     }
-    if (cantidad == null && _pendiente != null) cantidad = _pendiente;
-    if (_pendiente != null) setState(() => _pendiente = null);
     await _agregar(p, cantidad: cantidad);
   }
 
@@ -770,16 +752,7 @@ class _VentasPageState extends State<VentasPage> {
       child: Row(children: [
         const Icon(Icons.qr_code_scanner_rounded, color: ExEstilo.primario, size: 24),
         const SizedBox(width: 12),
-        if (_pendiente != null) ...[
-          InputChip(
-            label: Text('${formatoCantidad(_pendiente!)} ×', style: const TextStyle(fontWeight: FontWeight.w700, color: ExEstilo.primarioOscuro)),
-            backgroundColor: ExEstilo.suave,
-            side: BorderSide.none,
-            onDeleted: () => setState(() => _pendiente = null),
-            tooltip: 'Cantidad para el siguiente producto',
-          ),
-          const SizedBox(width: 8),
-        ],
+
         Expanded(
           child: TextField(
             controller: _codigo,
@@ -787,7 +760,7 @@ class _VentasPageState extends State<VentasPage> {
             autofocus: true,
             style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w500, color: ExColor.tinta),
             decoration: const InputDecoration(
-              hintText: 'Escanea o escribe el código  ·  .5* = medio kilo del siguiente',
+              hintText: 'Escanea o escribe el código del producto…',
               hintStyle: TextStyle(fontSize: 17, color: ExEstilo.texto2, fontWeight: FontWeight.w400),
               border: InputBorder.none,
               enabledBorder: InputBorder.none,
