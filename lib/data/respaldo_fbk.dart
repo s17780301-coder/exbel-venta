@@ -299,6 +299,7 @@ Future<(ResumenImportacion, ResumenImportacion)> importarRespaldo(
   if (productos) {
     final deps = {for (final d in await repos.productos.departamentos()) normalizar(d.nombre): d.id};
     final idNuevo = <int, String>{};
+    final omitidosIds = <String>{};
     for (final r in c.productos) {
       progreso?.call(hechos++, total);
       final desc = _txt(r['DESCRIPCION']);
@@ -307,6 +308,7 @@ Future<(ResumenImportacion, ResumenImportacion)> importarRespaldo(
         final existente = codigo.isEmpty ? null : await repos.productos.porCodigo(codigo);
         if (existente != null && omitirExistentes) {
           idNuevo[r['ID'] as int] = existente.id;
+          omitidosIds.add(existente.id);
           rp.omitidos++;
           continue;
         }
@@ -359,6 +361,8 @@ Future<(ResumenImportacion, ResumenImportacion)> importarRespaldo(
     for (final r in c.productos.where((r) => r['ES_KIT'] == 't')) {
       final kit = idNuevo[r['ID']];
       final lista = c.componentes[r['ID']];
+      // Un paquete que se dejó como estaba no se toca.
+      if (kit != null && omitidosIds.contains(kit)) continue;
       if (kit == null || lista == null || lista.isEmpty) continue;
       try {
         final comps = <Componente>[];

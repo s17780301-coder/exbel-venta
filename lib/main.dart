@@ -48,14 +48,27 @@ Future<void> main() async {
 
 final _panico = DetectorPanico();
 
+/// Teclas apretadas y cuándo. Solo cuentan las apretadas en el último segundo
+/// y medio: así una tecla "atorada" (p. ej. al cambiar de ventana) no cuenta.
+final _abajo = <PhysicalKeyboardKey, DateTime>{};
+
 /// Alerta de emergencia silenciosa, en cualquier pantalla:
 /// la mano sobre el teclado (muchas teclas juntas) o Ctrl + Alt + E.
 bool _teclaEmergencia(KeyEvent e) {
+  final ahora = DateTime.now();
+  if (e is KeyUpEvent) {
+    _abajo.remove(e.physicalKey);
+    return false;
+  }
   if (e is! KeyDownEvent) return false;
+  _abajo[e.physicalKey] = ahora;
+  _abajo.removeWhere((_, t) => ahora.difference(t) > const Duration(milliseconds: 1500));
+  final real = HardwareKeyboard.instance.physicalKeysPressed;
+  _abajo.removeWhere((k, _) => !real.contains(k));
+  final n = _abajo.length;
   final k = HardwareKeyboard.instance;
-  final n = k.physicalKeysPressed.length;
   final combinacion = e.logicalKey == LogicalKeyboardKey.keyE && k.isControlPressed && k.isAltPressed;
-  if (combinacion || _panico.alPresionar(n, DateTime.now())) {
+  if (combinacion || _panico.alPresionar(n, ahora)) {
     try {
       limpiarCapturaVentas();
       enviarAlertaEmergencia(
