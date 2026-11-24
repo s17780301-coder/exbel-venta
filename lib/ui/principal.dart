@@ -201,14 +201,17 @@ class _PrincipalState extends State<Principal> {
     final turno = sesion.turno;
     return Container(
       height: 92,
-      color: ExColor.tinta,
+      decoration: const BoxDecoration(
+        color: ExColor.barra,
+        border: Border(bottom: BorderSide(color: ExColor.linea)),
+      ),
       padding: const EdgeInsets.only(left: 14),
       child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         // Extremo superior izquierdo: exBel™ chiquito y la tienda.
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-            const ExMarca(oscuro: true, tamano: 11),
+            const ExMarca(oscuro: false, tamano: 11),
             const SizedBox(height: 2),
             Tooltip(
               message: 'Cambiar el nombre o el logotipo de la tienda',
@@ -227,7 +230,7 @@ class _PrincipalState extends State<Principal> {
                   ],
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 300),
-                    child: NombreTienda(negocio, tamano: 26),
+                    child: NombreTienda(negocio, tamano: 26, oscuro: false),
                   ),
                 ]),
               ),
@@ -246,14 +249,14 @@ class _PrincipalState extends State<Principal> {
                 ExAvatar(cajero.nombre, size: 38),
                 const SizedBox(width: 8),
                 Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(cajero.nombre, style: const TextStyle(color: ExColor.concreto, fontWeight: FontWeight.w600, fontSize: 16)),
+                  Text(cajero.nombre, style: const TextStyle(color: ExColor.tinta, fontWeight: FontWeight.w600, fontSize: 16)),
                   Text(turno == null ? cajaLocal.nombreCaja : '${turno.caja} · Turno ${turno.numero}',
-                      style: const TextStyle(color: ExColor.textoClaro, fontSize: 13)),
+                      style: const TextStyle(color: ExColor.texto2, fontSize: 13)),
                 ]),
               ]),
             ),
           ),
-        const Align(alignment: Alignment.topCenter, child: BotonesVentana(oscuro: true)),
+        const Align(alignment: Alignment.topCenter, child: BotonesVentana(oscuro: false)),
       ]),
     );
   }
@@ -271,14 +274,14 @@ class _PrincipalState extends State<Principal> {
           border: Border(top: BorderSide(color: activa ? ExColor.acento : Colors.transparent, width: 3)),
         ),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(s.icono, size: 34, color: activa ? ExColor.indigo : ExColor.textoClaro),
+          Icon(s.icono, size: 34, color: activa ? ExColor.indigo : ExColor.texto2),
           const SizedBox(height: 5),
           Text(
             s.tecla == null ? s.nombre : '${s.tecla} ${s.nombre}',
             style: TextStyle(
               fontSize: 14.5,
               fontWeight: activa ? FontWeight.w700 : FontWeight.w500,
-              color: activa ? ExColor.tinta : ExColor.textoClaro,
+              color: activa ? ExColor.tinta : ExColor.texto2,
             ),
           ),
         ]),

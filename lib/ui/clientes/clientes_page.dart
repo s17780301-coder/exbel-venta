@@ -225,12 +225,12 @@ class _ClientesPageState extends State<ClientesPage> {
                       ),
               ),
               Container(
-                color: ExColor.tinta,
+                color: ExColor.banda,
                 padding: const EdgeInsets.all(14),
                 child: Row(children: [
-                  const Text('Saldo total por cobrar', style: TextStyle(color: ExColor.textoClaro)),
+                  const Text('Saldo total por cobrar', style: TextStyle(color: ExColor.bandaTexto)),
                   const Spacer(),
-                  Text(formatoPesos(_saldoTotal), style: ExTexto.titulo(20, color: ExColor.concreto)),
+                  Text(formatoPesos(_saldoTotal), style: ExTexto.titulo(20, color: ExColor.bandaTexto)),
                 ]),
               ),
             ]),

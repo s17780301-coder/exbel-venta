@@ -25,7 +25,7 @@ import '../sesion.dart';
 import '../tema/tema.dart';
 import '../zoom.dart';
 
-const versionExBel = '0.6.2';
+const versionExBel = '0.6.3';
 
 /// Configuración de la tienda.
 class ConfigPage extends StatefulWidget {
@@ -138,10 +138,10 @@ class _ConfigPageState extends State<ConfigPage> {
     final abierta = _abierta;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Container(
-        color: ExColor.indigo,
+        color: ExColor.banda,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         child: Text(abierta == null ? 'CONFIGURACIÓN' : 'CONFIGURACIÓN - ${abierta.nombre.toUpperCase()}',
-            style: ExTexto.titulo(19, color: ExColor.blanco)),
+            style: ExTexto.titulo(19, color: ExColor.bandaTexto)),
       ),
       Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),

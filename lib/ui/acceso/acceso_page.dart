@@ -122,24 +122,24 @@ class _AccesoPageState extends State<AccesoPage> {
         Expanded(
           flex: 5,
           child: Container(
-            color: ExColor.tinta,
+            color: ExColor.banda,
             padding: const EdgeInsets.all(28),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const ExMarca(oscuro: true, tamano: 15),
+              const ExMarca(oscuro: false, tamano: 15),
               const Spacer(),
               Text(_paso == _Paso.primeraVez ? 'Bienvenido a' : 'Punto de venta de',
-                  style: ExTexto.texto(18, color: ExColor.textoClaro2)),
+                  style: ExTexto.texto(18, color: ExColor.texto2)),
               const SizedBox(height: 6),
               _paso == _Paso.primeraVez
-                  ? Text('exBel venta', style: ExTexto.titulo(48, color: ExColor.concreto))
-                  : NombreTienda(negocio, tamano: 52),
+                  ? Text('exBel venta', style: ExTexto.titulo(48, color: ExColor.bandaTexto))
+                  : NombreTienda(negocio, tamano: 52, oscuro: false),
               const SizedBox(height: 16),
               Container(width: 64, height: 6, color: ExColor.acento),
               const SizedBox(height: 16),
               Text('Ventas, inventario, crédito y cortes de caja.\nFunciona sin internet.',
-                  style: ExTexto.texto(16, color: ExColor.textoClaro)),
+                  style: ExTexto.texto(16, color: ExColor.texto2)),
               const Spacer(),
-              Text(formatoFechaHora(DateTime.now()), style: ExTexto.mono(13, color: ExColor.textoClaro2)),
+              Text(formatoFechaHora(DateTime.now()), style: ExTexto.mono(13, color: ExColor.texto2)),
             ]),
           ),
         ),

@@ -120,23 +120,23 @@ class _ArranqueState extends State<_Arranque> {
   Widget build(BuildContext context) {
     if (_listo) return const AccesoPage();
     return Scaffold(
-      backgroundColor: ExColor.tinta,
+      backgroundColor: ExColor.barra,
       body: Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const ExMarca(oscuro: true, tamano: 34),
+          const ExMarca(oscuro: false, tamano: 34),
           const SizedBox(height: 8),
-          Text('venta', style: ExTexto.marca(20, color: ExColor.textoClaro2, peso: FontWeight.w300)),
+          Text('venta', style: ExTexto.marca(20, color: ExColor.texto2, peso: FontWeight.w300)),
           const SizedBox(height: 32),
           if (_error == null)
             const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(color: ExColor.acento))
           else ...[
             Text(cajaLocal.esSecundaria ? 'No se pudo conectar con la caja principal' : 'exBel venta no pudo abrir su base de datos',
-                style: ExTexto.titulo(20, color: ExColor.concreto)),
+                style: ExTexto.titulo(20, color: ExColor.bandaTexto)),
             const SizedBox(height: 8),
             SizedBox(
               width: 560,
               child: SelectableText(_error!,
-                  textAlign: TextAlign.center, style: const TextStyle(color: ExColor.textoClaro)),
+                  textAlign: TextAlign.center, style: const TextStyle(color: ExColor.texto2)),
             ),
             const SizedBox(height: 20),
             Row(mainAxisSize: MainAxisSize.min, children: [
@@ -149,7 +149,7 @@ class _ArranqueState extends State<_Arranque> {
                 const SizedBox(width: 12),
                 OutlinedButton(
                   style: OutlinedButton.styleFrom(
-                      foregroundColor: ExColor.concreto, side: const BorderSide(color: ExColor.textoClaro2)),
+                      foregroundColor: ExColor.bandaTexto, side: const BorderSide(color: ExColor.borde)),
                   onPressed: () async {
                     await cajaLocal.cambiar(modo: 'principal');
                     _abrir();
@@ -160,7 +160,7 @@ class _ArranqueState extends State<_Arranque> {
               const SizedBox(width: 12),
               OutlinedButton(
                 style: OutlinedButton.styleFrom(
-                    foregroundColor: ExColor.concreto, side: const BorderSide(color: ExColor.textoClaro2)),
+                    foregroundColor: ExColor.bandaTexto, side: const BorderSide(color: ExColor.borde)),
                 onPressed: () => Clipboard.setData(ClipboardData(text: _error!)),
                 child: const Text('Copiar el error'),
               ),

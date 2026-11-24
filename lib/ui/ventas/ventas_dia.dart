@@ -189,13 +189,13 @@ class _HistorialState extends State<_Historial> {
         height: altoDialogo(context, 760),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Container(
-            color: ExColor.indigo,
+            color: ExColor.banda,
             padding: const EdgeInsets.fromLTRB(22, 8, 8, 8),
             child: Row(children: [
               Text(widget.clienteNombre == null ? 'HISTORIAL DE VENTAS' : 'COMPRAS DE ${widget.clienteNombre!.toUpperCase()}',
-                  style: ExTexto.titulo(20, color: ExColor.blanco)),
+                  style: ExTexto.titulo(20, color: ExColor.bandaTexto)),
               const Spacer(),
-              IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close, color: ExColor.blanco)),
+              IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close, color: ExColor.bandaTexto)),
             ]),
           ),
           Expanded(

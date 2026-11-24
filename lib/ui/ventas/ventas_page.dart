@@ -602,15 +602,15 @@ class _VentasPageState extends State<VentasPage> {
       // Banda como en Eleventa: "VENTA - Ticket 3".
       Container(
         width: double.infinity,
-        color: ExColor.indigo,
+        color: ExColor.banda,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         child: Row(children: [
-          Text('VENTA - ${_t.nombre}', style: ExTexto.titulo(19, color: ExColor.blanco)),
+          Text('VENTA - ${_t.nombre}', style: ExTexto.titulo(19, color: ExColor.bandaTexto)),
           if (_t.cliente != null) ...[
             const SizedBox(width: 16),
-            const Icon(Icons.person, color: ExColor.lavanda, size: 20),
+            const Icon(Icons.person, color: ExColor.indigo, size: 20),
             const SizedBox(width: 4),
-            Text(_t.cliente!.nombre, style: const TextStyle(color: ExColor.lavanda, fontSize: 16)),
+            Text(_t.cliente!.nombre, style: const TextStyle(color: ExColor.bandaTexto, fontSize: 16)),
           ],
         ]),
       ),
@@ -630,7 +630,7 @@ class _VentasPageState extends State<VentasPage> {
       return Padding(
         padding: const EdgeInsets.only(right: 6, top: 4),
         child: Material(
-          color: activa ? ExColor.indigo : ExColor.blanco,
+          color: activa ? ExColor.banda : ExColor.blanco,
           shape: RoundedRectangleBorder(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
             side: BorderSide(color: activa ? ExColor.indigo : ExColor.borde, width: 1.4),
@@ -644,21 +644,21 @@ class _VentasPageState extends State<VentasPage> {
             child: Padding(
               padding: const EdgeInsets.only(left: 14, right: 2),
               child: Row(children: [
-                Icon(Icons.receipt_outlined, size: 18, color: activa ? ExColor.blanco : ExColor.indigo),
+                Icon(Icons.receipt_outlined, size: 18, color: ExColor.indigo),
                 const SizedBox(width: 6),
                 Text(t.nombre,
                     style: TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w700, color: activa ? ExColor.blanco : ExColor.tinta)),
+                        fontSize: 15, fontWeight: FontWeight.w700, color: activa ? ExColor.bandaTexto : ExColor.tinta)),
                 if (t.renglones.isNotEmpty) ...[
                   const SizedBox(width: 8),
                   Text(formatoPesos(t.totalCentavos),
-                      style: ExTexto.mono(13, color: activa ? ExColor.lavanda : ExColor.texto2, peso: FontWeight.w600)),
+                      style: ExTexto.mono(13, color: ExColor.texto2, peso: FontWeight.w600)),
                 ],
                 IconButton(
                   tooltip: 'Eliminar ticket',
                   visualDensity: VisualDensity.compact,
                   iconSize: 16,
-                  color: activa ? ExColor.blanco : ExColor.texto2,
+                  color: ExColor.texto2,
                   onPressed: () => _cerrarTicket(i),
                   icon: const Icon(Icons.close),
                 ),
@@ -970,11 +970,12 @@ class _VentasPageState extends State<VentasPage> {
         ),
         Container(
           padding: const EdgeInsets.fromLTRB(26, 12, 12, 12),
-          decoration: BoxDecoration(color: ExColor.tinta, borderRadius: BorderRadius.circular(18)),
+          decoration: BoxDecoration(
+              color: ExColor.banda, borderRadius: BorderRadius.circular(18), border: Border.all(color: ExColor.borde, width: 1.4)),
           child: Row(children: [
             Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
-              const Text('TOTAL', style: TextStyle(color: ExColor.textoClaro2, fontSize: 14, letterSpacing: 2)),
-              Text(formatoPesos(_t.totalCentavos), style: ExTexto.titulo(52, color: ExColor.concreto)),
+              const Text('TOTAL', style: TextStyle(color: ExColor.texto2, fontSize: 14, letterSpacing: 2, fontWeight: FontWeight.w600)),
+              Text(formatoPesos(_t.totalCentavos), style: ExTexto.titulo(52, color: ExColor.bandaTexto)),
             ]),
             const SizedBox(width: 20),
             SizedBox(

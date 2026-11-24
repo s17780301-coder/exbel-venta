@@ -172,12 +172,12 @@ class _BuscadorState extends State<_Buscador> {
         height: altoDialogo(context, 660),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Container(
-            color: ExColor.indigo,
+            color: ExColor.banda,
             padding: const EdgeInsets.fromLTRB(22, 10, 8, 10),
             child: Row(children: [
-              Text(widget.titulo.toUpperCase(), style: ExTexto.titulo(20, color: ExColor.blanco)),
+              Text(widget.titulo.toUpperCase(), style: ExTexto.titulo(20, color: ExColor.bandaTexto)),
               const Spacer(),
-              IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close, color: ExColor.blanco)),
+              IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close, color: ExColor.bandaTexto)),
             ]),
           ),
           Padding(

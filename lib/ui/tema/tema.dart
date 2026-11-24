@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Colores de la marca exBel en tonos suaves (poco saturados) para estar
-/// muchas horas frente a la pantalla sin cansar la vista.
+/// Colores de la marca exBel en tonos claros y suaves para estar muchas
+/// horas frente a la pantalla: fondos blanco hueso (no blanco puro), texto
+/// gris índigo muy oscuro (no negro puro), bloques grandes en lavanda claro
+/// en lugar de oscuros, y el color fuerte solo en detalles.
 abstract final class ExColor {
   /// Índigo casi negro: texto principal y paneles oscuros.
-  static const tinta = Color(0xFF1A1640);
+  static const tinta = Color(0xFF2B2845);
   static const tinta2 = Color(0xFF34315A);
 
   /// Índigo del logotipo.
@@ -15,9 +17,22 @@ abstract final class ExColor {
   static const lavanda = Color(0xFFC7C4E0);
 
   /// Coral: botones principales y lo que está activo (texto en [tinta]).
-  static const acento = Color(0xFFD9897C);
+  static const acento = Color(0xFFE09A8D);
 
-  static const concreto = Color(0xFFF5F4FA);
+  /// Barra superior y bandas de título (lavanda muy claro).
+  static const barra = Color(0xFFECEAF5);
+  static const banda = Color(0xFFDDDAF0);
+
+  /// Texto sobre [barra] y [banda].
+  static const bandaTexto = Color(0xFF34306A);
+
+  /// Encabezado de tablas.
+  static const encabezado = Color(0xFFE2DFF2);
+
+  /// Botón principal (relleno suave).
+  static const boton = Color(0xFFD3CFEC);
+
+  static const concreto = Color(0xFFF4F3F8);
   static const blanco = Color(0xFFFBFBFC);
   static const linea = Color(0xFFBDB8D6);
 
@@ -130,8 +145,9 @@ ThemeData temaExBel() {
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: ExColor.tinta,
-        foregroundColor: ExColor.concreto,
+        backgroundColor: ExColor.boton,
+        foregroundColor: ExColor.bandaTexto,
+        side: const BorderSide(color: ExColor.borde, width: 1.4),
         shape: boton,
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         textStyle: const TextStyle(fontWeight: FontWeight.w600),

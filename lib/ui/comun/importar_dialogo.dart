@@ -136,11 +136,11 @@ class _ImportarState extends State<_Importar> {
         height: altoDialogo(context, 700),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Container(
-            color: ExColor.tinta,
+            color: ExColor.banda,
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
             child: Text(
               widget.clientes ? 'Importar clientes' : 'Importar productos',
-              style: ExTexto.titulo(20, color: ExColor.concreto),
+              style: ExTexto.titulo(20, color: ExColor.bandaTexto),
             ),
           ),
           Expanded(

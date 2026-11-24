@@ -244,11 +244,11 @@ class ExAvatar extends StatelessWidget {
     return Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(color: ExColor.tinta, shape: BoxShape.circle),
+      decoration: const BoxDecoration(color: ExColor.banda, shape: BoxShape.circle),
       alignment: Alignment.center,
       child: Text(
         _iniciales,
-        style: ExTexto.titulo(size * 0.36, color: ExColor.acento),
+        style: ExTexto.titulo(size * 0.36, color: ExColor.bandaTexto),
       ),
     );
   }

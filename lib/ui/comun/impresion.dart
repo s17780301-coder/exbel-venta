@@ -78,13 +78,13 @@ Future<void> vistaPrevia(BuildContext context, Uint8List pdf, {String titulo = '
         height: altoDialogo(context, 760),
         child: Column(children: [
           Container(
-            color: ExColor.tinta,
+            color: ExColor.banda,
             padding: const EdgeInsets.fromLTRB(20, 14, 8, 14),
             child: Row(children: [
-              Expanded(child: Text(titulo, style: ExTexto.titulo(18, color: ExColor.concreto))),
+              Expanded(child: Text(titulo, style: ExTexto.titulo(18, color: ExColor.bandaTexto))),
               IconButton(
                 onPressed: () => Navigator.pop(c),
-                icon: const Icon(Icons.close, color: ExColor.concreto),
+                icon: const Icon(Icons.close, color: ExColor.bandaTexto),
               ),
             ]),
           ),

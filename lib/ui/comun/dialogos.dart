@@ -276,7 +276,10 @@ class EncabezadoTabla extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: ExColor.tinta,
+      decoration: const BoxDecoration(
+        color: ExColor.encabezado,
+        border: Border(bottom: BorderSide(color: ExColor.borde, width: 1.2)),
+      ),
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: tamano * 0.75),
       child: Row(children: [
         for (final c in columnas)
@@ -284,7 +287,7 @@ class EncabezadoTabla extends StatelessWidget {
             flex: c.$2,
             child: Text(c.$1,
                 textAlign: c.$3 ? TextAlign.right : TextAlign.left,
-                style: TextStyle(color: ExColor.concreto, fontWeight: FontWeight.w600, fontSize: tamano)),
+                style: TextStyle(color: ExColor.bandaTexto, fontWeight: FontWeight.w700, fontSize: tamano)),
           ),
       ]),
     );

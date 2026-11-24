@@ -240,9 +240,9 @@ class _CobroState extends State<_Cobro> {
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 Container(
-                  color: ExColor.indigo,
+                  color: ExColor.banda,
                   padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
-                  child: Text('COBRAR', style: ExTexto.titulo(22, color: ExColor.blanco)),
+                  child: Text('COBRAR', style: ExTexto.titulo(22, color: ExColor.bandaTexto)),
                 ),
                 Expanded(
                   child: SingleChildScrollView(
