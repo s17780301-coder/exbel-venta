@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../core/caja_local.dart';
+import '../core/emergencia.dart';
+import '../core/licencia.dart';
 import '../data/ajustes_repo.dart';
 import '../data/repos.dart';
 import '../models/modelos.dart';
@@ -77,18 +80,25 @@ class Principal extends StatefulWidget {
 class _PrincipalState extends State<Principal> {
   int _actual = 0;
   final _visitadas = <int>{0};
+  Timer? _latido;
+
+  void _latir() => latido(caja: cajaLocal.nombreCaja, cajero: sesion.cajero?.nombre ?? '', equipo: Licencia.instancia.equipo);
 
   @override
   void initState() {
     super.initState();
     HardwareKeyboard.instance.addHandler(_tecla);
     cambiosDatos.addListener(_refrescar);
+    // Latido a la nube: así exBel Alerta sabe que esta caja está en línea.
+    _latir();
+    _latido = Timer.periodic(const Duration(minutes: 3), (_) => _latir());
   }
 
   @override
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_tecla);
     cambiosDatos.removeListener(_refrescar);
+    _latido?.cancel();
     super.dispose();
   }
 

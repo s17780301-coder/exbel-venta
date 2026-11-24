@@ -52,7 +52,6 @@ bool _teclaEmergencia(KeyEvent e) {
   if (!k.isControlPressed || !k.isAltPressed) return false;
   try {
     enviarAlertaEmergencia(
-      tienda: repos.ajustes.texto(Ajuste.nombreNegocio),
       caja: cajaLocal.nombreCaja,
       cajero: sesion.cajero?.nombre ?? '',
       equipo: Licencia.instancia.equipo,

@@ -101,9 +101,52 @@ jobs:
           name: exbel-venta-portable
           path: build/windows/x64/runner/Release/
 
+  alerta:
+    name: App exBel Alerta (Android)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: alerta
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Crear el proyecto Android
+        run: flutter create --platforms=android --org mx.exbel --project-name exbel_alerta .
+      - name: Ajustar Android (permisos, servicio, firma)
+        env:
+          ALERTA_FIRMA: ${{ secrets.ALERTA_FIRMA }}
+          ALERTA_CLAVE: ${{ secrets.ALERTA_CLAVE }}
+        run: python3 ci/preparar_android.py
+      - run: flutter pub get
+      - name: Ícono
+        run: dart run flutter_launcher_icons
+      - run: flutter analyze --no-fatal-infos --no-fatal-warnings lib
+      - name: Compilar APK
+        env:
+          ALERTA_CLAVE: ${{ secrets.ALERTA_CLAVE }}
+        run: flutter build apk --release
+      - name: Versión
+        run: |
+          VER=$(grep -m1 '^version:' pubspec.yaml | sed 's/version: *//; s/+.*//')
+          printf '{"version":"%s","url":"https://github.com/%s/releases/download/ultima/exBel-alerta.apk"}\n' "$VER" "${{ github.repository }}" > alerta-version.json
+          cp build/app/outputs/flutter-apk/app-release.apk exBel-alerta.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exbel-alerta
+          path: |
+            alerta/exBel-alerta.apk
+            alerta/alerta-version.json
+
   publicar:
     name: Publicar descargas
-    needs: [windows]
+    needs: [windows, alerta]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
@@ -121,6 +164,7 @@ jobs:
           printf '{"version":"%s","url":"https://github.com/%s/releases/download/ultima/exBel-venta-instalador.exe"}\n' "$VER" "${{ github.repository }}" > version.json
           cat version.json
           cp artefactos/exbel-venta-instalador/exBel-venta-instalador.exe .
+          cp artefactos/exbel-alerta/exBel-alerta.apk artefactos/exbel-alerta/alerta-version.json .
           mkdir "exBel venta" && cp -r artefactos/exbel-venta-portable/. "exBel venta/"
           zip -qr exBel-venta-portable.zip "exBel venta"
       - uses: softprops/action-gh-release@v2
@@ -137,3 +181,5 @@ jobs:
             exBel-venta-instalador.exe
             exBel-venta-portable.zip
             version.json
+            exBel-alerta.apk
+            alerta-version.json

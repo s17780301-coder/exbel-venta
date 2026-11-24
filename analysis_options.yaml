@@ -4,3 +4,7 @@ linter:
   rules:
     prefer_single_quotes: true
     curly_braces_in_flow_control_structures: false
+
+analyzer:
+  exclude:
+    - alerta/**
