@@ -628,6 +628,10 @@ class _VentasPageState extends State<VentasPage> {
 
   // ---------------- Cobro ----------------
 
+  /// Lo que se cobra: el total redondeado a 50 centavos (si está activado).
+  int get _totalCobro =>
+      repos.ajustes.si(Ajuste.redondeo50) ? redondear50(_t.totalCentavos) : _t.totalCentavos;
+
   Future<void> _cobrar() async {
     if (_t.renglones.isEmpty || _ocupado) return;
     _fijarVivo();
@@ -636,10 +640,18 @@ class _VentasPageState extends State<VentasPage> {
     if (turno == null || cajero == null) return;
     _ocupado = true;
     try {
-      final r = await cobrar(context, _t.totalCentavos, cliente: _t.cliente, articulos: _t.piezas);
+      // Redondeo a 50 centavos: queda como un renglón "Redondeo" en la venta
+      // y en el ticket, así el corte y los reportes cuadran.
+      final total = _t.totalCentavos;
+      final cobro = _totalCobro;
+      final renglones = [
+        ..._t.renglones,
+        if (cobro != total) Renglon(descripcion: 'Redondeo', cantidad: 1, precioNormalCentavos: cobro - total),
+      ];
+      final r = await cobrar(context, cobro, cliente: _t.cliente, articulos: _t.piezas);
       if (r == null || !mounted) return;
       final venta = await repos.ventas.registrar(
-        renglones: _t.renglones,
+        renglones: renglones,
         pago: r.pago,
         turnoId: turno.id,
         cajeroId: cajero.id,
@@ -1088,7 +1100,7 @@ class _VentasPageState extends State<VentasPage> {
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   alignment: Alignment.centerLeft,
-                  child: Text(formatoPesos(_t.totalCentavos),
+                  child: Text(formatoPesos(_totalCobro),
                       style: ExTexto.titulo(52, color: ExEstilo.primarioOscuro, peso: FontWeight.w600).copyWith(fontFeatures: num, letterSpacing: -1.2)),
                 ),
               ]),

@@ -31,7 +31,7 @@ import '../sesion.dart';
 import '../tema/tema.dart';
 import '../zoom.dart';
 
-const versionExBel = '0.12.9';
+const versionExBel = '0.13.0';
 
 /// Configuración de la tienda.
 class ConfigPage extends StatefulWidget {
@@ -460,6 +460,8 @@ class _FormasPago extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       _titulo('Formas de pago', 'Efectivo, tarjeta, transferencia y pago mixto siempre están disponibles.'),
+      const _Interruptor(Ajuste.redondeo50, 'Redondear el total a 50 centavos',
+          'Al más cercano: \$15.45 se cobra \$15.50 y \$15.20 se cobra \$15.00. Sale como "Redondeo" en el ticket.'),
       const _Interruptor(Ajuste.usarCredito, 'Crédito (fiado)'),
       const _Campo(Ajuste.avisoCredito, 'Avisar al llegar a este % del tope de crédito', ayuda: 'Ej. 80 = avisa cuando el cliente ya usó el 80 % de su tope', numero: true),
       const _Interruptor(Ajuste.permitirCobroMenor, 'Permitir cobrar en efectivo menos del total',

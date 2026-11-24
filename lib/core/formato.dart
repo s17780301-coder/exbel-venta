@@ -55,3 +55,10 @@ String formatoFechaHora(DateTime f) =>
 
 /// "21/11/2026"
 String formatoFecha(DateTime f) => '${_dos(f.day)}/${_dos(f.month)}/${f.year}';
+
+/// Redondea a 50 centavos, al más cercano: 15.20 → 15.00, 15.45 → 15.50,
+/// 15.80 → 16.00 (15.25 sube a 15.50).
+int redondear50(int centavos) {
+  final r = centavos % 50;
+  return r >= 25 ? centavos - r + 50 : centavos - r;
+}

@@ -61,6 +61,9 @@ abstract final class Ajuste {
 
   // Cajón de dinero conectado a la impresora de tickets.
   static const cajonAbrir = 'cajon_abrir';
+
+  // Al cobrar, el total se redondea a 50 centavos (al más cercano).
+  static const redondeo50 = 'redondeo_50';
   static const cajonImpresora = 'cajon_impresora';
 
   static const omision = <String, String>{
@@ -94,6 +97,7 @@ abstract final class Ajuste {
     folioMinimo: '0',
     simboloMoneda: '\$',
     cajonAbrir: '0',
+    redondeo50: '1',
     cajonImpresora: '',
   };
 }
