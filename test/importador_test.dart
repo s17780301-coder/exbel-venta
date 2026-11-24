@@ -19,7 +19,7 @@ void main() {
 
   tearDown(() => repos.db.close());
 
-  test('detecta columnas al estilo Eleventa aunque haya un título arriba', () {
+  test('detecta columnas de otro punto de venta aunque haya un título arriba', () {
     final filas = leerCsvTexto('Catálogo de productos\n'
         'Código,Descripción,Precio Costo,Precio Venta,Precio Mayoreo,Departamento,Existencia,Inv. Mínimo,Tipo de Venta\n'
         '7501055300846,Refresco 600 ml,12.50,18.00,16.50,Bebidas,48,12,Unidad\n'
@@ -109,8 +109,8 @@ void main() {
     expect((await repos.caja.turnoAbierto())?.id, turno.id);
   });
 
-  test('lee el Excel que exporta Eleventa (FlexCel) e importa', () async {
-    final bytes = File('test/datos/eleventa_muestra.xlsx').readAsBytesSync();
+  test('lee un Excel FlexCel de otro punto de venta e importa', () async {
+    final bytes = File('test/datos/muestra_flexcel.xlsx').readAsBytesSync();
     final filas = leerTabla(bytes, 'inventario.xlsx');
     expect(filas.length, 41);
     expect(filas.first.first, 'Código');

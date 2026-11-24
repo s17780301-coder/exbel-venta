@@ -30,7 +30,7 @@ En **Releases → ultima**:
   - Faltante o sobrante, ventas por forma de pago, por departamento e impuestos.
   - Historial de turnos.
 - **Reportes:** por día, producto, departamento, cajero, cliente, hora y forma de pago, más productos sin venta. Todos se exportan a Excel.
-- **Importar desde Eleventa:** el catálogo (.xlsx o CSV) con existencias, y los clientes con lo que deben. Detecta las columnas solo.
+- **Importar desde otro sistema:** el catálogo (.xlsx o CSV) con existencias, y los clientes con lo que deben. Detecta las columnas solo.
 - **Configuración:**
   - Tienda y ticket (logotipo, 58/80 mm, impresora).
   - Cajeros con contraseña y permisos (o autorización de supervisor), báscula y respaldos (automáticos y manuales).

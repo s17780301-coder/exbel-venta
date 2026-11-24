@@ -80,6 +80,9 @@ class _ArranqueState extends State<_Arranque> {
   String? _error;
   bool _listo = false;
 
+  /// La presentación se ve al menos este tiempo.
+  late final Future<void> _presentacion = Future<void>.delayed(const Duration(milliseconds: 2600));
+
   @override
   void initState() {
     super.initState();
@@ -109,6 +112,7 @@ class _ArranqueState extends State<_Arranque> {
       if (simbolo.trim().isNotEmpty) simboloMoneda = simbolo.trim();
       final z = repos.ajustes.numero(Ajuste.zoom);
       if (z >= 0.8 && z <= 2) zoomPantalla.value = z;
+      await _presentacion;
       if (mounted) setState(() => _listo = true);
     } catch (e, s) {
       await _registrarError('$e\n$s');
@@ -123,12 +127,28 @@ class _ArranqueState extends State<_Arranque> {
       backgroundColor: ExColor.barra,
       body: Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const ExMarca(oscuro: false, tamano: 34),
-          const SizedBox(height: 8),
-          Text('venta', style: ExTexto.marca(20, color: ExColor.texto2, peso: FontWeight.w300)),
-          const SizedBox(height: 32),
+          // Presentación de la marca.
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 900),
+            curve: Curves.easeOutCubic,
+            builder: (_, v, hijo) => Opacity(
+              opacity: v,
+              child: Transform.translate(offset: Offset(0, 14 * (1 - v)), child: hijo),
+            ),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const ExMarca(oscuro: false, tamano: 72),
+              const SizedBox(height: 18),
+              Container(width: 90, height: 5, decoration: BoxDecoration(color: ExColor.acento, borderRadius: BorderRadius.circular(3))),
+              const SizedBox(height: 18),
+              Text('SISTEMAS PROFESIONALES DE SIMPLIFICACIÓN MERCANTIL',
+                  textAlign: TextAlign.center,
+                  style: ExTexto.marca(17, color: ExColor.bandaTexto, peso: FontWeight.w400).copyWith(letterSpacing: 3.2)),
+            ]),
+          ),
+          const SizedBox(height: 48),
           if (_error == null)
-            const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(color: ExColor.acento))
+            const SizedBox(width: 160, child: LinearProgressIndicator(color: ExColor.acento, backgroundColor: ExColor.banda, minHeight: 3))
           else ...[
             Text(cajaLocal.esSecundaria ? 'No se pudo conectar con la caja principal' : 'exBel venta no pudo abrir su base de datos',
                 style: ExTexto.titulo(20, color: ExColor.bandaTexto)),

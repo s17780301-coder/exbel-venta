@@ -18,7 +18,7 @@ class ResultadoCobro {
   final String notas;
 }
 
-/// F12: cobrar, como en Eleventa: total grande, forma de pago con íconos,
+/// F12: cobrar: total grande, forma de pago con íconos,
 /// "Pagó con" y "Su cambio", y a la derecha F1 / F2 / ESC / F4.
 /// En "Mixto" se combinan efectivo, tarjeta, transferencia, vales, dólares
 /// y crédito.
@@ -260,7 +260,7 @@ class _CobroState extends State<_Cobro> {
                 ),
               ]),
             ),
-            // Columna derecha, como en Eleventa.
+            // Columna derecha.
             Container(
               width: 290,
               color: ExColor.concreto,

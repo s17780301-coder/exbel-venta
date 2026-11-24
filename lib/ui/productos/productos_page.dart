@@ -68,7 +68,7 @@ class _ProductosPageState extends State<ProductosPage> {
   }
 
   /// Elimina el producto seleccionado (o los marcados). Si no hay ninguno,
-  /// lo pide por código o nombre, como en Eleventa.
+  /// lo pide por código o nombre.
   Future<void> _eliminar() async {
     if (!await _puede()) return;
     var ids = _sel.toList();
@@ -186,7 +186,7 @@ class _ProductosPageState extends State<ProductosPage> {
           const Spacer(),
         ]),
         const SizedBox(height: 10),
-        // Barra de botones como en Eleventa.
+        // Barra de botones.
         Wrap(spacing: 6, runSpacing: 6, children: [
           _boton(Icons.add_circle_outline, 'Nuevo', () => _editar()),
           _boton(Icons.edit_outlined, 'Modificar', () async {

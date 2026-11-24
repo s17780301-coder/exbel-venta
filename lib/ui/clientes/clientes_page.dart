@@ -190,7 +190,7 @@ class _ClientesPageState extends State<ClientesPage> {
                         }
                       },
                       itemBuilder: (_) => const [
-                        PopupMenuItem(value: 'imp', child: Text('Importar clientes (Eleventa o Excel)')),
+                        PopupMenuItem(value: 'imp', child: Text('Importar clientes desde Excel')),
                         PopupMenuItem(value: 'exp', child: Text('Exportar saldos a Excel')),
                       ],
                       icon: const Icon(Icons.more_vert),

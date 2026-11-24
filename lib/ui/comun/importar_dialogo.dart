@@ -10,7 +10,7 @@ import '../tema/tema.dart';
 import '../zoom.dart';
 import 'dialogos.dart';
 
-/// Importa productos o clientes desde el Excel que exporta Eleventa (u otro
+/// Importa productos o clientes desde el Excel que exporta otro sistema (u otro
 /// sistema). Detecta las columnas solo y deja corregirlas antes de importar.
 Future<void> importarDesdeArchivo(BuildContext context, {bool clientes = false}) async {
   final r = await FilePicker.platform.pickFiles(
@@ -192,7 +192,7 @@ class _ImportarState extends State<_Importar> {
                     value: _granel,
                     onChanged: (v) => setState(() => _granel = v ?? true),
                     title: Text('Marcar como granel (kg) los que tienen existencia con decimales ($_conDecimales productos)'),
-                    subtitle: const Text('Eleventa no exporta si un producto es a granel; los decimales (ej. arroz 20.24) lo delatan.'),
+                    subtitle: const Text('Muchos sistemas no exportan si un producto es a granel; los decimales (ej. arroz 20.24) lo delatan.'),
                   ),
                 if (!widget.clientes)
                   CheckboxListTile(

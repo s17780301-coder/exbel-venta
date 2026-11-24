@@ -72,7 +72,7 @@ class ClientesRepo {
       (await db.rawQuery('SELECT COALESCE(SUM(saldo_centavos), 0) AS s FROM clientes WHERE activo = 1'))
           .first['s'] as int;
 
-  /// Deuda que el cliente ya traía (de Eleventa u otro sistema, o de la
+  /// Deuda que el cliente ya traía (de otro sistema, o de la
   /// libreta). Se suma a su saldo y aparece en el estado de cuenta.
   Future<void> fijarSaldoAnterior(String clienteId, int montoCentavos) async {
     if (montoCentavos < 0) throw const ErrorNegocio('El saldo anterior no puede ser negativo.');

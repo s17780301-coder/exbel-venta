@@ -21,7 +21,7 @@ List<List<String>> leerTabla(List<int> bytes, String nombre) {
 }
 
 /// Lector propio de .xlsx (es un ZIP con XML): lee el texto de las celdas de
-/// la hoja con más filas. Funciona con los archivos que exporta Eleventa.
+/// la hoja con más filas. Funciona con los Excel que exportan otros puntos de venta.
 List<List<String>> leerXlsx(List<int> bytes) {
   final zip = ZipDecoder().decodeBytes(bytes);
   String? texto(ArchiveFile? f) => f == null ? null : utf8.decode(f.content as List<int>, allowMalformed: true);
@@ -142,7 +142,7 @@ String normalizar(String s) {
 }
 
 /// Un dato que se puede importar y cómo se puede llamar su columna en
-/// Eleventa, SICAR, Abarrotes PDV o un Excel hecho a mano.
+/// otros puntos de venta o un Excel hecho a mano.
 class Campo {
   const Campo(this.clave, this.nombre, this.sinonimos, {this.obligatorio = false});
   final String clave;
@@ -243,7 +243,7 @@ double? leerNumero(String s) {
   return c == null ? null : c / 100;
 }
 
-/// "20.24" sí; "18.00" no. Eleventa no exporta si es a granel, pero una
+/// "20.24" sí; "18.00" no. Otros sistemas no exportan si es a granel, pero una
 /// existencia con decimales casi siempre lo indica (arroz, aguacate…).
 bool tieneDecimales(String s) {
   final n = leerNumero(s);

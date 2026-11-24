@@ -11,7 +11,7 @@ import '../sesion.dart';
 import '../tema/tema.dart';
 import '../zoom.dart';
 
-/// Historial de ventas (como en Eleventa): ventas del día o de otras fechas
+/// Historial de ventas: ventas del día o de otras fechas
 /// (hasta un mes atrás con un clic), reimprimir, devolver y cancelar.
 /// Con [clienteId] muestra todas las compras de ese cliente.
 Future<void> mostrarVentasDelDia(BuildContext context, {Venta? venta, String? clienteId, String? clienteNombre}) {

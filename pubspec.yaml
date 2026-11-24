@@ -1,7 +1,7 @@
 name: exbel_venta
 description: exBel venta — punto de venta para tiendas de abarrotes y comercios. Windows, pantalla completa, funciona sin internet.
 publish_to: 'none'
-version: 0.6.4+18
+version: 0.6.5+19
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -27,7 +27,7 @@ dependencies:
   window_manager: ^0.4.2
   # Claves de cajero (se guardan cifradas).
   crypto: ^3.0.3
-  # Importar el catálogo de Eleventa (.xlsx): se lee el ZIP y el XML.
+  # Importar catálogos en Excel (.xlsx): se lee el ZIP y el XML.
   archive: ^3.4.10
   xml: ^6.3.0
   # Ticket por WhatsApp.

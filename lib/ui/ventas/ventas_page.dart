@@ -599,7 +599,7 @@ class _VentasPageState extends State<VentasPage> {
   @override
   Widget build(BuildContext context) {
     return Column(children: [
-      // Banda como en Eleventa: "VENTA - Ticket 3".
+      // Banda de título: "VENTA - Ticket 3".
       Container(
         width: double.infinity,
         color: ExColor.banda,
@@ -951,7 +951,7 @@ class _VentasPageState extends State<VentasPage> {
             ]),
           ]),
         ),
-        // Como Eleventa: siempre a la vista lo que pagó y su cambio.
+        // Siempre a la vista lo que pagó y su cambio.
         Container(
           margin: const EdgeInsets.only(right: 16),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),

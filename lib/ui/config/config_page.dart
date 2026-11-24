@@ -25,7 +25,7 @@ import '../sesion.dart';
 import '../tema/tema.dart';
 import '../zoom.dart';
 
-const versionExBel = '0.6.4';
+const versionExBel = '0.6.5';
 
 /// Configuración de la tienda.
 class ConfigPage extends StatefulWidget {
@@ -48,7 +48,7 @@ const _verde = Color(0xFF3D7A55);
 const _naranja = Color(0xFFB9824A);
 const _azul = Color(0xFF4F6E9E);
 
-/// Como en Eleventa: íconos por grupo.
+/// Íconos por grupo.
 final _grupos = <(String, List<_Opcion>)>[
   (
     'General',
@@ -590,9 +590,9 @@ class _Precargados extends StatelessWidget {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       _titulo('Artículos precargados'),
       ExSeccion(
-        titulo: 'Traer tu catálogo de Eleventa',
+        titulo: 'Traer tu catálogo de otro sistema',
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Exporta tu catálogo desde Eleventa (F3 Productos → Catálogo → Exportar) e impórtalo aquí. '
+          const Text('Exporta tu catálogo a Excel desde tu sistema anterior e impórtalo aquí. '
               'Se reconocen las columnas solas.'),
           const SizedBox(height: 10),
           FilledButton.icon(
@@ -960,7 +960,7 @@ class _PantallaState extends State<_Pantalla> {
     const opciones = [(1.0, 'Normal'), (1.15, 'Grande'), (1.3, 'Más grande'), (1.5, 'Muy grande')];
     final actual = zoomPantalla.value;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      _titulo('Tamaño de la pantalla', 'Agranda letras, botones y tablas. "Grande" se parece al tamaño de Eleventa.'),
+      _titulo('Tamaño de la pantalla', 'Agranda letras, botones y tablas. "Grande" es el recomendado para el mostrador.'),
       Wrap(spacing: 10, runSpacing: 10, children: [
         for (final o in opciones)
           ChoiceChip(
@@ -1109,7 +1109,7 @@ class _Respaldos extends StatelessWidget {
         titulo: 'Empezar de cero',
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('Borra los productos de prueba, clientes o ventas antes de meter el inventario real '
-              '(por ejemplo, el que traes de Eleventa). Los cajeros y la configuración se conservan.'),
+              '(por ejemplo, el que traes de tu sistema anterior). Los cajeros y la configuración se conservan.'),
           const SizedBox(height: 12),
           FilledButton.icon(
             style: FilledButton.styleFrom(backgroundColor: ExColor.rojo),
