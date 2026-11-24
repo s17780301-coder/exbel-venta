@@ -120,7 +120,7 @@ class ProductosRepo {
     if (p.precioCentavos <= 0 && !p.esKit) throw const ErrorNegocio('Escribe el precio de venta.');
     if (p.codigo.trim().isNotEmpty) {
       final rep = await db.query('productos',
-          where: 'codigo = ? COLLATE NOCASE AND activo = 1 AND id <> ?', whereArgs: [p.codigo.trim(), p.id]);
+          where: 'TRIM(codigo) = ? COLLATE NOCASE AND activo = 1 AND id <> ?', whereArgs: [p.codigo.trim(), p.id]);
       if (rep.isNotEmpty) {
         throw ErrorNegocio('El código ${p.codigo} ya es de "${rep.first['descripcion']}".');
       }
@@ -145,6 +145,57 @@ class ProductosRepo {
       }
     });
     return (await porId(p.id))!;
+  }
+
+  /// Otro producto activo con el mismo código (sin importar espacios ni
+  /// mayúsculas). [excepto]: el que se está editando.
+  Future<Producto?> conCodigo(String codigo, {String? excepto}) async {
+    codigo = codigo.trim();
+    if (codigo.isEmpty) return null;
+    final f = await db.rawQuery(
+        '$_selectProducto WHERE p.activo = 1 AND TRIM(p.codigo) = ? COLLATE NOCASE AND p.id <> ? LIMIT 1', [codigo, excepto ?? '']);
+    return f.isEmpty ? null : Producto.desdeMapa(f.first);
+  }
+
+  /// Otro producto activo con el mismo nombre (sin acentos, mayúsculas ni
+  /// espacios de más).
+  Future<Producto?> conNombre(String descripcion, {String? excepto}) async {
+    final n = sinAcentos(descripcion);
+    if (n.isEmpty) return null;
+    final f = await db.rawQuery('$_selectProducto WHERE p.activo = 1 AND p.busqueda LIKE ? AND p.id <> ?', ['$n%', excepto ?? '']);
+    for (final m in f) {
+      final p = Producto.desdeMapa(m);
+      if (sinAcentos(p.descripcion) == n) return p;
+    }
+    return null;
+  }
+
+  /// Productos repetidos que ya están en el catálogo: grupos con el mismo
+  /// código o el mismo nombre.
+  Future<List<({String motivo, List<Producto> productos})>> duplicados() async {
+    final todos = (await db.rawQuery('$_selectProducto WHERE p.activo = 1 ORDER BY p.descripcion'))
+        .map(Producto.desdeMapa)
+        .toList();
+    final porCodigo = <String, List<Producto>>{};
+    final porNombre = <String, List<Producto>>{};
+    for (final p in todos) {
+      final c = p.codigo.trim().toLowerCase();
+      if (c.isNotEmpty) porCodigo.putIfAbsent(c, () => []).add(p);
+      porNombre.putIfAbsent(sinAcentos(p.descripcion), () => []).add(p);
+    }
+    final grupos = <({String motivo, List<Producto> productos})>[];
+    final vistos = <String>{};
+    for (final e in porCodigo.entries) {
+      if (e.value.length < 2) continue;
+      grupos.add((motivo: 'Mismo código: ${e.value.first.codigo.trim()}', productos: e.value));
+      vistos.add(e.value.map((p) => p.id).toList().join(','));
+    }
+    for (final e in porNombre.entries) {
+      if (e.value.length < 2 || e.key.isEmpty) continue;
+      if (vistos.contains(e.value.map((p) => p.id).toList().join(','))) continue;
+      grupos.add((motivo: 'Mismo nombre: ${e.value.first.descripcion}', productos: e.value));
+    }
+    return grupos;
   }
 
   /// Los productos no se borran (tienen ventas); se dan de baja.

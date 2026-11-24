@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../core/formato.dart';
 import '../../core/ids.dart';
+import '../../core/texto.dart';
 import '../../data/ajustes_repo.dart';
 import '../../data/repos.dart';
 import '../../models/modelos.dart';
@@ -30,6 +33,18 @@ String _cant(double c) => c == 0 ? '' : formatoCantidad(c);
 class _FormState extends State<_Form> {
   late final Producto? p = widget.p;
   late final _codigo = TextEditingController(text: p?.codigo ?? '');
+
+  /// Anti duplicados: si el código ya es de otro producto se avisa al momento.
+  Producto? _codigoOcupado;
+  Timer? _esperaCodigo;
+
+  void _revisarCodigo(String c) {
+    _esperaCodigo?.cancel();
+    _esperaCodigo = Timer(const Duration(milliseconds: 250), () async {
+      final o = await repos.productos.conCodigo(c, excepto: p?.id);
+      if (mounted) setState(() => _codigoOcupado = o);
+    });
+  }
   late final _desc = TextEditingController(text: p?.descripcion ?? '');
   late final _costo = TextEditingController(text: _pesos(p?.costoCentavos ?? 0));
   late final _ganancia = TextEditingController(
@@ -71,6 +86,7 @@ class _FormState extends State<_Form> {
 
   @override
   void dispose() {
+    _esperaCodigo?.cancel();
     for (final c in [_codigo, _desc, _costo, _ganancia, _precio, _mayoreo, _desde, _existencia, _minimo, _maximo, _ieps]) {
       c.dispose();
     }
@@ -128,6 +144,39 @@ class _FormState extends State<_Form> {
 
   Future<void> _guardar() async {
     if (_tipo == 'kit' && _componentes.isEmpty) return aviso(context, 'Agrega los productos que lleva el paquete.');
+    // Anti duplicados: código repetido no se permite; nombre repetido se pregunta.
+    final ocupado = await repos.productos.conCodigo(_codigo.text, excepto: p?.id);
+    if (!mounted) return;
+    if (ocupado != null) {
+      setState(() => _codigoOcupado = ocupado);
+      await showDialog<void>(
+        context: context,
+        builder: (c) => AlertDialog(
+          title: const Text('Código ocupado'),
+          content: Text('El código ${_codigo.text.trim()} ya es de "${ocupado.descripcion}" '
+              '(${formatoPesos(ocupado.precioCentavos)}). Usa otro código o modifica ese producto.'),
+          actions: [FilledButton(onPressed: () => Navigator.pop(c), child: const Text('Entendido'))],
+        ),
+      );
+      return;
+    }
+    final cambioNombre = p == null || sinAcentos(p!.descripcion) != sinAcentos(_desc.text);
+    if (cambioNombre) {
+      final igual = await repos.productos.conNombre(_desc.text, excepto: p?.id);
+      if (!mounted) return;
+      if (igual != null &&
+          !await confirmar(
+            context,
+            'Producto repetido',
+            'Ya existe "${igual.descripcion}"${igual.codigo.isEmpty ? '' : ' con el código ${igual.codigo}'} '
+                'a ${formatoPesos(igual.precioCentavos)}. ¿Quieres guardar otro producto con el mismo nombre?',
+            si: 'Guardar de todos modos',
+            no: 'No, cancelar',
+          )) {
+        return;
+      }
+      if (!mounted) return;
+    }
     final nuevo = Producto(
       id: p?.id ?? nuevoId(),
       codigo: _codigo.text.trim(),
@@ -181,7 +230,13 @@ class _FormState extends State<_Form> {
                 controller: _codigo,
                 autofocus: p == null,
                 style: ExTexto.mono(15, peso: FontWeight.w500),
-                decoration: const InputDecoration(labelText: 'Código de barras', helperText: 'Escanéalo o inventa uno corto'),
+                onChanged: _revisarCodigo,
+                decoration: InputDecoration(
+                  labelText: 'Código de barras',
+                  helperText: 'Escanéalo o inventa uno corto',
+                  errorText: _codigoOcupado == null ? null : 'Ya es de "${_codigoOcupado!.descripcion}"',
+                  errorMaxLines: 2,
+                ),
               ),
               TextField(
                 controller: _desc,

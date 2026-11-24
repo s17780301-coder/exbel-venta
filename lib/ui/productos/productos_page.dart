@@ -14,6 +14,7 @@ import '../comun/ex_widgets.dart';
 import '../sesion.dart';
 import '../tema/tema.dart';
 import '../ventas/buscar_producto.dart';
+import 'duplicados.dart';
 import 'producto_form.dart';
 
 /// F3: catálogo de productos.
@@ -259,6 +260,14 @@ class _ProductosPageState extends State<ProductosPage> {
           _boton(Icons.file_download_outlined, 'Importar', _importar),
           _boton(Icons.file_upload_outlined, 'Exportar', _exportar),
           _boton(Icons.checklist, 'Marcar todos', _marcarTodos),
+          _boton(Icons.content_copy_rounded, 'Repetidos', () async {
+            if (!await _puede()) return;
+            if (!mounted) return;
+            if (await revisarDuplicados(context)) {
+              avisarCambio();
+              _cargar();
+            }
+          }),
           _boton(Icons.science_outlined, 'Productos de ejemplo', _ejemplo),
         ]),
         const SizedBox(height: 12),

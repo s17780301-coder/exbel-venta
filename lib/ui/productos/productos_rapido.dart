@@ -127,12 +127,26 @@ class _AgregarState extends State<_Agregar> {
   }
 
   Future<void> _revisarCodigo(String c) async {
-    final p = c.trim().isEmpty ? null : await repos.productos.porCodigo(c.trim());
+    final p = await repos.productos.conCodigo(c);
     if (mounted) setState(() => _existente = p);
   }
 
   Future<void> _guardar() async {
-    if (_existente != null) return aviso(context, 'Ese código ya es de "${_existente!.descripcion}".');
+    final ocupado = await repos.productos.conCodigo(_codigo.text);
+    if (!mounted) return;
+    if (ocupado != null) {
+      setState(() => _existente = ocupado);
+      return aviso(context, 'Ese código ya es de "${ocupado.descripcion}". Usa otro código.');
+    }
+    final igual = await repos.productos.conNombre(_desc.text);
+    if (!mounted) return;
+    if (igual != null &&
+        !await confirmar(context, 'Producto repetido',
+            'Ya existe "${igual.descripcion}"${igual.codigo.isEmpty ? '' : ' con el código ${igual.codigo}'}. ¿Agregar otro con el mismo nombre?',
+            si: 'Agregar de todos modos', no: 'No, cancelar')) {
+      return;
+    }
+    if (!mounted) return;
     final p = Producto(
       id: nuevoId(),
       codigo: _codigo.text.trim(),
