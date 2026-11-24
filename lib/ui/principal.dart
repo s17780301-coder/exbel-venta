@@ -50,6 +50,12 @@ bool Function() codigoVentasVacio = () => true;
 /// Borra lo que se haya escrito en el campo de código (al activar el pánico).
 void Function() limpiarCapturaVentas = () {};
 
+/// Pone el cursor en el campo de código de Ventas.
+void Function() enfocarVentas = () {};
+
+/// true mientras la sección visible es Ventas.
+bool ventasVisible = true;
+
 class _Seccion {
   const _Seccion(this.nombre, this.tecla, this.icono, this.permiso, this.tono);
   final String nombre;
@@ -80,7 +86,7 @@ class Principal extends StatefulWidget {
   State<Principal> createState() => _PrincipalState();
 }
 
-class _PrincipalState extends State<Principal> {
+class _PrincipalState extends State<Principal> with WidgetsBindingObserver {
   int _actual = 0;
   final _visitadas = <int>{0};
   Timer? _latido;
@@ -90,6 +96,7 @@ class _PrincipalState extends State<Principal> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     HardwareKeyboard.instance.addHandler(_tecla);
     cambiosDatos.addListener(_refrescar);
     // Latido a la nube: así exBel Alerta sabe que esta caja está en línea.
@@ -98,7 +105,19 @@ class _PrincipalState extends State<Principal> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState estado) {
+    // Al volver a exBel desde otro programa, el cursor regresa al código.
+    if (estado == AppLifecycleState.resumed && _actual == 0) enfocarVentas();
+  }
+
+  /// Después de cerrar una ventana abierta desde aquí (F3, F10…).
+  void _volverAlCodigo() {
+    if (mounted && _actual == 0) enfocarVentas();
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     HardwareKeyboard.instance.removeHandler(_tecla);
     cambiosDatos.removeListener(_refrescar);
     _latido?.cancel();
@@ -131,7 +150,7 @@ class _PrincipalState extends State<Principal> {
     };
     // F3: ventana rápida para agregar o eliminar productos.
     if (e.logicalKey == LogicalKeyboardKey.f3) {
-      productosRapido(context);
+      productosRapido(context).then((_) => _volverAlCodigo());
       return true;
     }
     final i = mapa[e.logicalKey];
@@ -173,11 +192,14 @@ class _PrincipalState extends State<Principal> {
       _actual = i;
       _visitadas.add(i);
     });
+    ventasVisible = i == 0;
+    // Al regresar a Ventas, el cursor queda listo en el campo de código.
+    if (i == 0) enfocarVentas();
   }
 
   Future<void> _buscarUniversal() async {
     final h = await buscarUniversal(context);
-    if (h == null || !mounted) return;
+    if (h == null || !mounted) return _volverAlCodigo();
     final p = h.producto, c = h.cliente, v = h.venta;
     final enInventario = elegirEnInventario;
     if (p != null && _actual == 3 && enInventario != null) {
@@ -191,6 +213,7 @@ class _PrincipalState extends State<Principal> {
     } else if (v != null) {
       await mostrarVentasDelDia(context, venta: v);
     }
+    _volverAlCodigo();
   }
 
   Future<void> _cambiarCajero() async {

@@ -79,6 +79,8 @@ class _VentasPageState extends State<VentasPage> {
     limpiarCapturaVentas = () {
       if (mounted) _codigo.clear();
     };
+    enfocarVentas = _enfocar;
+    FocusManager.instance.addListener(_vigilarFoco);
     encabezadoVentas.value = (_) => _ticketsSegmentados();
     _cargarFavoritos();
     _restaurarTickets();
@@ -176,6 +178,7 @@ class _VentasPageState extends State<VentasPage> {
 
   @override
   void dispose() {
+    FocusManager.instance.removeListener(_vigilarFoco);
     _fijarVivo();
     teclasVentas.removeListener(_alTeclear);
     encabezadoVentas.value = null;
@@ -194,8 +197,16 @@ class _VentasPageState extends State<VentasPage> {
   }
 
   void _enfocar() => WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _focoCodigo.requestFocus();
+        if (mounted && ventasVisible && (ModalRoute.of(context)?.isCurrent ?? true)) _focoCodigo.requestFocus();
       });
+
+  /// Red de seguridad: si en Ventas nada tiene el cursor (por ejemplo, al
+  /// cerrar una ventana), regresa al campo de código.
+  void _vigilarFoco() {
+    if (!mounted || !ventasVisible) return;
+    final f = FocusManager.instance.primaryFocus;
+    if (f == null || f is FocusScopeNode) _enfocar();
+  }
 
   // ---------------- Teclado ----------------
 
