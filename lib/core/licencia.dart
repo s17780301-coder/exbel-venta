@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -137,6 +138,8 @@ class Licencia {
       'p_caja': caja,
       'p_version': version,
       'p_inicio_local': e.inicio.toUtc().toIso8601String(),
+      // Si se activó con código en esta caja, la nube lo comprueba y lo registra.
+      if (e.activada && '${_d['activacion'] ?? ''}'.isNotEmpty) 'p_activacion': '${_d['activacion']}',
     });
     if (r is! Map) return;
     final inicioNube = DateTime.tryParse('${r['prueba_inicio']}')?.toLocal();
@@ -170,6 +173,8 @@ class Licencia {
     await _escribirRegistro('activacion', codigo.trim().toUpperCase());
     final e = estado;
     estado = EstadoLicencia(equipo: equipo, activada: true, diasRestantes: e?.diasRestantes ?? 0, inicio: e?.inicio ?? DateTime.now());
+    // Avisa a la nube (sin esperar): así la venta queda registrada en Supabase.
+    unawaited(sincronizarNube().catchError((_) {}));
     return true;
   }
 
