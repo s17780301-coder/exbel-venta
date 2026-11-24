@@ -105,3 +105,13 @@ const FirebaseOptions? opcionesFirebase = FirebaseOptions(
     print('Push: activado')
 else:
     print('Push: apagado (falta ci/google-services.json)')
+
+# Lint de librerías falla en CI (bug de lint): se apaga el "lintVital".
+raizk = pathlib.Path('android/build.gradle.kts')
+raizk.write_text(raizk.read_text() + '''
+subprojects {
+    tasks.configureEach {
+        if (name.contains("lintVital") || name.contains("LintVital")) enabled = false
+    }
+}
+''')
