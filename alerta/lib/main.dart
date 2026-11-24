@@ -11,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'actualizar.dart';
 import 'nube.dart';
+import 'nube.dart' as nube;
 import 'servicio.dart';
 
 // Colores de exBel.
@@ -587,7 +588,7 @@ class Historial extends StatelessWidget {
               Expanded(child: Text(v.tienda, style: const TextStyle(fontWeight: FontWeight.w600))),
               TextButton(
                 onPressed: () async {
-                  final l = await vinculos();
+                  final l = await nube.vinculos();
                   l.removeWhere((x) => x.token == v.token);
                   await guardarVinculos(l);
                   if (context.mounted) Navigator.of(context).pop();
