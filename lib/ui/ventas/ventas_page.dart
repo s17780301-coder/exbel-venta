@@ -12,6 +12,7 @@ import '../../data/ajustes_repo.dart';
 import '../../data/repos.dart';
 import '../../models/modelos.dart';
 import '../comun/dialogos.dart';
+import '../comun/ex_ui.dart';
 import '../config/config_page.dart' show versionExBel;
 import '../comun/impresion.dart';
 import '../principal.dart';
@@ -67,6 +68,7 @@ class _VentasPageState extends State<VentasPage> {
     teclasVentas.addListener(_alTeclear);
     cambiosDatos.addListener(_cargarFavoritos);
     codigoVentasVacio = () => _codigo.text.isEmpty;
+    encabezadoVentas.value = (_) => _ticketsSegmentados();
     _cargarFavoritos();
     _restaurarTickets();
   }
@@ -76,6 +78,7 @@ class _VentasPageState extends State<VentasPage> {
   @override
   void setState(VoidCallback fn) {
     super.setState(fn);
+    refrescoEncabezado.value++;
     _guardado?.cancel();
     _guardado = Timer(const Duration(milliseconds: 400), _guardarTickets);
   }
@@ -152,6 +155,7 @@ class _VentasPageState extends State<VentasPage> {
   @override
   void dispose() {
     teclasVentas.removeListener(_alTeclear);
+    encabezadoVentas.value = null;
     _guardado?.cancel();
     _guardarTickets();
     cambiosDatos.removeListener(_cargarFavoritos);
@@ -209,6 +213,8 @@ class _VentasPageState extends State<VentasPage> {
       _descuento();
     } else if (ctrl && k == LogicalKeyboardKey.keyB) {
       _ventasDelDia();
+    } else if (ctrl && k == LogicalKeyboardKey.keyR) {
+      _reimprimir();
     }
   }
 
@@ -599,70 +605,62 @@ class _VentasPageState extends State<VentasPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(children: [
-      // Banda de título: "VENTA - Ticket 3".
-      Container(
-        width: double.infinity,
-        color: ExColor.banda,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: Row(children: [
-          Text('VENTA - ${_t.nombre}', style: ExTexto.titulo(19, color: ExColor.bandaTexto)),
-          if (_t.cliente != null) ...[
-            const SizedBox(width: 16),
-            const Icon(Icons.person, color: ExColor.indigo, size: 20),
-            const SizedBox(width: 4),
-            Text(_t.cliente!.nombre, style: const TextStyle(color: ExColor.bandaTexto, fontSize: 16)),
-          ],
-        ]),
+    return Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Expanded(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(22, 6, 18, 10),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            _captura(),
+            const SizedBox(height: 14),
+            Expanded(child: _tabla()),
+            const SizedBox(height: 8),
+            _atajos(),
+          ]),
+        ),
       ),
-      _captura(),
-      if (_favoritos.isNotEmpty && MediaQuery.of(context).size.height > 820) _barraFavoritos(),
-      _botones(),
-      _barraTickets(),
-      Expanded(child: _tabla()),
-      _pie(),
+      _panelCobro(),
     ]);
   }
 
-  Widget _barraTickets() {
-    Widget pestana(int i) {
+  /// En el encabezado: los tickets abiertos como pestañas.
+  Widget _ticketsSegmentados() {
+    Widget chip(int i) {
       final t = _tickets[i];
       final activa = i == _actual;
       return Padding(
-        padding: const EdgeInsets.only(right: 6, top: 4),
+        padding: const EdgeInsets.only(right: 2),
         child: Material(
-          color: activa ? ExColor.banda : ExColor.blanco,
-          shape: RoundedRectangleBorder(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
-            side: BorderSide(color: activa ? ExColor.indigo : ExColor.borde, width: 1.4),
-          ),
+          color: activa ? ExEstilo.tarjeta : Colors.transparent,
+          elevation: 0,
+          borderRadius: BorderRadius.circular(9),
           child: InkWell(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+            borderRadius: BorderRadius.circular(9),
             onTap: () {
               setState(() => _actual = i);
               _enfocar();
             },
-            child: Padding(
-              padding: const EdgeInsets.only(left: 14, right: 2),
-              child: Row(children: [
-                Icon(Icons.receipt_outlined, size: 18, color: ExColor.indigo),
-                const SizedBox(width: 6),
+            child: Container(
+              decoration: activa
+                  ? BoxDecoration(borderRadius: BorderRadius.circular(9), boxShadow: ExEstilo.sombra)
+                  : null,
+              padding: EdgeInsets.only(left: 13, right: activa ? 4 : 13, top: 7, bottom: 7),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Text(t.nombre,
-                    style: TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w700, color: activa ? ExColor.bandaTexto : ExColor.tinta)),
-                if (t.renglones.isNotEmpty) ...[
-                  const SizedBox(width: 8),
-                  Text(formatoPesos(t.totalCentavos),
-                      style: ExTexto.mono(13, color: ExColor.texto2, peso: FontWeight.w600)),
+                    style: TextStyle(fontSize: 13, fontWeight: activa ? FontWeight.w700 : FontWeight.w500, color: activa ? ExColor.tinta : ExEstilo.texto2)),
+                if (t.renglones.isNotEmpty)
+                  Text(' · ${formatoPesos(t.totalCentavos)}',
+                      style: TextStyle(fontSize: 13, color: activa ? ExColor.tinta : ExEstilo.texto2)),
+                if (activa) ...[
+                  const SizedBox(width: 4),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(6),
+                    onTap: () => _cerrarTicket(i),
+                    child: const Tooltip(
+                      message: 'Eliminar ticket',
+                      child: Padding(padding: EdgeInsets.all(3), child: Icon(Icons.close_rounded, size: 15, color: ExEstilo.texto2)),
+                    ),
+                  ),
                 ],
-                IconButton(
-                  tooltip: 'Eliminar ticket',
-                  visualDensity: VisualDensity.compact,
-                  iconSize: 16,
-                  color: ExColor.texto2,
-                  onPressed: () => _cerrarTicket(i),
-                  icon: const Icon(Icons.close),
-                ),
               ]),
             ),
           ),
@@ -671,224 +669,186 @@ class _VentasPageState extends State<VentasPage> {
     }
 
     return Container(
-      height: 44,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: const BoxDecoration(
-        color: ExColor.concreto,
-        border: Border(bottom: BorderSide(color: ExColor.indigo, width: 3)),
-      ),
-      child: Row(children: [
-        Expanded(
-          child: ListView(scrollDirection: Axis.horizontal, children: [
-            for (var i = 0; i < _tickets.length; i++) pestana(i),
-            if (_tickets.length < maxTickets)
-              Padding(
-                padding: const EdgeInsets.only(top: 4, bottom: 2),
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: ExColor.blanco,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                  ),
-                  onPressed: _nuevoTicket,
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Nuevo ticket (F6)'),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(color: ExEstilo.suave, borderRadius: BorderRadius.circular(12)),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          for (var i = 0; i < _tickets.length; i++) chip(i),
+          if (_tickets.length < maxTickets)
+            Tooltip(
+              message: 'Nuevo ticket (F6)',
+              child: InkWell(
+                borderRadius: BorderRadius.circular(9),
+                onTap: _nuevoTicket,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  child: Icon(Icons.add_rounded, size: 19, color: ExEstilo.primario),
                 ),
               ),
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Text('${_tickets.length} de $maxTickets tickets', style: const TextStyle(color: ExColor.texto2)),
-              ),
             ),
-          ]),
-        ),
-      ]),
+        ]),
+      ),
     );
   }
 
   Widget _captura() {
-    final cliente = _t.cliente;
     return Container(
-      color: ExColor.concreto,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 6),
+      height: 58,
+      decoration: BoxDecoration(
+        color: ExEstilo.tarjeta,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFCFCBEA), width: 1.5),
+        boxShadow: const [BoxShadow(color: ExEstilo.suave, spreadRadius: 4)],
+      ),
+      padding: const EdgeInsets.only(left: 16, right: 7),
       child: Row(children: [
-        Text('Código del producto:', style: ExTexto.titulo(19)),
+        const Icon(Icons.qr_code_scanner_rounded, color: ExEstilo.primario, size: 24),
         const SizedBox(width: 12),
         Expanded(
           child: TextField(
             controller: _codigo,
             focusNode: _focoCodigo,
             autofocus: true,
-            style: ExTexto.mono(22, peso: FontWeight.w600),
-            decoration: InputDecoration(
-              hintText: 'Escanea o escribe el código · 3*código para varias piezas · o escribe el nombre',
-              hintStyle: const TextStyle(fontSize: 15, color: ExColor.texto2),
-              prefixIcon: const Icon(Icons.qr_code_scanner),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(28)),
-              enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(28), borderSide: const BorderSide(color: ExColor.linea)),
-              focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(28), borderSide: const BorderSide(color: ExColor.indigo, width: 2)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w500, color: ExColor.tinta),
+            decoration: const InputDecoration(
+              hintText: 'Escanea o escribe el código del producto…',
+              hintStyle: TextStyle(fontSize: 17, color: ExEstilo.texto2, fontWeight: FontWeight.w400),
+              border: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              filled: false,
+              isDense: true,
             ),
             onSubmitted: _capturar,
           ),
         ),
-        const SizedBox(width: 12),
-        SizedBox(
-          height: 50,
-          child: FilledButton.icon(
-            onPressed: () => _capturar(_codigo.text),
-            icon: const Icon(Icons.keyboard_return),
-            label: const Text('ENTER - Agregar Producto', style: TextStyle(fontSize: 15)),
+        InkWell(
+          onTap: _buscar,
+          borderRadius: BorderRadius.circular(8),
+          child: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Tecla('F10'),
+              SizedBox(width: 6),
+              Text('buscar por nombre', style: TextStyle(fontSize: 12.5, color: ExEstilo.texto2)),
+            ]),
           ),
         ),
-        const SizedBox(width: 12),
-        OutlinedButton.icon(
-          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 50)),
-          onPressed: _elegirCliente,
-          icon: const Icon(Icons.person_outline),
-          label: Text(cliente == null ? 'Cliente' : cliente.nombre, overflow: TextOverflow.ellipsis),
+        const SizedBox(width: 6),
+        SizedBox(
+          height: 42,
+          child: FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: ExEstilo.suave,
+              foregroundColor: ExEstilo.primarioOscuro,
+              side: BorderSide.none,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => _capturar(_codigo.text),
+            icon: const Icon(Icons.keyboard_return_rounded, size: 18),
+            label: const Text('Agregar', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+          ),
         ),
       ]),
     );
   }
 
-  Widget _barraFavoritos() {
-    return Container(
-      height: 44,
-      color: ExColor.concreto,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: _favoritos.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (_, i) {
-          final p = _favoritos[i];
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                side: const BorderSide(color: ExColor.lavanda),
-                backgroundColor: ExColor.blanco,
-              ),
-              onPressed: () => _agregar(p),
-              child: Text('${p.descripcion}  ${formatoPesos(p.precioCentavos)}', style: const TextStyle(fontSize: 15)),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _botones() {
-    Widget b(String tecla, String texto, VoidCallback f, {IconData? icono}) => Padding(
-          padding: const EdgeInsets.only(right: 6),
-          child: OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              side: const BorderSide(color: ExColor.borde, width: 1.4),
-              backgroundColor: ExColor.blanco,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: f,
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              if (icono != null) ...[Icon(icono, size: 20), const SizedBox(width: 6)],
-              Text(tecla, style: ExTexto.mono(13, color: ExColor.indigo)),
-              const SizedBox(width: 6),
-              Text(texto, style: const TextStyle(fontSize: 15)),
-            ]),
-          ),
-        );
-    return Container(
-      color: ExColor.concreto,
-      padding: const EdgeInsets.fromLTRB(16, 2, 16, 6),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(children: [
-          b('INS', 'Varios', _varios),
-          b('CTRL+P', 'Art. común', _comun),
-          b('F10', 'Buscar', _buscar, icono: Icons.search),
-          b('F11', 'Mayoreo', _mayoreo),
-          b('CTRL+D', 'Descuento', _descuento),
-          b('F7', 'Entradas', () => _movimientoCaja('entrada')),
-          b('F8', 'Salidas', () => _movimientoCaja('salida')),
-          b('SUPR', 'Borrar art.', _borrarSeleccion),
-          b('F9', 'Verificador', _verificador),
-          b('CTRL+B', 'Ventas del día', _ventasDelDia),
-          if (repos.ajustes.si(Ajuste.cajonAbrir)) b('', 'Abrir cajón', _abrirCajon, icono: Icons.inbox_outlined),
-        ]),
-      ),
-    );
-  }
-
   Widget _tabla() {
-    const columnas = [
-      ('Código', 3, false),
-      ('Descripción del producto', 8, false),
-      ('Precio venta', 3, true),
-      ('Cant.', 2, true),
-      ('Importe', 3, true),
-      ('Existencia', 2, true),
-    ];
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(color: ExColor.blanco, border: Border.all(color: ExColor.borde, width: 1.4)),
+    const flex = [2, 8, 3, 2, 3, 2];
+    Widget enc(String t, int f, {bool der = false}) => Expanded(
+          flex: f,
+          child: Text(t,
+              textAlign: der ? TextAlign.right : TextAlign.left,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ExEstilo.texto2, letterSpacing: 0.4)),
+        );
+    const num = TextStyle(fontSize: 15, fontFeatures: [FontFeature.tabularFigures()], color: ExColor.tinta);
+    return Tarjeta(
       child: Column(children: [
-        const EncabezadoTabla(columnas, tamano: 16),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: ExEstilo.linea))),
+          child: Row(children: [
+            enc('CÓDIGO', flex[0]),
+            enc('PRODUCTO', flex[1]),
+            enc('PRECIO', flex[2], der: true),
+            enc('CANT.', flex[3], der: true),
+            enc('IMPORTE', flex[4], der: true),
+            enc('EXIST.', flex[5], der: true),
+          ]),
+        ),
         Expanded(
           child: _t.renglones.isEmpty
               ? Center(
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.shopping_basket_outlined, size: 56, color: ExColor.gris),
-                    const SizedBox(height: 10),
-                    Text('Escanea un producto para empezar', style: ExTexto.titulo(18, color: ExColor.texto2)),
-                    const SizedBox(height: 4),
-                    const Text('F10 para buscar por nombre · F12 para cobrar', style: TextStyle(color: ExColor.texto2)),
+                    const Mosaico(Icons.shopping_basket_rounded, tono: Tono.lavanda, tamano: 64),
+                    const SizedBox(height: 14),
+                    Text('Escanea un producto para empezar', style: ExTexto.titulo(18, color: ExColor.tinta)),
+                    const SizedBox(height: 6),
+                    const Row(mainAxisSize: MainAxisSize.min, children: [
+                      Tecla('F10'),
+                      Text('  para buscar por nombre   ·   ', style: TextStyle(color: ExEstilo.texto2)),
+                      Tecla('F12'),
+                      Text('  para cobrar', style: TextStyle(color: ExEstilo.texto2)),
+                    ]),
                   ]),
                 )
               : ListView.builder(
                   controller: _scroll,
                   itemCount: _t.renglones.length,
-                  itemExtent: 52,
+                  itemExtent: 56,
                   itemBuilder: (_, i) {
                     final r = _t.renglones[i];
+                    final sel = i == _t.seleccion;
+                    final dep = r.producto?.departamentoNombre ?? (r.esComun ? 'Artículo común' : 'Sin departamento');
                     final etiquetas = [
                       if (r.conMayoreo) 'mayoreo',
                       if (r.conPromocion) r.promocion!.nombre,
                       if (r.precioManualCentavos != null) 'precio especial',
-                      if (r.esComun) 'común',
                     ];
                     return FilaTabla(
                       [
-                        (celda(r.codigo, mono: true, tamano: 17), 3, false),
+                        (Text(r.codigo, style: num.copyWith(color: ExEstilo.texto2)), flex[0], false),
                         (
                           Row(children: [
-                            Flexible(child: celda(r.descripcion, tamano: 17)),
-                            for (final e in etiquetas)
-                              Container(
-                                margin: const EdgeInsets.only(left: 6),
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                color: ExColor.acento.withOpacity(0.18),
-                                child: Text(e, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
-                              ),
+                            AvatarColor(dep, tamano: 34, redondo: false),
+                            const SizedBox(width: 12),
+                            Flexible(
+                              child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Row(children: [
+                                  Flexible(
+                                    child: Text(r.descripcion,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: ExColor.tinta)),
+                                  ),
+                                  for (final e in etiquetas)
+                                    Container(
+                                      margin: const EdgeInsets.only(left: 6),
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                                      decoration: BoxDecoration(color: Tono.verde.fondo, borderRadius: BorderRadius.circular(5)),
+                                      child: Text(e, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Tono.verde.color)),
+                                    ),
+                                ]),
+                                Text(dep, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: ExEstilo.texto2)),
+                              ]),
+                            ),
                           ]),
-                          8,
+                          flex[1],
                           false
                         ),
-                        (celda(formatoPesos(r.precioUnitarioCentavos), mono: true, tamano: 17), 3, true),
-                        (celda(formatoCantidad(r.cantidad), mono: true, negrita: true, tamano: 17), 2, true),
-                        (celda(formatoPesos(r.importeCentavos), mono: true, negrita: true, tamano: 17), 3, true),
+                        (Text(formatoPesos(r.precioUnitarioCentavos), style: num), flex[2], true),
+                        (Text(formatoCantidad(r.cantidad), style: num.copyWith(fontWeight: FontWeight.w700)), flex[3], true),
+                        (Text(formatoPesos(r.importeCentavos), style: num.copyWith(fontWeight: FontWeight.w700)), flex[4], true),
                         (
-                          celda(r.existencia == null ? '—' : formatoCantidad(r.existencia! - r.cantidad),
-                              mono: true, tamano: 17, color: r.faltaExistencia ? ExColor.rojo : ExColor.texto2),
-                          2,
+                          Text(r.existencia == null ? '—' : formatoCantidad(r.existencia! - r.cantidad),
+                              style: num.copyWith(color: r.faltaExistencia ? ExColor.rojo : ExEstilo.texto2)),
+                          flex[5],
                           true
                         ),
                       ],
-                      par: i.isOdd,
-                      seleccionada: i == _t.seleccion,
+                      seleccionada: sel,
+                      color: ExEstilo.tarjeta,
                       onTap: () {
                         setState(() => _t.seleccion = i);
                         _enfocar();
@@ -902,128 +862,207 @@ class _VentasPageState extends State<VentasPage> {
     );
   }
 
-  Widget _chico(IconData i, String t, VoidCallback f) => OutlinedButton.icon(
-        style: OutlinedButton.styleFrom(
-          minimumSize: const Size(0, 38),
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          backgroundColor: ExColor.blanco,
-          side: const BorderSide(color: ExColor.borde, width: 1.4),
-        ),
-        onPressed: () {
-          f();
-          _enfocar();
-        },
-        icon: Icon(i, size: 18),
-        label: Text(t, style: const TextStyle(fontSize: 14)),
-      );
+  Widget _atajos() {
+    void y(VoidCallback f) {
+      f();
+      _enfocar();
+    }
 
-  Widget _pie() {
+    return Row(children: [
+      Expanded(
+        child: Wrap(spacing: 2, runSpacing: 2, children: [
+          Atajo('+ / −', 'Cantidad', () => y(() => _sumar(1))),
+          Atajo('Supr', 'Quitar', () => y(_borrarSeleccion)),
+          Atajo('INS', 'Varios', () => y(_varios)),
+          Atajo('Ctrl+P', 'Art. común', () => y(_comun)),
+          Atajo('F11', 'Mayoreo', () => y(_mayoreo)),
+          Atajo('F7', 'Entrada', () => y(() => _movimientoCaja('entrada'))),
+          Atajo('F8', 'Salida', () => y(() => _movimientoCaja('salida'))),
+          Atajo('F9', 'Verificador', () => y(_verificador)),
+          Atajo('F5', 'Cambiar ticket', () => y(_siguienteTicket)),
+          if (repos.ajustes.si(Ajuste.cajonAbrir)) Atajo('Cajón', 'Abrir', () => y(_abrirCajon)),
+        ]),
+      ),
+      const _Reloj(),
+    ]);
+  }
+
+  Widget _panelCobro() {
     final pago = _ultima?.pago;
     final pagoCon = pago == null ? 0 : (pago.recibidoCentavos > 0 ? pago.recibidoCentavos : pago.totalCentavos);
     final cambio = pago == null
         ? 0
         : (pago.recibidoCentavos > pago.efectivoCentavos ? pago.recibidoCentavos - pago.efectivoCentavos : (pago.efectivoCentavos < 0 ? -pago.efectivoCentavos : 0));
-    Widget dato(String t, int c) => Row(mainAxisSize: MainAxisSize.min, children: [
-          SizedBox(width: 100, child: Text(t, style: const TextStyle(fontSize: 16, color: ExColor.tinta, fontWeight: FontWeight.w600))),
-          SizedBox(
-            width: 150,
-            child: Text(formatoPesos(c), textAlign: TextAlign.right, style: ExTexto.titulo(24, color: ExColor.tinta)),
-          ),
-        ]);
+    final cliente = _t.cliente;
+    const num = [FontFeature.tabularFigures()];
+    Widget renglon(String a, String b, {Color? color, bool fuerte = false}) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 2),
+          child: Row(children: [
+            Expanded(child: Text(a, style: const TextStyle(fontSize: 14, color: ExEstilo.texto2))),
+            Text(b, style: TextStyle(fontSize: 15, fontWeight: fuerte ? FontWeight.w700 : FontWeight.w600, color: color ?? ExColor.tinta, fontFeatures: num)),
+          ]),
+        );
+    void y(VoidCallback f) {
+      f();
+      _enfocar();
+    }
+
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-            Text('${formatoCantidad(_t.piezas)} productos en la venta actual',
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 17)),
-            if (_t.ahorroCentavos > 0)
-              Text('El cliente ahorra ${formatoPesos(_t.ahorroCentavos)}',
-                  style: const TextStyle(color: ExColor.verde, fontWeight: FontWeight.w600, fontSize: 15)),
-            const SizedBox(height: 6),
-            Wrap(spacing: 6, runSpacing: 6, children: [
-              _chico(Icons.sync_alt, 'F5 - Cambiar', _siguienteTicket),
-              _chico(Icons.add_box_outlined, 'F6 - Pendiente', _nuevoTicket),
-              _chico(Icons.delete_outline, 'Eliminar ticket', () => _cerrarTicket(_actual)),
-              _chico(Icons.add, 'Cant. (+)', () => _sumar(1)),
-              _chico(Icons.remove, 'Cant. (−)', () => _sumar(-1)),
-            ]),
-          ]),
-        ),
-        // Siempre a la vista lo que pagó y su cambio.
-        Container(
-          margin: const EdgeInsets.only(right: 16),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFFE4E2F1),
+      width: 340,
+      decoration: const BoxDecoration(color: ExEstilo.superficie, border: Border(left: BorderSide(color: ExEstilo.linea))),
+      padding: const EdgeInsets.fromLTRB(18, 14, 18, 14),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        // Cliente
+        Material(
+          color: ExEstilo.tarjeta,
+          borderRadius: BorderRadius.circular(14),
+          child: InkWell(
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: ExColor.borde, width: 1.4),
-          ),
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
-            dato('Pagó con:', pagoCon),
-            const SizedBox(height: 4),
-            dato('Su cambio:', cambio),
-            if (_ultima != null)
-              Text('Folio ${_ultima!.folio} · ${pago!.descripcion}', style: const TextStyle(fontSize: 12, color: ExColor.texto2)),
-          ]),
-        ),
-        // Cobrar y total, con la barra clara debajo del importe.
-        Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            SizedBox(
-              width: 210,
-              height: 74,
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: ExColor.blanco,
-                  side: const BorderSide(color: ExColor.borde, width: 1.4),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            onTap: () => y(_elegirCliente),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: ExEstilo.linea)),
+              child: Row(children: [
+                cliente == null
+                    ? const Mosaico(Icons.person_rounded, tono: Tono.coral, tamano: 36)
+                    : AvatarColor(cliente.nombre, tamano: 36),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(cliente?.nombre ?? 'Público en general',
+                        overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: ExColor.tinta)),
+                    Text(
+                        cliente == null
+                            ? 'Asignar cliente para crédito'
+                            : 'Debe ${formatoPesos(cliente.saldoCentavos)}${cliente.tieneLimite ? ' · tope ${formatoPesos(cliente.limiteCentavos)}' : ''}',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12, color: ExEstilo.texto2)),
+                  ]),
                 ),
-                onPressed: _cobrar,
-                icon: const Icon(Icons.point_of_sale, size: 30, color: ExColor.verde),
-                label: Text('F12 - Cobrar', style: ExTexto.titulo(24, color: ExColor.indigo, peso: FontWeight.w600)),
-              ),
+                const Icon(Icons.chevron_right_rounded, color: ExEstilo.texto2),
+              ]),
             ),
-            const SizedBox(width: 16),
-            SizedBox(
-              width: 280,
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Total
+        Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: ExEstilo.suave,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFFDCD8EF)),
+          ),
+          child: Stack(children: [
+            const Positioned(right: -40, top: -40, child: _Adorno()),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                renglon('Artículos', formatoCantidad(_t.piezas)),
+                if (_t.ahorroCentavos > 0) renglon('Ahorro del cliente', formatoPesos(_t.ahorroCentavos), color: Tono.verde.color),
+                Container(height: 1, color: const Color(0xFFD8D4EE), margin: const EdgeInsets.symmetric(vertical: 8)),
+                const Text('TOTAL', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 2, color: ExEstilo.texto2)),
+                const SizedBox(height: 4),
                 FittedBox(
                   fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerRight,
+                  alignment: Alignment.centerLeft,
                   child: Text(formatoPesos(_t.totalCentavos),
-                      style: ExTexto.titulo(60, color: ExColor.indigo, peso: FontWeight.w500)),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  height: 9,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFD5DBF3),
-                    borderRadius: BorderRadius.circular(3),
-                    border: Border.all(color: const Color(0xFFB9C3EA)),
-                  ),
+                      style: ExTexto.titulo(52, color: ExEstilo.primarioOscuro, peso: FontWeight.w600).copyWith(fontFeatures: num, letterSpacing: -1.2)),
                 ),
               ]),
             ),
           ]),
-          const SizedBox(height: 8),
-          Row(children: [
-            SizedBox(
-              width: 210,
-              child: _chico(Icons.print_outlined, 'Reimprimir Último Ticket', _reimprimir),
+        ),
+        const SizedBox(height: 12),
+        // Cobrar
+        SizedBox(
+          height: 64,
+          child: FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: ExEstilo.primario,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: const Color(0xFFB9B6D6),
+              disabledForegroundColor: Colors.white,
+              side: BorderSide.none,
+              elevation: 3,
+              shadowColor: ExEstilo.primario.withOpacity(0.35),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
-            const SizedBox(width: 16),
-            SizedBox(
-              width: 280,
-              child: _chico(Icons.receipt_long_outlined, 'Ventas del día y Devoluciones', _ventasDelDia),
-            ),
+            onPressed: _t.renglones.isEmpty ? null : _cobrar,
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const Icon(Icons.payments_rounded, size: 26),
+              const SizedBox(width: 12),
+              const Text('Cobrar', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+              const SizedBox(width: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.18), borderRadius: BorderRadius.circular(6)),
+                child: const Text('F12', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+              ),
+            ]),
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Venta anterior
+        Container(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+          decoration: BoxDecoration(color: ExEstilo.tarjeta, borderRadius: BorderRadius.circular(14), border: Border.all(color: ExEstilo.linea)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Row(children: [
+              Mosaico(_ultima == null ? Icons.receipt_long_rounded : Icons.check_rounded, tono: _ultima == null ? Tono.gris : Tono.verde, tamano: 28),
+              const SizedBox(width: 10),
+              Text(_ultima == null ? 'VENTA ANTERIOR' : 'VENTA ANTERIOR · FOLIO ${_ultima!.folio}',
+                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, letterSpacing: 0.4, color: ExEstilo.texto2)),
+            ]),
+            const SizedBox(height: 6),
+            renglon('Pagó con', formatoPesos(pagoCon)),
+            renglon('Su cambio', formatoPesos(cambio), color: cambio > 0 ? Tono.verde.color : null, fuerte: true),
           ]),
-          const SizedBox(height: 4),
-          const _Reloj(),
+        ),
+        const Spacer(),
+        // Acciones
+        Row(children: [
+          Expanded(child: BotonAccion(icono: Icons.print_rounded, texto: 'Reimprimir último ticket', tecla: 'Ctrl+R', tono: Tono.azul, onTap: () => y(_reimprimir))),
+          const SizedBox(width: 8),
+          Expanded(
+              child: BotonAccion(
+                  icono: Icons.receipt_long_rounded, texto: 'Ventas del día y devoluciones', tecla: 'Ctrl+B', tono: Tono.rosa, onTap: () => y(_ventasDelDia))),
+        ]),
+        const SizedBox(height: 8),
+        Row(children: [
+          Expanded(child: BotonAccion(icono: Icons.schedule_rounded, texto: 'Dejar pendiente', tecla: 'F6', tono: Tono.ambar, onTap: () => y(_nuevoTicket))),
+          const SizedBox(width: 8),
+          Expanded(child: BotonAccion(icono: Icons.percent_rounded, texto: 'Descuento', tecla: 'Ctrl+D', tono: Tono.verde, onTap: () => y(_descuento))),
         ]),
       ]),
     );
   }
+}
+
+/// Detalle de la tarjeta del total: círculos y el punto coral de la marca.
+class _Adorno extends StatelessWidget {
+  const _Adorno();
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: 150,
+        height: 150,
+        child: Stack(children: [
+          Container(decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: const Color(0xFFDCD8EF), width: 1.5))),
+          Center(
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: const Color(0xFFDCD8EF), width: 1.5)),
+            ),
+          ),
+          Positioned(
+            right: 25,
+            bottom: 25,
+            child: Container(width: 14, height: 14, decoration: BoxDecoration(shape: BoxShape.circle, color: ExColor.acento.withOpacity(0.6))),
+          ),
+        ]),
+      );
 }
 
 /// Abajo a la derecha: versión, fecha y hora.

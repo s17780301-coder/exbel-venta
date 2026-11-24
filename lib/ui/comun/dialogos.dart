@@ -277,17 +277,17 @@ class EncabezadoTabla extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: ExColor.encabezado,
-        border: Border(bottom: BorderSide(color: ExColor.borde, width: 1.2)),
+        color: Color(0xFFF7F6FB),
+        border: Border(bottom: BorderSide(color: Color(0xFFE3E1EE))),
       ),
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: tamano * 0.75),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: tamano * 0.8),
       child: Row(children: [
         for (final c in columnas)
           Expanded(
             flex: c.$2,
             child: Text(c.$1,
                 textAlign: c.$3 ? TextAlign.right : TextAlign.left,
-                style: TextStyle(color: ExColor.bandaTexto, fontWeight: FontWeight.w700, fontSize: tamano)),
+                style: TextStyle(color: const Color(0xFF6B6785), fontWeight: FontWeight.w600, fontSize: tamano * 0.92, letterSpacing: 0.3)),
           ),
       ]),
     );
@@ -328,12 +328,15 @@ class _FilaTablaState extends State<FilaTabla> {
   Widget build(BuildContext context) {
     final w = widget;
     return Material(
-      color: w.seleccionada ? ExColor.lavanda : (w.color ?? (w.par ? ExColor.concreto : ExColor.blanco)),
-      shape: const Border(bottom: BorderSide(color: Color(0xFFA9A4C9), width: 1.2)),
+      color: w.seleccionada ? const Color(0xFFEDEBF9) : (w.color ?? (w.par ? const Color(0xFFFAFAFD) : const Color(0xFFFFFFFF))),
+      shape: Border(
+        bottom: const BorderSide(color: Color(0xFFE3E1EE)),
+        left: BorderSide(color: w.seleccionada ? const Color(0xFF4A4789) : Colors.transparent, width: 3),
+      ),
       child: InkWell(
         onTap: w.onTap == null && w.onDoubleTap == null ? null : _toque,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
           child: Row(children: [
             for (final c in w.celdas)
               Expanded(flex: c.$2, child: Align(alignment: c.$3 ? Alignment.centerRight : Alignment.centerLeft, child: c.$1)),

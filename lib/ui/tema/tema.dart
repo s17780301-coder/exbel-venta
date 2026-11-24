@@ -79,10 +79,10 @@ abstract final class ExTexto {
 /// Tema de la app: todo cuadrado, salvo botones y avisos.
 ThemeData temaExBel() {
   const cero = RoundedRectangleBorder(borderRadius: BorderRadius.zero);
-  final boton = RoundedRectangleBorder(borderRadius: BorderRadius.circular(6));
+  final boton = RoundedRectangleBorder(borderRadius: BorderRadius.circular(10));
   const bordeCampo = OutlineInputBorder(
-    borderRadius: BorderRadius.zero,
-    borderSide: BorderSide(color: ExColor.linea),
+    borderRadius: BorderRadius.all(Radius.circular(10)),
+    borderSide: BorderSide(color: Color(0xFFDCD9EA)),
   );
 
   final base = ThemeData(
@@ -120,8 +120,8 @@ ThemeData temaExBel() {
       margin: EdgeInsets.zero,
     ),
     dialogTheme: DialogTheme(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-      backgroundColor: ExColor.blanco,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
     ),
     bottomSheetTheme: const BottomSheetThemeData(
@@ -136,8 +136,8 @@ ThemeData temaExBel() {
       border: bordeCampo,
       enabledBorder: bordeCampo,
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.zero,
-        borderSide: BorderSide(color: ExColor.tinta, width: 2),
+        borderRadius: BorderRadius.all(Radius.circular(10)),
+        borderSide: BorderSide(color: Color(0xFF4A4789), width: 1.8),
       ),
       filled: true,
       fillColor: ExColor.blanco,
@@ -145,9 +145,9 @@ ThemeData temaExBel() {
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: ExColor.boton,
-        foregroundColor: ExColor.bandaTexto,
-        side: const BorderSide(color: ExColor.borde, width: 1.4),
+        backgroundColor: const Color(0xFF4A4789),
+        foregroundColor: Colors.white,
+        disabledBackgroundColor: const Color(0xFFCBC8E0),
         shape: boton,
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         textStyle: const TextStyle(fontWeight: FontWeight.w600),
@@ -156,7 +156,8 @@ ThemeData temaExBel() {
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: ExColor.tinta,
-        side: const BorderSide(color: ExColor.borde, width: 1.4),
+        backgroundColor: Colors.white,
+        side: const BorderSide(color: Color(0xFFDCD9EA), width: 1.2),
         shape: boton,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         textStyle: const TextStyle(fontWeight: FontWeight.w600),
