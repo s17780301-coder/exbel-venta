@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/bascula.dart';
 import '../../core/cajon.dart';
 import '../../core/errores.dart';
 import '../../core/formato.dart';
@@ -55,6 +56,12 @@ class _VentasPageState extends State<VentasPage> {
   final _scroll = ScrollController();
   List<Producto> _favoritos = [];
   Venta? _ultima;
+
+  /// Renglón a granel que sigue a la báscula: si se echa más producto, el
+  /// peso y el importe suben solos. Se fija al agregar otro producto, cobrar,
+  /// cambiar la cantidad a mano o vaciar la báscula.
+  Renglon? _vivo;
+  double _vivoPeso = 0;
   bool _ocupado = false;
 
   Ticket get _t => _tickets[_actual];
@@ -165,6 +172,7 @@ class _VentasPageState extends State<VentasPage> {
 
   @override
   void dispose() {
+    _fijarVivo();
     teclasVentas.removeListener(_alTeclear);
     encabezadoVentas.value = null;
     _guardado?.cancel();
@@ -365,7 +373,41 @@ class _VentasPageState extends State<VentasPage> {
     return true;
   }
 
+  void _fijarVivo() {
+    if (_vivo == null) return;
+    _vivo = null;
+    LectorBascula.instancia.peso.removeListener(_pesoVivo);
+    LectorBascula.instancia.soltar();
+  }
+
+  void _seguirPeso(Renglon r) {
+    final b = configBascula(repos.ajustes);
+    if (b == null) return;
+    _fijarVivo();
+    _vivo = r;
+    _vivoPeso = r.cantidad;
+    LectorBascula.instancia.peso.addListener(_pesoVivo);
+    LectorBascula.instancia.usar(b);
+  }
+
+  void _pesoVivo() {
+    final r = _vivo;
+    final v = LectorBascula.instancia.peso.value;
+    if (r == null || v == null || !mounted) return;
+    // Ya no está en el ticket, o el cajero cambió la cantidad a mano: se fija.
+    if (!_t.renglones.contains(r) || (r.cantidad - _vivoPeso).abs() > 0.0005) return _fijarVivo();
+    // Báscula vacía: se queda con el último peso.
+    if (v <= 0.002) return _fijarVivo();
+    if ((v - r.cantidad).abs() < 0.0005) return;
+    setState(() {
+      r.cantidad = v;
+      _vivoPeso = v;
+    });
+  }
+
   Future<void> _agregar(Producto p, {double? cantidad}) async {
+    _fijarVivo();
+    granelDesdeBascula = false;
     if (cantidad != null && !await _cantidadValida(p, cantidad)) return _enfocar();
     // Granel sin cantidad: se pregunta por peso o por importe.
     if (cantidad == null && p.esGranel) {
@@ -388,6 +430,7 @@ class _VentasPageState extends State<VentasPage> {
         _t.renglones.add(r);
         _t.seleccion = _t.renglones.length - 1;
       });
+      if (p.esGranel && granelDesdeBascula) _seguirPeso(r);
     }
     _alFinal();
     _enfocar();
@@ -572,6 +615,7 @@ class _VentasPageState extends State<VentasPage> {
 
   Future<void> _cobrar() async {
     if (_t.renglones.isEmpty || _ocupado) return;
+    _fijarVivo();
     final turno = sesion.turno;
     final cajero = sesion.cajero;
     if (turno == null || cajero == null) return;

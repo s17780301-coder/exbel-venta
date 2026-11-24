@@ -12,6 +12,9 @@ import '../sesion.dart';
 import '../zoom.dart';
 import '../tema/tema.dart';
 
+/// true si la última cantidad de [pedirGranel] vino de la báscula (sin teclear).
+bool granelDesdeBascula = false;
+
 /// Granel: cantidad (0.250 = 250 g) o importe ($20 de jamón).
 Future<double?> pedirGranel(BuildContext context, Producto p) {
   return showDialog<double>(context: context, builder: (_) => _Granel(p));
@@ -78,7 +81,10 @@ class _GranelState extends State<_Granel> {
     _cant.text = formatoCantidad((i / widget.p.precioCentavos * 1000).round() / 1000);
   }
 
-  void _aceptar() => Navigator.pop(context, leerCantidad(_cant.text));
+  void _aceptar() {
+    granelDesdeBascula = _bascula != null && _siguePeso;
+    Navigator.pop(context, leerCantidad(_cant.text));
+  }
 
   @override
   Widget build(BuildContext context) {
