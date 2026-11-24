@@ -8,6 +8,7 @@ import 'package:window_manager/window_manager.dart';
 import '../../core/bascula.dart';
 import '../../core/cajon.dart';
 import '../../core/db.dart';
+import '../../core/licencia.dart';
 import '../../core/formato.dart';
 import '../../core/tickets.dart';
 import '../../data/ajustes_repo.dart';
@@ -18,6 +19,7 @@ import '../../models/modelos.dart';
 import '../comun/dialogos.dart';
 import '../comun/ex_widgets.dart';
 import '../comun/impresion.dart';
+import '../comun/licencia_ui.dart';
 import '../comun/multicaja_ui.dart';
 import '../comun/importar_dialogo.dart';
 
@@ -25,7 +27,7 @@ import '../sesion.dart';
 import '../tema/tema.dart';
 import '../zoom.dart';
 
-const versionExBel = '0.6.6';
+const versionExBel = '0.7.0';
 
 /// Configuración de la tienda.
 class ConfigPage extends StatefulWidget {
@@ -648,16 +650,33 @@ class _Proximamente extends StatelessWidget {
   }
 }
 
-class _Licencia extends StatelessWidget {
+class _Licencia extends StatefulWidget {
   const _Licencia();
 
   @override
+  State<_Licencia> createState() => _LicenciaState();
+}
+
+class _LicenciaState extends State<_Licencia> {
+  @override
   Widget build(BuildContext context) {
+    final e = Licencia.instancia.estado;
+    final activada = e?.activada ?? false;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       _titulo('Licencia'),
       ListTile(leading: const Icon(Icons.storefront), title: Text(repos.ajustes.texto(Ajuste.nombreNegocio)), subtitle: const Text('Tienda')),
-      const ListTile(leading: Icon(Icons.verified_outlined), title: Text('exBel venta'), subtitle: Text('Licencia de prueba')),
-      const Text('La activación de licencias llegará en una próxima versión.', style: TextStyle(color: ExColor.texto2)),
+      ListTile(
+        leading: Icon(activada ? Icons.verified : Icons.hourglass_bottom, color: activada ? ExColor.verde : ExColor.naranja),
+        title: const Text('exBel venta'),
+        subtitle: Text(activada
+            ? 'Activado en este equipo'
+            : 'Versión de prueba · ${e == null ? '' : (e.diasRestantes <= 0 ? 'terminó' : 'quedan ${e.diasRestantes} de $diasDePrueba días')}'),
+      ),
+      ListTile(leading: const Icon(Icons.computer), title: Text(Licencia.instancia.equipo), subtitle: const Text('Código de equipo')),
+      if (!activada) ...[
+        const SizedBox(height: 10),
+        SizedBox(width: 520, child: PanelActivacion(alActivar: () => setState(() {}))),
+      ],
     ]);
   }
 }

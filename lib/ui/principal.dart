@@ -13,6 +13,7 @@ import 'comun/buscador_universal.dart';
 import 'productos/producto_form.dart';
 import 'ventas/ventas_dia.dart';
 import 'comun/dialogos.dart';
+import 'comun/licencia_ui.dart';
 import 'comun/ex_widgets.dart';
 import 'comun/nombre_tienda.dart';
 import 'comun/ventana.dart';
@@ -183,6 +184,7 @@ class _PrincipalState extends State<Principal> {
     return Scaffold(
       body: Column(children: [
         _barraSuperior(),
+        const AvisoPrueba(),
         Expanded(
           child: IndexedStack(
             index: _actual,

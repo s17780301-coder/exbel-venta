@@ -9,11 +9,13 @@ import 'package:window_manager/window_manager.dart';
 
 import 'core/caja_local.dart';
 import 'core/db.dart';
+import 'core/licencia.dart';
 import 'core/red/db_remota.dart';
 import 'core/red/servidor.dart';
 import 'core/formato.dart';
 import 'data/repos.dart';
 import 'ui/acceso/acceso_page.dart';
+import 'ui/comun/licencia_ui.dart';
 import 'ui/comun/ex_widgets.dart';
 import 'ui/tema/tema.dart';
 import 'ui/zoom.dart';
@@ -93,6 +95,7 @@ class _ArranqueState extends State<_Arranque> {
     setState(() => _error = null);
     try {
       await cajaLocal.cargar(await AppDb.carpeta());
+      await Licencia.instancia.cargar(await AppDb.carpeta());
       if (cajaLocal.esSecundaria) {
         // Caja adicional: usa la base de datos de la caja principal.
         final remota = DatabaseRemota(cajaLocal.servidor, cajaLocal.clave);
@@ -122,7 +125,12 @@ class _ArranqueState extends State<_Arranque> {
 
   @override
   Widget build(BuildContext context) {
-    if (_listo) return const AccesoPage();
+    if (_listo) {
+      if (Licencia.instancia.estado?.vencida ?? false) {
+        return BloqueoPrueba(alActivar: () => setState(() {}));
+      }
+      return const AccesoPage();
+    }
     return Scaffold(
       backgroundColor: ExColor.barra,
       body: Center(

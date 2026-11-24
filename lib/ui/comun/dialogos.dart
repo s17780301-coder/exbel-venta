@@ -329,7 +329,7 @@ class _FilaTablaState extends State<FilaTabla> {
     final w = widget;
     return Material(
       color: w.seleccionada ? ExColor.lavanda : (w.color ?? (w.par ? ExColor.concreto : ExColor.blanco)),
-      shape: const Border(bottom: BorderSide(color: ExColor.linea)),
+      shape: const Border(bottom: BorderSide(color: Color(0xFFA9A4C9), width: 1.2)),
       child: InkWell(
         onTap: w.onTap == null && w.onDoubleTap == null ? null : _toque,
         child: Padding(
