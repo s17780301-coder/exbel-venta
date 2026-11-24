@@ -13,6 +13,7 @@ import '../comun/enter_avanza.dart';
 import '../sesion.dart';
 import '../tema/tema.dart';
 import '../ventas/buscar_producto.dart';
+import 'codigo_ocupado.dart';
 
 /// Alta o modificación de un producto. Regresa true si se guardó.
 Future<bool> editarProducto(BuildContext context, Producto? p) async {
@@ -38,8 +39,24 @@ class _FormState extends State<_Form> {
   /// Anti duplicados: si el código ya es de otro producto se avisa al momento.
   Producto? _codigoOcupado;
   Timer? _esperaCodigo;
+  final _focoCodigo = FocusNode();
+  String? _yaAvisado;
+
+  /// Al salir del campo de código se avisa si ya existe.
+  Future<void> _alSalirCodigo() async {
+    if (!mounted || _focoCodigo.hasFocus) return;
+    final c = _codigo.text.trim();
+    if (c.isEmpty || c == _yaAvisado) return;
+    _yaAvisado = c;
+    final libre = await avisarCodigoOcupado(context, c, excepto: p?.id);
+    if (!libre && mounted) {
+      _focoCodigo.requestFocus();
+      _codigo.selection = TextSelection(baseOffset: 0, extentOffset: _codigo.text.length);
+    }
+  }
 
   void _revisarCodigo(String c) {
+    _yaAvisado = null;
     _esperaCodigo?.cancel();
     _esperaCodigo = Timer(const Duration(milliseconds: 250), () async {
       final o = await repos.productos.conCodigo(c, excepto: p?.id);
@@ -71,6 +88,7 @@ class _FormState extends State<_Form> {
   @override
   void initState() {
     super.initState();
+    _focoCodigo.addListener(_alSalirCodigo);
     _cargar();
   }
 
@@ -88,6 +106,7 @@ class _FormState extends State<_Form> {
   @override
   void dispose() {
     _esperaCodigo?.cancel();
+    _focoCodigo.dispose();
     for (final c in [_codigo, _desc, _costo, _ganancia, _precio, _mayoreo, _desde, _existencia, _minimo, _maximo, _ieps]) {
       c.dispose();
     }
@@ -233,6 +252,7 @@ class _FormState extends State<_Form> {
             _fila([
               TextField(
                 controller: _codigo,
+                focusNode: _focoCodigo,
                 autofocus: p == null,
                 style: ExTexto.mono(15, peso: FontWeight.w500),
                 onChanged: _revisarCodigo,

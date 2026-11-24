@@ -13,6 +13,7 @@ import '../comun/ex_ui.dart';
 import '../sesion.dart';
 import '../tema/tema.dart';
 import '../zoom.dart';
+import 'codigo_ocupado.dart';
 import 'producto_form.dart';
 
 /// F3: ventana sencilla para agregar o eliminar productos.
@@ -113,6 +114,7 @@ class _AgregarState extends State<_Agregar> {
   @override
   void initState() {
     super.initState();
+    _focoCodigo.addListener(_alSalirCodigo);
     repos.productos.departamentos().then((d) {
       if (mounted) setState(() => _deps = d);
     });
@@ -127,7 +129,23 @@ class _AgregarState extends State<_Agregar> {
     super.dispose();
   }
 
+  String? _yaAvisado;
+
+  /// Al salir del campo de código (Enter del lector, Tab o clic) se avisa si ya existe.
+  Future<void> _alSalirCodigo() async {
+    if (!mounted || _focoCodigo.hasFocus) return;
+    final c = _codigo.text.trim();
+    if (c.isEmpty || c == _yaAvisado) return;
+    _yaAvisado = c;
+    final libre = await avisarCodigoOcupado(context, c);
+    if (!libre && mounted) {
+      _focoCodigo.requestFocus();
+      _codigo.selection = TextSelection(baseOffset: 0, extentOffset: _codigo.text.length);
+    }
+  }
+
   Future<void> _revisarCodigo(String c) async {
+    _yaAvisado = null;
     final p = await repos.productos.conCodigo(c);
     if (mounted) setState(() => _existente = p);
   }
