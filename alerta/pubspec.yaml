@@ -1,7 +1,7 @@
 name: exbel_alerta
 description: exBel Alerta, recibe el botón de emergencia de las cajas exBel venta.
 publish_to: 'none'
-version: 1.1.0+2
+version: 1.1.0+3
 
 environment:
   sdk: '>=3.5.0 <4.0.0'
