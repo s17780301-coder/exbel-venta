@@ -1,0 +1,5 @@
+-- exBel venta en Supabase (proyecto compartido, sección "exbel").
+-- Aplicado como migración "exbel_licencias_alertas". Se guarda aquí como referencia.
+-- Tablas: exbel.equipos (computadoras, prueba y activación), exbel.alertas (botón de emergencia).
+-- Funciones públicas: public.exbel_registrar(...), public.exbel_alerta(...).
+-- Para activar una tienda desde el panel de Supabase: en exbel.equipos poner activado = true.

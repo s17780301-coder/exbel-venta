@@ -9,6 +9,9 @@ import 'package:window_manager/window_manager.dart';
 
 import 'core/caja_local.dart';
 import 'core/db.dart';
+import 'ui/config/config_page.dart' show versionExBel;
+import 'ui/sesion.dart';
+import 'core/emergencia.dart';
 import 'core/licencia.dart';
 import 'core/red/db_remota.dart';
 import 'core/red/servidor.dart';
@@ -37,8 +40,25 @@ Future<void> main() async {
         );
       } catch (_) {}
     }
+    HardwareKeyboard.instance.addHandler(_teclaEmergencia);
     runApp(const ExBelVenta());
   }, (e, s) => _registrarError('$e\n$s'));
+}
+
+/// Ctrl + Alt + E en cualquier pantalla: alerta de emergencia silenciosa.
+bool _teclaEmergencia(KeyEvent e) {
+  if (e is! KeyDownEvent || e.logicalKey != LogicalKeyboardKey.keyE) return false;
+  final k = HardwareKeyboard.instance;
+  if (!k.isControlPressed || !k.isAltPressed) return false;
+  try {
+    enviarAlertaEmergencia(
+      tienda: repos.ajustes.texto(Ajuste.nombreNegocio),
+      caja: cajaLocal.nombreCaja,
+      cajero: sesion.cajero?.nombre ?? '',
+      equipo: Licencia.instancia.equipo,
+    );
+  } catch (_) {}
+  return true;
 }
 
 Future<void> _registrarError(String texto) async {
@@ -111,6 +131,12 @@ class _ArranqueState extends State<_Arranque> {
       if (repos.ajustes.texto(Ajuste.nombreNegocio) == 'Mi tienda') {
         await repos.ajustes.guardar(Ajuste.nombreNegocio, tiendaPersonalizada);
       }
+      // Licencia en línea (si no hay internet, sigue con la de esta computadora).
+      try {
+        await Licencia.instancia
+            .sincronizarNube(tienda: repos.ajustes.texto(Ajuste.nombreNegocio), caja: cajaLocal.nombreCaja, version: versionExBel)
+            .timeout(const Duration(seconds: 6));
+      } catch (_) {}
       final simbolo = repos.ajustes.texto(Ajuste.simboloMoneda);
       if (simbolo.trim().isNotEmpty) simboloMoneda = simbolo.trim();
       final z = repos.ajustes.numero(Ajuste.zoom);

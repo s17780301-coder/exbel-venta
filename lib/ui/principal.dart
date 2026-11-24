@@ -15,6 +15,7 @@ import 'productos/productos_rapido.dart';
 import 'ventas/ventas_dia.dart';
 import 'comun/dialogos.dart';
 import 'comun/licencia_ui.dart';
+import 'comun/actualizacion_ui.dart';
 import 'comun/ex_ui.dart';
 import 'comun/ex_widgets.dart';
 import 'comun/nombre_tienda.dart';
@@ -208,6 +209,7 @@ class _PrincipalState extends State<Principal> {
         Expanded(
           child: Column(children: [
             const AvisoPrueba(),
+        const AvisoActualizacion(),
             _barraSuperior(),
             Expanded(
               child: IndexedStack(

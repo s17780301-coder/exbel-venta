@@ -50,3 +50,5 @@ Name: "{autodesktop}\exBel venta"; Filename: "{app}\exBelVenta.exe"; Tasks: escr
 
 [Run]
 Filename: "{app}\exBelVenta.exe"; Description: "Abrir exBel venta"; Flags: nowait postinstall skipifsilent
+; Actualización automática (instalación silenciosa): vuelve a abrir exBel venta.
+Filename: "{app}\exBelVenta.exe"; Flags: nowait; Check: WizardSilent

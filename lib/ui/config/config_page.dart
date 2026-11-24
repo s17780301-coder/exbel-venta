@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:window_manager/window_manager.dart';
 
+import '../../core/actualizador.dart';
 import '../../core/bascula.dart';
 import '../../core/cajon.dart';
 import '../../core/db.dart';
@@ -19,16 +20,18 @@ import '../../models/modelos.dart';
 import '../comun/dialogos.dart';
 import '../comun/ex_ui.dart';
 import '../comun/ex_widgets.dart';
+import '../comun/actualizacion_ui.dart';
 import '../comun/impresion.dart';
 import '../comun/licencia_ui.dart';
 import '../comun/multicaja_ui.dart';
+import 'emergencia_page.dart';
 import '../comun/importar_dialogo.dart';
 
 import '../sesion.dart';
 import '../tema/tema.dart';
 import '../zoom.dart';
 
-const versionExBel = '0.9.3';
+const versionExBel = '0.10.0';
 
 /// Configuración de la tienda.
 class ConfigPage extends StatefulWidget {
@@ -87,6 +90,7 @@ final _grupos = <(String, List<_Opcion>)>[
       _Opcion('Lector de Códigos', Icons.qr_code_scanner, ExColor.indigo, _Lector()),
       _Opcion('Cajón de Dinero', Icons.inbox_outlined, ExColor.texto2, _Cajon()),
       _Opcion('Báscula', Icons.scale_outlined, ExColor.rojo, _Bascula()),
+      _Opcion('Botón de Emergencia', Icons.sos_rounded, ExColor.rojo, SeccionEmergencia()),
       _Opcion('Terminal TPV', Icons.credit_card, ExColor.tinta, _Proximamente('Terminal TPV',
           'Por ahora, cobra en tu terminal (Clip, Mercado Pago, banco) y en exBel elige "Tarjeta" al cobrar. '
           'La conexión directa con terminales llegará en una próxima versión.')),
@@ -680,6 +684,11 @@ class _LicenciaState extends State<_Licencia> {
             : 'Versión de prueba · ${e == null ? '' : (e.diasRestantes <= 0 ? 'terminó' : 'quedan ${e.diasRestantes} de $diasDePrueba días')}'),
       ),
       ListTile(leading: const Icon(Icons.computer), title: Text(Licencia.instancia.equipo), subtitle: const Text('Código de equipo')),
+      const Padding(
+        padding: EdgeInsets.only(bottom: 6),
+        child: Text('Con internet, la licencia también se revisa en línea: si la tienda se activa desde el panel de exBel, '
+            'esta computadora se activa sola al abrir el programa.', style: TextStyle(color: ExColor.texto2)),
+      ),
       if (!activada) ...[
         const SizedBox(height: 10),
         SizedBox(width: 520, child: PanelActivacion(alActivar: () => setState(() {}))),
@@ -696,8 +705,22 @@ class _Actualizaciones extends StatelessWidget {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       _titulo('Actualizaciones'),
       ListTile(leading: const Icon(Icons.info_outline), title: const Text('Versión instalada'), subtitle: Text(versionExBel)),
-      const Text('Para actualizar, abre el instalador nuevo de exBel venta: se instala encima y tus datos se conservan. '
-          'La actualización automática llegará en una próxima versión.', style: TextStyle(color: ExColor.texto2)),
+      const Text('exBel venta revisa solo si hay versión nueva cada vez que se abre y muestra una franja verde para instalarla. '
+          'Tus datos se conservan.', style: TextStyle(color: ExColor.texto2)),
+      const SizedBox(height: 12),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: FilledButton.icon(
+          onPressed: () async {
+            final v = await buscarActualizacion(versionExBel);
+            if (!context.mounted) return;
+            if (v == null) return aviso(context, 'Ya tienes la versión más nueva (o no hay internet).');
+            await actualizarAhora(context, v);
+          },
+          icon: const Icon(Icons.system_update_alt_rounded),
+          label: const Text('Buscar actualización ahora'),
+        ),
+      ),
     ]);
   }
 }

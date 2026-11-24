@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
+import 'nube.dart';
+
 /// Prueba de 7 días y activación por equipo.
 ///
 /// Cada computadora tiene un "código de equipo". exBel entrega un código de
@@ -121,6 +123,43 @@ class Licencia {
     final usados = visto.difference(inicio).inHours / 24;
     final restantes = (diasDePrueba - usados).ceil().clamp(0, diasDePrueba);
     return estado = EstadoLicencia(equipo: equipo, activada: activada, diasRestantes: restantes, inicio: inicio);
+  }
+
+  /// Se reporta a la nube: la prueba cuenta desde la fecha más antigua
+  /// conocida (aunque reinstalen o cambien de usuario de Windows) y, si la
+  /// tienda ya fue activada desde el panel, se activa sola.
+  Future<void> sincronizarNube({String? tienda, String? caja, String? version}) async {
+    final e = estado;
+    if (e == null || equipo.isEmpty) return;
+    final r = await nubeRpc('exbel_registrar', {
+      'p_equipo': equipo,
+      'p_tienda': tienda,
+      'p_caja': caja,
+      'p_version': version,
+      'p_inicio_local': e.inicio.toUtc().toIso8601String(),
+    });
+    if (r is! Map) return;
+    final inicioNube = DateTime.tryParse('${r['prueba_inicio']}')?.toLocal();
+    final ahoraNube = DateTime.tryParse('${r['ahora']}')?.toLocal();
+    var inicio = e.inicio;
+    if (inicioNube != null && inicioNube.isBefore(inicio)) {
+      inicio = inicioNube;
+      _d['inicio'] = inicio.toIso8601String();
+      await _guardar();
+      await _escribirRegistro('inicio', inicio.toIso8601String());
+    }
+    var activada = e.activada;
+    if (r['activado'] == true && !activada) {
+      final codigo = codigoActivacionPara(equipo);
+      _d['activacion'] = codigo;
+      await _guardar();
+      await _escribirRegistro('activacion', codigo);
+      activada = true;
+    }
+    final ahora = ahoraNube != null && ahoraNube.isAfter(DateTime.now()) ? ahoraNube : DateTime.now();
+    final usados = ahora.difference(inicio).inHours / 24;
+    estado = EstadoLicencia(
+        equipo: equipo, activada: activada, diasRestantes: (diasDePrueba - usados).ceil().clamp(0, diasDePrueba), inicio: inicio);
   }
 
   /// true si el código es correcto para este equipo.

@@ -109,11 +109,17 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+        with:
+          path: fuente
       - uses: actions/download-artifact@v4
         with:
           path: artefactos
       - name: Preparar archivos
         run: |
+          VER=$(grep -m1 '^version:' fuente/pubspec.yaml | sed 's/version: *//; s/+.*//')
+          printf '{"version":"%s","url":"https://github.com/%s/releases/download/ultima/exBel-venta-instalador.exe"}\n' "$VER" "${{ github.repository }}" > version.json
+          cat version.json
           cp artefactos/exbel-venta-instalador/exBel-venta-instalador.exe .
           mkdir "exBel venta" && cp -r artefactos/exbel-venta-portable/. "exBel venta/"
           zip -qr exBel-venta-portable.zip "exBel venta"
@@ -130,3 +136,4 @@ jobs:
           files: |
             exBel-venta-instalador.exe
             exBel-venta-portable.zip
+            version.json
