@@ -182,6 +182,13 @@ class _VentasPageState extends State<VentasPage> {
   void _alTeclear() {
     final e = teclasVentas.value;
     if (e == null || _ocupado) return;
+    // Punto del teclado numérico con Bloq Num apagado: escribe "." (no borra).
+    if (e.physicalKey == PhysicalKeyboardKey.numpadDecimal && e.logicalKey == LogicalKeyboardKey.delete) {
+      final t = _codigo.text;
+      _codigo.value = TextEditingValue(text: '$t.', selection: TextSelection.collapsed(offset: t.length + 1));
+      _focoCodigo.requestFocus();
+      return;
+    }
     final k = e.logicalKey;
     final ctrl = HardwareKeyboard.instance.isControlPressed;
     if (k == LogicalKeyboardKey.f12) {
@@ -268,8 +275,11 @@ class _VentasPageState extends State<VentasPage> {
     final estrella = texto.indexOf('*');
     if (estrella == 0) texto = texto.substring(1).trim();
     if (estrella > 0) {
-      cantidad = leerCantidad(texto.substring(0, estrella));
-      texto = texto.substring(estrella + 1).trim();
+      var izq = texto.substring(0, estrella).trim(), der = texto.substring(estrella + 1).trim();
+      // También "código*cantidad" (ej. AGUA500*20).
+      if (leerCantidad(izq) == null && leerCantidad(der) != null) (izq, der) = (der, izq);
+      cantidad = leerCantidad(izq);
+      texto = der;
       if (cantidad == null || cantidad <= 0) {
         aviso(context, 'La cantidad antes del * no es válida.');
         return _enfocar();
@@ -284,6 +294,7 @@ class _VentasPageState extends State<VentasPage> {
         // Cambia la cantidad del producto seleccionado (o del último agregado).
         final i = _t.seleccion >= 0 && _t.seleccion < _t.renglones.length ? _t.seleccion : _t.renglones.length - 1;
         final rg = _t.renglones[i];
+        if (!await _cantidadValida(rg.producto, c)) return _enfocar();
         if (!_hayExistencia(rg, c)) return _enfocar();
         setState(() {
           rg.cantidad = c;
@@ -344,7 +355,25 @@ class _VentasPageState extends State<VentasPage> {
     return true;
   }
 
+  /// Los productos por pieza solo aceptan cantidades enteras (como en el
+  /// sistema anterior). Si traen decimales, se ofrece marcarlos a granel.
+  Future<bool> _cantidadValida(Producto? p, double c) async {
+    if (p == null || p.esGranel || c == c.roundToDouble()) return true;
+    final marcar = await confirmar(
+      context,
+      'Este producto se vende por pieza',
+      '"${p.descripcion}" está dado de alta por pieza, así que solo acepta cantidades enteras.\n\n'
+          '¿Se vende por kilo? Márcalo como "a granel" y podrás cobrar ${formatoCantidad(c)}.',
+      si: 'Marcar a granel',
+    );
+    if (!marcar || !mounted || !await autorizar(context, Permiso.productos)) return false;
+    await repos.productos.cambiarTipo([p.id], 'granel');
+    avisarCambio();
+    return true;
+  }
+
   Future<void> _agregar(Producto p, {double? cantidad}) async {
+    if (cantidad != null && !await _cantidadValida(p, cantidad)) return _enfocar();
     // Granel sin cantidad: se pregunta por peso o por importe.
     if (cantidad == null && p.esGranel) {
       cantidad = await pedirGranel(context, p);
@@ -479,6 +508,7 @@ class _VentasPageState extends State<VentasPage> {
       setState(() => _t.seleccion = i);
       return _borrarSeleccion();
     }
+    if (!await _cantidadValida(r.producto, c)) return _enfocar();
     if (!_hayExistencia(r, c)) return _enfocar();
     setState(() => r.cantidad = c);
     _enfocar();

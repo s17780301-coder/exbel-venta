@@ -153,6 +153,17 @@ class ProductosRepo {
         where: 'id = ?', whereArgs: [id]);
   }
 
+  /// Cambia cómo se venden varios productos: 'unidad' (pieza) o 'granel'.
+  /// Los paquetes (kits) no se cambian.
+  Future<int> cambiarTipo(List<String> ids, String tipo) async {
+    var n = 0;
+    for (final id in ids) {
+      n += await db.update('productos', {'tipo': tipo, 'actualizado': ahoraUtc(), 'sincronizado': 0},
+          where: "id = ? AND tipo != 'kit'", whereArgs: [id]);
+    }
+    return n;
+  }
+
   Future<void> marcarFavorito(String id, bool favorito) async {
     await db.update('productos', {'favorito': favorito ? 1 : 0, 'actualizado': ahoraUtc(), 'sincronizado': 0},
         where: 'id = ?', whereArgs: [id]);

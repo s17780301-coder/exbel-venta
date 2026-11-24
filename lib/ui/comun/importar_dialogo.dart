@@ -71,6 +71,8 @@ class _ImportarState extends State<_Importar> {
   late Map<String, int> _cols;
   bool _reemplazar = true;
   bool _granel = true;
+  late final List<(String, int, int, bool)> _deps = widget.clientes ? const [] : departamentosDelArchivo(widget.filas, _encabezado, _cols);
+  late final Set<String> _depsGranel = {for (final d in _deps) if (d.$4) d.$1};
   bool _trabajando = false;
   double _avance = 0;
   ResumenImportacion? _resumen;
@@ -105,6 +107,7 @@ class _ImportarState extends State<_Importar> {
               _cols,
               reemplazarExistencia: _reemplazar,
               granelSiDecimales: _granel && !_cols.containsKey('tipo'),
+              departamentosGranel: _cols.containsKey('tipo') ? const {} : {for (final d in _depsGranel) normalizar(d)},
               cajeroId: sesion.cajero?.id,
               progreso: (h, t) {
                 if (mounted && (h % 25 == 0 || h == t)) setState(() => _avance = t == 0 ? 1 : h / t);
@@ -194,6 +197,25 @@ class _ImportarState extends State<_Importar> {
                     title: Text('Marcar como granel (kg) los que tienen existencia con decimales ($_conDecimales productos)'),
                     subtitle: const Text('Muchos sistemas no exportan si un producto es a granel; los decimales (ej. arroz 20.24) lo delatan.'),
                   ),
+                if (!widget.clientes && !_cols.containsKey('tipo') && _deps.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text('¿Qué departamentos se venden a granel (por kilo)?', style: ExTexto.titulo(16)),
+                  const SizedBox(height: 4),
+                  const Text(
+                      'El Excel del sistema anterior no dice qué productos son a granel. Marca los departamentos que se venden por kilo: '
+                      'todos sus productos pedirán la cantidad al cobrar (ej. .5 = medio kilo). Ya vienen marcados los que parecen.',
+                      style: TextStyle(color: ExColor.texto2)),
+                  const SizedBox(height: 8),
+                  Wrap(spacing: 6, runSpacing: 6, children: [
+                    for (final d in _deps)
+                      FilterChip(
+                        label: Text('${d.$1} (${d.$2})'),
+                        selected: _depsGranel.contains(d.$1),
+                        onSelected: (v) => setState(() => v ? _depsGranel.add(d.$1) : _depsGranel.remove(d.$1)),
+                      ),
+                  ]),
+                  const SizedBox(height: 10),
+                ],
                 if (!widget.clientes)
                   CheckboxListTile(
                     contentPadding: EdgeInsets.zero,

@@ -136,4 +136,20 @@ void main() {
     expect((await repos.productos.porCodigo('ARROZ'))!.tipo, 'granel');
     expect((await repos.productos.porCodigo('COCA'))!.tipo, 'unidad');
   });
+
+  test('sugiere departamentos a granel aunque la existencia sea entera', () {
+    final filas = [
+      ['Código', 'Producto', 'P. Venta', 'Existencia', 'Departamento'],
+      ['1', 'Dog Chow Cachorro', '\$60.00', '2.00', 'croquetas'],
+      ['2', 'Pedigri Adulto', '\$48.00', '11.28', 'croquetas'],
+      ['3', 'Coca 600', '\$18.00', '24.00', 'REFRESCOS'],
+      ['4', 'Frijol', '\$38.00', '10.50', 'Abarrotes sueltos'],
+      ['5', 'Arroz', '\$30.00', '9.75', 'Abarrotes sueltos'],
+    ];
+    final (fila, cols) = detectarColumnas(filas, camposProducto);
+    final d = {for (final x in departamentosDelArchivo(filas, fila, cols)) x.\$1: x.\$4};
+    expect(d['croquetas'], isTrue);
+    expect(d['REFRESCOS'], isFalse);
+    expect(d['Abarrotes sueltos'], isTrue);
+  });
 }

@@ -261,7 +261,26 @@ class CampoNumero extends StatelessWidget {
       onSubmitted: onSubmitted,
       onChanged: onChanged,
     );
-    return ancho == null ? campo : SizedBox(width: ancho, child: campo);
+    // El punto del teclado numérico con Bloq Num apagado llega como "Supr":
+    // aquí siempre escribe el punto.
+    final conPunto = Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onKeyEvent: (_, e) {
+        if (e is! KeyUpEvent && e.physicalKey == PhysicalKeyboardKey.numpadDecimal && e.logicalKey == LogicalKeyboardKey.delete) {
+          final v = controller.value;
+          final ini = v.selection.isValid ? v.selection.start : v.text.length;
+          final fin = v.selection.isValid ? v.selection.end : v.text.length;
+          final t = v.text.replaceRange(ini, fin, '.');
+          controller.value = TextEditingValue(text: t, selection: TextSelection.collapsed(offset: ini + 1));
+          onChanged?.call(t);
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: campo,
+    );
+    return ancho == null ? conPunto : SizedBox(width: ancho, child: conPunto);
   }
 }
 

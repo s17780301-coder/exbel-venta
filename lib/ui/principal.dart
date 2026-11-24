@@ -134,6 +134,7 @@ class _PrincipalState extends State<Principal> {
           LogicalKeyboardKey.insert, LogicalKeyboardKey.arrowUp,
           LogicalKeyboardKey.arrowDown,
         ].contains(k) ||
+        (e.physicalKey == PhysicalKeyboardKey.numpadDecimal && k == LogicalKeyboardKey.delete) ||
         ((esMasOMenos(e) != 0 || k == LogicalKeyboardKey.delete) && codigoVentasVacio()) ||
         (ctrl && [LogicalKeyboardKey.keyP, LogicalKeyboardKey.keyD, LogicalKeyboardKey.keyB, LogicalKeyboardKey.keyF, LogicalKeyboardKey.keyR].contains(k));
   }

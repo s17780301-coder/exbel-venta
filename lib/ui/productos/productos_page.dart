@@ -103,6 +103,35 @@ class _ProductosPageState extends State<ProductosPage> {
     avisarCambio();
   }
 
+  /// Marca varios productos como "a granel" (por kilo) o "por pieza".
+  Future<void> _cambiarTipo() async {
+    if (_sel.isEmpty) {
+      return aviso(context,
+          'Marca los productos (casilla de la izquierda) que quieres cambiar. Tip: filtra por departamento y usa "Marcar todos".');
+    }
+    if (!await _puede()) return;
+    if (!mounted) return;
+    final tipo = await showDialog<String>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text('¿Cómo se venden estos ${_sel.length} productos?'),
+        content: const Text('A granel: al cobrar piden la cantidad y aceptan decimales (.5 = medio kilo).
+'
+            'Por pieza: se agregan de 1 en 1 y solo con cantidades enteras.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(c), child: const Text('Cancelar')),
+          OutlinedButton(onPressed: () => Navigator.pop(c, 'unidad'), child: const Text('Por pieza')),
+          FilledButton(onPressed: () => Navigator.pop(c, 'granel'), child: const Text('A granel (kilo)')),
+        ],
+      ),
+    );
+    if (tipo == null) return;
+    final n = await repos.productos.cambiarTipo(_sel.toList(), tipo);
+    _sel.clear();
+    avisarCambio();
+    if (mounted) aviso(context, '$n productos ahora se venden ${tipo == 'granel' ? 'a granel' : 'por pieza'}.');
+  }
+
   Future<void> _departamentos() async {
     if (!await _puede()) return;
     await showDialog<void>(context: context, builder: (_) => const _Departamentos());
@@ -213,6 +242,7 @@ class _ProductosPageState extends State<ProductosPage> {
           _boton(Icons.folder_outlined, 'Departamentos', _departamentos),
           _boton(Icons.local_offer_outlined, 'Promociones', _promociones),
           _boton(Icons.price_change_outlined, 'Cambiar precios', _cambiarPrecios),
+          _boton(Icons.scale_rounded, 'Pieza o granel', _cambiarTipo),
           _boton(Icons.file_download_outlined, 'Importar', _importar),
           _boton(Icons.file_upload_outlined, 'Exportar', _exportar),
           _boton(Icons.checklist, 'Marcar todos', _marcarTodos),

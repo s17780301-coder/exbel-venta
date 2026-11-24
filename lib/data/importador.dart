@@ -281,6 +281,7 @@ Future<ResumenImportacion> importarProductos(
   Map<String, int> columnas, {
   bool reemplazarExistencia = true,
   bool granelSiDecimales = false,
+  Set<String> departamentosGranel = const {},
   String? cajeroId,
   void Function(int hechos, int total)? progreso,
 }) async {
@@ -318,7 +319,9 @@ Future<ResumenImportacion> importarProductos(
         descripcion: desc,
         tipo: columnas.containsKey('tipo')
             ? leerTipo(v(f, 'tipo'))
-            : (granelSiDecimales && tieneDecimales(v(f, 'existencia')) ? 'granel' : (existente?.tipo ?? 'unidad')),
+            : ((granelSiDecimales && tieneDecimales(v(f, 'existencia'))) || departamentosGranel.contains(normalizar(depNombre))
+                ? 'granel'
+                : (existente?.tipo ?? 'unidad')),
         departamentoId: depId,
         costoCentavos: leerDinero(v(f, 'costo')) ?? existente?.costoCentavos ?? 0,
         precioCentavos: precio,
@@ -428,3 +431,32 @@ Future<void> borrarDatos({
 
 /// Para mostrar cantidades del archivo en la vista previa.
 String muestra(String s) => s.length > 40 ? '${s.substring(0, 40)}…' : s;
+
+/// Palabras de departamentos que normalmente se venden por kilo.
+const _pistasGranel = ['granel', 'croqueta', 'semilla', 'grano', 'salchichon', 'carne', 'queso', 'fruta', 'verdura',
+  'legumbre', 'chile seco', 'cremeria', 'jamon', 'pollo', 'res', 'cerdo', 'alimento para', 'forraje', 'cereal suelto'];
+
+/// Departamentos del archivo: (nombre, productos, con existencia decimal, sugerido a granel).
+List<(String, int, int, bool)> departamentosDelArchivo(List<List<String>> filas, int encabezado, Map<String, int> cols) {
+  final iDep = cols['departamento'];
+  if (iDep == null) return [];
+  final iEx = cols['existencia'];
+  final total = <String, int>{};
+  final dec = <String, int>{};
+  for (final f in filas.skip(encabezado + 1)) {
+    final d = iDep < f.length ? f[iDep].trim() : '';
+    if (d.isEmpty) continue;
+    total[d] = (total[d] ?? 0) + 1;
+    if (iEx != null && iEx < f.length && tieneDecimales(f[iEx])) dec[d] = (dec[d] ?? 0) + 1;
+  }
+  final r = [
+    for (final e in total.entries)
+      (
+        e.key,
+        e.value,
+        dec[e.key] ?? 0,
+        (dec[e.key] ?? 0) * 10 >= e.value * 3 || _pistasGranel.any((p) => normalizar(e.key).contains(p)),
+      )
+  ]..sort((a, b) => a.$1.toLowerCase().compareTo(b.$1.toLowerCase()));
+  return r;
+}
