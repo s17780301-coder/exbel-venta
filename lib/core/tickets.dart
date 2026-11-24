@@ -30,11 +30,12 @@ String t(String s) {
 }
 
 PdfPageFormat formatoTicket() {
-  final ancho = repos.ajustes.entero(Ajuste.ticketAncho) == 80 ? 80.0 : 58.0;
-  return PdfPageFormat(ancho * PdfPageFormat.mm, double.infinity, marginAll: 3 * PdfPageFormat.mm);
+  // Ancho que de verdad imprime la impresora (58 mm → 48 mm, 80 mm → 72 mm).
+  final ancho = repos.ajustes.entero(Ajuste.ticketAncho) == 80 ? 72.0 : 48.0;
+  return PdfPageFormat(ancho * PdfPageFormat.mm, double.infinity, marginAll: 1 * PdfPageFormat.mm);
 }
 
-pw.Widget _fila(String a, String b, {bool negrita = false, double tamano = 8}) => pw.Row(
+pw.Widget _fila(String a, String b, {bool negrita = false, double tamano = 9}) => pw.Row(
       mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -59,7 +60,7 @@ List<pw.Widget> _encabezado() {
     pw.Text(t(a.texto(Ajuste.nombreNegocio).toUpperCase()),
         textAlign: pw.TextAlign.center, style: pw.TextStyle(fontSize: 11, fontWeight: pw.FontWeight.bold)),
     for (final x in [a.texto(Ajuste.direccion), a.texto(Ajuste.telefono), a.texto(Ajuste.rfc), a.texto(Ajuste.ticketEncabezado)])
-      if (x.trim().isNotEmpty) pw.Text(t(x), textAlign: pw.TextAlign.center, style: const pw.TextStyle(fontSize: 7.5)),
+      if (x.trim().isNotEmpty) pw.Text(t(x), textAlign: pw.TextAlign.center, style: const pw.TextStyle(fontSize: 8.5)),
   ];
 }
 
@@ -84,14 +85,14 @@ Future<Uint8List> ticketVenta(Venta v, List<LineaVendida> lineas, {bool copia = 
     build: (_) => pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.stretch, children: [
       ..._encabezado(),
       _linea(),
-      if (copia) pw.Text('*** COPIA ***', textAlign: pw.TextAlign.center, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
-      if (v.cancelada) pw.Text('*** CANCELADA ***', textAlign: pw.TextAlign.center, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+      if (copia) pw.Text('*** COPIA ***', textAlign: pw.TextAlign.center, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
+      if (v.cancelada) pw.Text('*** CANCELADA ***', textAlign: pw.TextAlign.center, style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
       _fila('Folio ${v.folio}', formatoFechaHora(v.fecha)),
       _fila('Cajero: ${v.cajeroNombre ?? ''}', ''),
       if (v.clienteNombre != null) _fila('Cliente: ${v.clienteNombre}', ''),
       _linea(),
       for (final l in lineas) ...[
-        pw.Text(t(l.descripcion), style: const pw.TextStyle(fontSize: 8)),
+        pw.Text(t(l.descripcion), style: const pw.TextStyle(fontSize: 9)),
         _fila('  ${formatoCantidad(l.cantidad)} x ${formatoPesos(l.precioCentavos)}', formatoPesos(l.importeCentavos)),
       ],
       _linea(),
@@ -110,9 +111,9 @@ Future<Uint8List> ticketVenta(Venta v, List<LineaVendida> lineas, {bool copia = 
       if (pago.valesCentavos > 0) _fila('Vales', formatoPesos(pago.valesCentavos)),
       if (pago.dolaresCentavos > 0) _fila('Dólares (en pesos)', formatoPesos(pago.dolaresCentavos)),
       if (pago.creditoCentavos > 0) _fila('A crédito', formatoPesos(pago.creditoCentavos), negrita: true),
-      if (v.notas.isNotEmpty) ...[_linea(), pw.Text(t(v.notas), style: const pw.TextStyle(fontSize: 7.5))],
+      if (v.notas.isNotEmpty) ...[_linea(), pw.Text(t(v.notas), style: const pw.TextStyle(fontSize: 8.5))],
       _linea(),
-      pw.Text(t(a.texto(Ajuste.ticketPie)), textAlign: pw.TextAlign.center, style: const pw.TextStyle(fontSize: 8)),
+      pw.Text(t(a.texto(Ajuste.ticketPie)), textAlign: pw.TextAlign.center, style: const pw.TextStyle(fontSize: 9)),
       pw.SizedBox(height: 4),
       pw.Text('exBel venta', textAlign: pw.TextAlign.center, style: const pw.TextStyle(fontSize: 6, color: PdfColors.grey600)),
     ]),
@@ -136,7 +137,7 @@ Future<Uint8List> ticketCorte(Corte c, {int? contadoCentavos, int? fondoSiguient
       _fila('Ventas (${c.numeroVentas})', formatoPesos(c.ventasCentavos), negrita: true),
       _fila('Ganancia', formatoPesos(c.gananciaCentavos)),
       _linea(),
-      pw.Text('DINERO EN CAJA', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+      pw.Text('DINERO EN CAJA', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
       _fila('Fondo de caja', formatoPesos(c.fondoCentavos)),
       _fila('+ Ventas en efectivo', formatoPesos(c.efectivoCentavos)),
       _fila('+ Abonos en efectivo', formatoPesos(c.abonosEfectivoCentavos)),
@@ -160,7 +161,7 @@ Future<Uint8List> ticketCorte(Corte c, {int? contadoCentavos, int? fondoSiguient
         ],
       ],
       _linea(),
-      pw.Text('VENTAS POR FORMA DE PAGO', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+      pw.Text('VENTAS POR FORMA DE PAGO', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
       _fila('Efectivo', formatoPesos(c.efectivoCentavos)),
       _fila('Tarjeta', formatoPesos(c.tarjetaCentavos)),
       _fila('Transferencia', formatoPesos(c.transferenciaCentavos)),
@@ -170,7 +171,7 @@ Future<Uint8List> ticketCorte(Corte c, {int? contadoCentavos, int? fondoSiguient
       _fila('Abonos con tarjeta/otros', formatoPesos(c.abonosOtrosCentavos)),
       _fila('Devoluciones', formatoPesos(c.devolucionesCentavos)),
       _linea(),
-      pw.Text('POR DEPARTAMENTO', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),
+      pw.Text('POR DEPARTAMENTO', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold)),
       for (final d in c.porDepartamento) _fila(d.$1, formatoPesos(d.$2)),
       if (c.ivaCentavos > 0 || c.iepsCentavos > 0) ...[
         _linea(),

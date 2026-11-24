@@ -1,9 +1,13 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 
+import '../../core/escpos.dart';
+import '../../core/impresion_cruda.dart';
 import '../../core/impresora.dart';
+import '../../data/ajustes_repo.dart';
 import '../../data/repos.dart';
 import '../zoom.dart';
 import '../tema/tema.dart';
@@ -17,6 +21,13 @@ Future<void> imprimir(BuildContext context, Uint8List pdf, {String nombre = 'tic
   try {
     final p = await impresoraTickets();
     if (p != null) {
+      // Directo en ESC/POS: a todo el ancho del papel y sin que Windows lo encoja.
+      if (Platform.isWindows) {
+        try {
+          final datos = await escposDesdePdf(pdf, anchoMm: repos.ajustes.entero(Ajuste.ticketAncho));
+          if (imprimirCrudo(p.name, datos, documento: nombre) == null) return;
+        } catch (_) {}
+      }
       await Printing.directPrintPdf(printer: p, onLayout: (_) async => pdf, name: nombre);
       return;
     }
