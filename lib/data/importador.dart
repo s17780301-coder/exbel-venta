@@ -434,7 +434,7 @@ String muestra(String s) => s.length > 40 ? '${s.substring(0, 40)}…' : s;
 
 /// Palabras de departamentos que normalmente se venden por kilo.
 const _pistasGranel = ['granel', 'croqueta', 'semilla', 'grano', 'salchichon', 'carne', 'queso', 'fruta', 'verdura',
-  'legumbre', 'chile seco', 'cremeria', 'jamon', 'pollo', 'res', 'cerdo', 'alimento para', 'forraje', 'cereal suelto'];
+  'legumbre', 'chile seco', 'cremeria', 'jamon', 'pollo', 'carniceria', 'cerdo', 'alimento para', 'forraje', 'cereal suelto'];
 
 /// Departamentos del archivo: (nombre, productos, con existencia decimal, sugerido a granel).
 List<(String, int, int, bool)> departamentosDelArchivo(List<List<String>> filas, int encabezado, Map<String, int> cols) {
