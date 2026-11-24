@@ -68,7 +68,7 @@ class _BuscadorState extends State<_Buscador> {
     final t = _c.text.trim();
     final r = <Hallazgo>[];
     // Vacío hasta que se escriban al menos 2 letras (como pidió la tienda).
-    if (t.length < 2) {
+    if (t.isEmpty) {
       if (mounted) setState(() => _r = []);
       return;
     }
@@ -206,13 +206,13 @@ class _BuscadorState extends State<_Buscador> {
           ),
           Expanded(
             child: _r.isEmpty
-                ? ExVacio(_c.text.trim().length < 2 ? 'Escribe al menos 2 letras del producto, cliente o folio' : 'Sin resultados')
+                ? ExVacio(_c.text.trim().isEmpty ? 'Escribe una letra del producto, cliente o folio' : 'Sin resultados')
                 : ListView.builder(itemCount: _r.length, itemBuilder: (_, i) => _fila(i)),
           ),
           Padding(
             padding: const EdgeInsets.all(14),
             child: Row(children: [
-              Text(_c.text.trim().length < 2 ? 'Primero salen los más buscados y vendidos' : '${_r.length} resultados · clic o ENTER para elegir',
+              Text(_c.text.trim().isEmpty ? 'Primero salen los más buscados y vendidos' : '${_r.length} resultados · clic o ENTER para elegir',
                   style: const TextStyle(color: ExColor.texto2)),
               const Spacer(),
               TextButton(onPressed: () => Navigator.pop(context), child: const Text('ESC - Cancelar')),

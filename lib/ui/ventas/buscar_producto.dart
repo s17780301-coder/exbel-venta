@@ -48,7 +48,7 @@ class _BuscadorState extends State<_Buscador> {
   Future<void> _buscar() async {
     final t = _c.text.trim();
     // Vacío hasta 2 letras; luego primero los más buscados y vendidos.
-    final r = t.length < 2 ? <Producto>[] : await repos.productos.buscar(t, porUso: true, limite: 200);
+    final r = t.isEmpty ? <Producto>[] : await repos.productos.buscar(t, porUso: true, limite: 200);
     if (mounted) {
       setState(() {
         _lista = r;
@@ -121,7 +121,7 @@ class _BuscadorState extends State<_Buscador> {
           ]),
           Expanded(
             child: _lista.isEmpty
-                ? Center(child: Text(_c.text.trim().length < 2 ? 'Escribe al menos 2 letras del producto' : 'Sin resultados', style: const TextStyle(fontSize: 16, color: ExColor.texto2)))
+                ? Center(child: Text(_c.text.trim().isEmpty ? 'Escribe una letra o el código del producto' : 'Sin resultados', style: const TextStyle(fontSize: 16, color: ExColor.texto2)))
                 : ListView.builder(
                     itemCount: _lista.length,
                     itemExtent: 44,

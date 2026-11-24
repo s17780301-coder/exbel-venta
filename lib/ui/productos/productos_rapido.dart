@@ -269,7 +269,7 @@ class _EliminarState extends State<_Eliminar> {
   }
 
   Future<void> _cargar(String t) async {
-    if (t.trim().length < 2) {
+    if (t.trim().isEmpty) {
       setState(() {
         _lista = [];
         _sel = -1;
