@@ -23,10 +23,15 @@ Future<void> imprimir(BuildContext context, Uint8List pdf, {String nombre = 'tic
     if (p != null) {
       // Directo en ESC/POS: a todo el ancho del papel y sin que Windows lo encoja.
       if (Platform.isWindows) {
+        String? falla;
         try {
           final datos = await escposDesdePdf(pdf, anchoMm: repos.ajustes.entero(Ajuste.ticketAncho));
-          if (imprimirCrudo(p.name, datos, documento: nombre) == null) return;
-        } catch (_) {}
+          falla = imprimirCrudo(p.name, datos, documento: nombre);
+          if (falla == null) return;
+        } catch (e) {
+          falla = '$e';
+        }
+        if (context.mounted) aviso(context, 'Impresión directa no funcionó ($falla). Se imprimió por Windows.');
       }
       await Printing.directPrintPdf(printer: p, onLayout: (_) async => pdf, name: nombre);
       return;
