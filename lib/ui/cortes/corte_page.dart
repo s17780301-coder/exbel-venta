@@ -7,6 +7,7 @@ import '../../data/ajustes_repo.dart';
 import '../../data/repos.dart';
 import '../../models/modelos.dart';
 import '../comun/dialogos.dart';
+import '../comun/ex_ui.dart';
 import '../comun/ex_widgets.dart';
 import '../comun/impresion.dart';
 import '../sesion.dart';
@@ -132,7 +133,7 @@ class _CortePageState extends State<CortePage> {
       padding: const EdgeInsets.all(20),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [
-          Text('Corte', style: ExTexto.titulo(28)),
+          const TituloSeccion('Corte de caja', icono: Icons.calculate_rounded, tono: Tono.azul),
           const SizedBox(width: 20),
           SegmentedButton<_Vista>(
             segments: const [

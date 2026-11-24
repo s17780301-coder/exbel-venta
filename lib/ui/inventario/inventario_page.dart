@@ -7,6 +7,7 @@ import '../../data/repos.dart';
 import '../../models/modelos.dart';
 import '../comun/csv.dart';
 import '../comun/dialogos.dart';
+import '../comun/ex_ui.dart';
 import '../comun/ex_widgets.dart';
 import '../sesion.dart';
 import '../tema/tema.dart';
@@ -38,19 +39,21 @@ class _InventarioPageState extends State<InventarioPage> {
     return Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Container(
         width: 250,
-        color: ExColor.blanco,
+        decoration: const BoxDecoration(color: Color(0xFFFCFCFD), border: Border(right: BorderSide(color: Color(0xFFE3E1EE)))),
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-            child: Text('Inventario', style: ExTexto.titulo(26)),
+            child: const TituloSeccion('Inventario', icono: Icons.warehouse_rounded, tono: Tono.ambar),
           ),
           for (var i = 0; i < _vistas.length; i++)
             ListTile(
               selected: _vista == i,
-              selectedTileColor: ExColor.lavanda.withOpacity(0.5),
+              selectedTileColor: const Color(0xFFF0EEF9),
               selectedColor: ExColor.tinta,
-              leading: Icon(_vistas[i].$2),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+              leading: Mosaico(_vistas[i].$2, tono: Tono.todos[i % Tono.todos.length], tamano: 34),
               title: Text(_vistas[i].$1),
               onTap: () => setState(() => _vista = i),
             ),

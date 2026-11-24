@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../tema/ex_icon.dart';
 import '../tema/tema.dart';
+import 'ex_ui.dart';
 
 /// Etiqueta cuadrada (estado, lista de precios, contador).
 class ExEtiqueta extends StatelessWidget {
@@ -134,8 +135,9 @@ class ExSeccion extends StatelessWidget {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: oscuro ? ExColor.tinta : ExColor.blanco,
-        border: oscuro ? null : Border.all(color: ExColor.linea),
+        color: oscuro ? const Color(0xFFECEAF7) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [BoxShadow(color: Color(0x142B2845), blurRadius: 3, offset: Offset(0, 1))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -146,8 +148,7 @@ class ExSeccion extends StatelessWidget {
               Expanded(
                 child: Text(
                   titulo!,
-                  style: ExTexto.titulo(18,
-                      color: oscuro ? ExColor.concreto : ExColor.tinta),
+                  style: ExTexto.titulo(17, color: ExColor.tinta),
                 ),
               ),
               if (accion != null) accion!,
@@ -183,34 +184,40 @@ class ExKpi extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fondo = alerta
-        ? ExColor.naranja
+        ? const Color(0xFFFBE3DC)
         : destacado
-            ? ExColor.acento
-            : ExColor.blanco;
+            ? const Color(0xFFECEAF7)
+            : Colors.white;
+    final colorValor = alerta ? const Color(0xFFB0573F) : (destacado ? const Color(0xFF34306A) : ExColor.tinta);
     return Material(
       color: fondo,
+      borderRadius: BorderRadius.circular(16),
+      shadowColor: const Color(0x332B2845),
+      elevation: destacado || alerta ? 0 : 1,
       child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
           decoration: BoxDecoration(
-            border: destacado || alerta ? null : Border.all(color: ExColor.linea),
+            borderRadius: BorderRadius.circular(16),
+            border: destacado ? Border.all(color: const Color(0xFFDCD8EF)) : (alerta ? Border.all(color: const Color(0xFFF1C9BC)) : null),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(nombre,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-              const SizedBox(height: 6),
+              Text(nombre.toUpperCase(),
+                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, letterSpacing: 0.8, color: Color(0xFF6B6785))),
+              const SizedBox(height: 8),
               FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
-                child: Text(valor, style: ExTexto.titulo(28)),
+                child: Text(valor, style: ExTexto.titulo(28, color: colorValor, peso: FontWeight.w600)),
               ),
               if (nota != null) ...[
                 const SizedBox(height: 4),
-                Text(nota!, style: const TextStyle(fontSize: 12)),
+                Text(nota!, style: const TextStyle(fontSize: 12.5, color: Color(0xFF6B6785))),
               ],
             ],
           ),
@@ -241,14 +248,15 @@ class ExAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = Tono.de(nombre);
     return Container(
       width: size,
       height: size,
-      decoration: const BoxDecoration(color: ExColor.banda, shape: BoxShape.circle),
+      decoration: BoxDecoration(color: t.fondo, shape: BoxShape.circle),
       alignment: Alignment.center,
       child: Text(
         _iniciales,
-        style: ExTexto.titulo(size * 0.36, color: ExColor.bandaTexto),
+        style: ExTexto.titulo(size * 0.36, color: t.color),
       ),
     );
   }
@@ -276,21 +284,21 @@ class ExBotonIcono extends StatelessWidget {
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: oscuro ? ExColor.tinta : ExColor.blanco,
+        color: oscuro ? const Color(0xFFECEAF7) : Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(6),
-          side: oscuro ? BorderSide.none : const BorderSide(color: ExColor.borde, width: 1.4),
+          borderRadius: BorderRadius.circular(10),
+          side: const BorderSide(color: Color(0xFFDCD9EA)),
         ),
         child: InkWell(
           onTap: onPressed,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(10),
           child: SizedBox(
             width: size,
             height: size,
             child: Center(
               child: ExIcon(
                 icono,
-                color: oscuro ? ExColor.concreto : ExColor.tinta,
+                color: const Color(0xFF4A4789),
               ),
             ),
           ),
@@ -315,9 +323,11 @@ class ExVacio extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const Mosaico(Icons.inbox_rounded, tono: Tono.lavanda, tamano: 52),
+            const SizedBox(height: 12),
             Text(texto,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: ExColor.texto2)),
+                style: const TextStyle(color: ExColor.texto2, fontSize: 15)),
             if (accion != null) ...[const SizedBox(height: 16), accion!],
           ],
         ),
@@ -353,7 +363,7 @@ class ExBuscador extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radio = BorderRadius.circular(grande ? 32 : 24);
+    final radio = BorderRadius.circular(grande ? 16 : 12);
     return TextField(
       controller: controller,
       focusNode: focusNode,
@@ -366,7 +376,7 @@ class ExBuscador extends StatelessWidget {
         contentPadding: EdgeInsets.symmetric(vertical: grande ? 22 : 14, horizontal: 8),
         prefixIcon: Padding(
           padding: EdgeInsets.only(left: grande ? 20 : 14, right: 8),
-          child: ExIcon(ExIcono.buscar, size: grande ? 24 : 18),
+          child: ExIcon(ExIcono.buscar, size: grande ? 24 : 18, color: const Color(0xFF4A4789)),
         ),
         prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
         suffixIcon: atajo == null
@@ -387,13 +397,15 @@ class ExBuscador extends StatelessWidget {
                 ),
               ),
         border: OutlineInputBorder(borderRadius: radio),
+        filled: true,
+        fillColor: Colors.white,
         enabledBorder: OutlineInputBorder(
           borderRadius: radio,
-          borderSide: BorderSide(color: grande ? ExColor.tinta : ExColor.linea, width: grande ? 2 : 1),
+          borderSide: BorderSide(color: const Color(0xFFDCD9EA), width: grande ? 1.5 : 1.2),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: radio,
-          borderSide: const BorderSide(color: ExColor.tinta, width: 2),
+          borderSide: const BorderSide(color: Color(0xFF4A4789), width: 1.8),
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: radio,

@@ -17,6 +17,7 @@ import '../../data/importador.dart';
 import '../../data/repos.dart';
 import '../../models/modelos.dart';
 import '../comun/dialogos.dart';
+import '../comun/ex_ui.dart';
 import '../comun/ex_widgets.dart';
 import '../comun/impresion.dart';
 import '../comun/licencia_ui.dart';
@@ -139,24 +140,22 @@ class _ConfigPageState extends State<ConfigPage> {
   Widget build(BuildContext context) {
     final abierta = _abierta;
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      Container(
-        color: ExColor.banda,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        child: Text(abierta == null ? 'CONFIGURACIÓN' : 'CONFIGURACIÓN - ${abierta.nombre.toUpperCase()}',
-            style: ExTexto.titulo(19, color: ExColor.bandaTexto)),
-      ),
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+        padding: const EdgeInsets.fromLTRB(22, 6, 22, 10),
         child: Row(children: [
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(backgroundColor: ExColor.blanco, side: const BorderSide(color: ExColor.borde, width: 1.4)),
-            onPressed: abierta == null ? null : () => setState(() => _abierta = null),
-            icon: const Icon(Icons.home_outlined, color: ExColor.acento),
-            label: const Text('Mostrar todas las opciones'),
-          ),
+          TituloSeccion(abierta == null ? 'Configuración' : abierta.nombre,
+              icono: abierta == null ? Icons.settings_rounded : abierta.icono,
+              tono: Tono.gris,
+              subtitulo: abierta == null ? 'Ajusta exBel venta a tu negocio' : 'Configuración'),
+          const Spacer(),
+          if (abierta != null)
+            OutlinedButton.icon(
+              onPressed: () => setState(() => _abierta = null),
+              icon: const Icon(Icons.grid_view_rounded, color: Color(0xFF4A4789)),
+              label: const Text('Todas las opciones'),
+            ),
         ]),
       ),
-      const Divider(),
       Expanded(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
@@ -164,11 +163,12 @@ class _ConfigPageState extends State<ConfigPage> {
               ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   for (final g in _grupos) ...[
                     Padding(
-                      padding: const EdgeInsets.only(top: 10, bottom: 6),
-                      child: Text(g.$1, style: ExTexto.titulo(18, color: ExColor.indigo)),
+                      padding: const EdgeInsets.only(top: 12, bottom: 10),
+                      child: Text(g.$1.toUpperCase(),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1, color: Color(0xFF6B6785))),
                     ),
-                    Wrap(spacing: 6, runSpacing: 6, children: [for (final o in g.$2) _icono(o)]),
-                    const Divider(height: 18),
+                    Wrap(spacing: 12, runSpacing: 12, children: [for (final o in g.$2) _icono(o)]),
+                    const SizedBox(height: 10),
                   ],
                 ])
               : Align(
@@ -181,18 +181,26 @@ class _ConfigPageState extends State<ConfigPage> {
   }
 
   Widget _icono(_Opcion o) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: () => setState(() => _abierta = o),
-      child: SizedBox(
-        width: 150,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-          child: Column(children: [
-            Icon(o.icono, size: 38, color: o.color),
-            const SizedBox(height: 6),
-            Text(o.nombre, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15)),
-          ]),
+    final tono = Tono(Color.alphaBlend(o.color.withOpacity(0.14), Colors.white), o.color);
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      elevation: 1,
+      shadowColor: const Color(0x332B2845),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => setState(() => _abierta = o),
+        child: SizedBox(
+          width: 150,
+          height: 118,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Mosaico(o.icono, tono: tono, tamano: 48),
+              const SizedBox(height: 10),
+              Text(o.nombre, textAlign: TextAlign.center, maxLines: 2, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600)),
+            ]),
+          ),
         ),
       ),
     );

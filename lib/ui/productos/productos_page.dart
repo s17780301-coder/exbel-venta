@@ -8,6 +8,7 @@ import '../../data/repos.dart';
 import '../../models/modelos.dart';
 import '../comun/csv.dart';
 import '../comun/dialogos.dart';
+import '../comun/ex_ui.dart';
 import '../comun/importar_dialogo.dart';
 import '../comun/ex_widgets.dart';
 import '../sesion.dart';
@@ -134,17 +135,32 @@ class _ProductosPageState extends State<ProductosPage> {
     await importarDesdeArchivo(context);
   }
 
-  Widget _boton(IconData i, String t, VoidCallback f, {bool peligro = false}) => OutlinedButton.icon(
-        style: OutlinedButton.styleFrom(
-          minimumSize: const Size(0, 46),
-          backgroundColor: ExColor.blanco,
-          foregroundColor: peligro ? ExColor.rojo : null,
-          side: BorderSide(color: peligro ? ExColor.rojo : ExColor.borde, width: 1.4),
+  static const _tonos = [Tono.verde, Tono.lavanda, Tono.coral, Tono.ambar, Tono.rosa, Tono.azul, Tono.verde, Tono.azul, Tono.gris, Tono.ambar];
+  int _nBoton = 0;
+
+  Widget _boton(IconData i, String t, VoidCallback f, {bool peligro = false}) {
+    final tono = peligro ? Tono.coral : _tonos[_nBoton++ % _tonos.length];
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: f,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(7, 7, 14, 7),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: peligro ? const Color(0xFFF1C9BC) : const Color(0xFFE3E1EE)),
+          ),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Mosaico(i, tono: tono, tamano: 30),
+            const SizedBox(width: 9),
+            Text(t, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: peligro ? tono.color : ExColor.tinta)),
+          ]),
         ),
-        onPressed: f,
-        icon: Icon(i, size: 20, color: peligro ? ExColor.rojo : ExColor.indigo),
-        label: Text(t, style: const TextStyle(fontSize: 15)),
-      );
+      ),
+    );
+  }
 
   Future<void> _marcarTodos() async {
     setState(() {
@@ -176,13 +192,12 @@ class _ProductosPageState extends State<ProductosPage> {
   }
 
   Widget _contenido(BuildContext context) {
+    _nBoton = 0;
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(22, 6, 22, 14),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [
-          Text('Productos', style: ExTexto.titulo(28)),
-          const SizedBox(width: 12),
-          Text('$_total en el catálogo', style: const TextStyle(color: ExColor.texto2)),
+          TituloSeccion('Productos', icono: Icons.inventory_2_rounded, tono: Tono.verde, subtitulo: '$_total en el catálogo'),
           const Spacer(),
         ]),
         const SizedBox(height: 10),

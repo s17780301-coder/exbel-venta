@@ -7,6 +7,7 @@ import '../../data/reportes_repo.dart';
 import '../../data/repos.dart';
 import '../comun/csv.dart';
 import '../comun/dialogos.dart' show EncabezadoTabla, FilaTabla, celda;
+import '../comun/ex_ui.dart';
 import '../comun/ex_widgets.dart';
 import '../tema/tema.dart';
 
@@ -126,7 +127,7 @@ class _ReportesPageState extends State<ReportesPage> {
       padding: const EdgeInsets.all(20),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [
-          Text('Reportes', style: ExTexto.titulo(28)),
+          const TituloSeccion('Reportes', icono: Icons.bar_chart_rounded, tono: Tono.rosa),
           const SizedBox(width: 20),
           Expanded(
             child: Wrap(spacing: 8, runSpacing: 8, children: [

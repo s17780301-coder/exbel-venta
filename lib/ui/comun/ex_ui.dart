@@ -198,3 +198,22 @@ class Tarjeta extends StatelessWidget {
         child: child,
       );
 }
+
+/// Título de sección: mosaico de color, nombre y (opcional) subtítulo.
+class TituloSeccion extends StatelessWidget {
+  const TituloSeccion(this.titulo, {super.key, required this.icono, required this.tono, this.subtitulo});
+  final String titulo;
+  final IconData icono;
+  final Tono tono;
+  final String? subtitulo;
+
+  @override
+  Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min, children: [
+        Mosaico(icono, tono: tono, tamano: 44),
+        const SizedBox(width: 14),
+        Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(titulo, style: ExTexto.titulo(24, color: ExColor.tinta, peso: FontWeight.w700)),
+          if (subtitulo != null) Text(subtitulo!, style: const TextStyle(fontSize: 13, color: ExEstilo.texto2)),
+        ]),
+      ]);
+}

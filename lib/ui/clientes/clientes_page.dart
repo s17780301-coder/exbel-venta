@@ -10,6 +10,7 @@ import '../../models/modelos.dart';
 import '../comun/csv.dart';
 import '../comun/dialogos.dart';
 import '../comun/importar_dialogo.dart';
+import '../comun/ex_ui.dart';
 import '../comun/ex_widgets.dart';
 import '../comun/impresion.dart';
 import '../sesion.dart';
@@ -161,11 +162,16 @@ class _ClientesPageState extends State<ClientesPage> {
         SizedBox(
           width: 420,
           child: Container(
-            color: ExColor.blanco,
+            decoration: const BoxDecoration(color: Color(0xFFFCFCFD), border: Border(right: BorderSide(color: Color(0xFFE3E1EE)))),
             child: Column(children: [
               Padding(
                 padding: const EdgeInsets.all(14),
                 child: Column(children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TituloSeccion('Clientes', icono: Icons.people_alt_rounded, tono: Tono.coral, subtitulo: '${_lista.length} en la lista'),
+                  ),
+                  const SizedBox(height: 12),
                   ExBuscador(controller: _buscar, hint: 'Buscar cliente', onChanged: (_) => _cargar()),
                   const SizedBox(height: 10),
                   Row(children: [
@@ -209,7 +215,7 @@ class _ClientesPageState extends State<ClientesPage> {
                           final c = _lista[i];
                           return ListTile(
                             selected: _sel?.id == c.id,
-                            selectedTileColor: ExColor.lavanda.withOpacity(0.5),
+                            selectedTileColor: const Color(0xFFF0EEF9),
                             leading: ExAvatar(c.nombre),
                             title: Text(c.nombre),
                             subtitle: Text('No. ${c.numero}${c.telefono.isEmpty ? '' : ' · ${c.telefono}'}'),
