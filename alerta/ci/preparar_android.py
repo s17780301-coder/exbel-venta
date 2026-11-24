@@ -59,6 +59,9 @@ kts = raiz / 'build.gradle.kts'
 g = kts.read_text()
 g = re.sub(r'minSdk\s*=\s*[^\n]+', 'minSdk = 23', g, count=1)
 g = re.sub(r'(defaultConfig\s*\{)', r'\1\n        multiDexEnabled = true', g, count=1)
+# ota_update necesita "desugaring" de Java.
+g = re.sub(r'(compileOptions\s*\{)', r'\1\n        isCoreLibraryDesugaringEnabled = true', g, count=1)
+g += '\ndependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")\n}\n'
 # Firma fija desde los secretos de GitHub (ALERTA_FIRMA en base64 y ALERTA_CLAVE).
 # Sin secretos se usa la firma de prueba: instala, pero no se actualiza encima.
 b64 = os.environ.get('ALERTA_FIRMA', '').strip()

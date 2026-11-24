@@ -27,7 +27,7 @@ class _ImportarRespaldo extends StatefulWidget {
 class _ImportarRespaldoState extends State<_ImportarRespaldo> {
   ContenidoRespaldo? _c;
   String? _error;
-  bool _productos = true, _clientes = true, _reemplazar = true, _trabajando = false;
+  bool _productos = true, _clientes = true, _reemplazar = true, _omitir = false, _trabajando = false;
   double _avance = 0;
   (ResumenImportacion, ResumenImportacion)? _r;
 
@@ -48,6 +48,7 @@ class _ImportarRespaldoState extends State<_ImportarRespaldo> {
           productos: _productos,
           clientes: _clientes,
           reemplazarExistencia: _reemplazar,
+          omitirExistentes: _omitir,
           cajeroId: sesion.cajero?.id, progreso: (h, t) {
         if (mounted && (h % 25 == 0 || h == t)) setState(() => _avance = t == 0 ? 1 : h / t);
       });
@@ -91,7 +92,7 @@ class _ImportarRespaldoState extends State<_ImportarRespaldo> {
     } else if (r != null) {
       final errores = [...r.$1.errores, ...r.$2.errores];
       cuerpo = Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        if (_productos) _dato(Icons.inventory_2_rounded, Tono.verde, 'Productos', '${r.$1.nuevos} nuevos · ${r.$1.actualizados} actualizados'),
+        if (_productos) _dato(Icons.inventory_2_rounded, Tono.verde, 'Productos', '${r.$1.nuevos} nuevos · ${r.$1.actualizados} actualizados${r.$1.omitidos > 0 ? ' · ${r.$1.omitidos} omitidos' : ''}'),
         if (_clientes) _dato(Icons.people_alt_rounded, Tono.coral, 'Clientes', '${r.$2.nuevos} nuevos · ${r.$2.omitidos} ya estaban'),
         if (errores.isNotEmpty) ...[
           const SizedBox(height: 8),
@@ -117,13 +118,33 @@ class _ImportarRespaldoState extends State<_ImportarRespaldo> {
           onChanged: _trabajando ? null : (v) => setState(() => _productos = v ?? true),
           title: const Text('Importar productos, departamentos y existencias'),
         ),
-        if (_productos)
-          CheckboxListTile(
-            contentPadding: const EdgeInsets.only(left: 24),
-            value: _reemplazar,
-            onChanged: _trabajando ? null : (v) => setState(() => _reemplazar = v ?? true),
-            title: const Text('Si un producto ya existe aquí, poner la existencia del respaldo'),
+        if (_productos) ...[
+          const Padding(
+            padding: EdgeInsets.only(left: 24, top: 2, bottom: 2),
+            child: Text('Productos que ya existen aquí (mismo código):', style: TextStyle(fontWeight: FontWeight.w600)),
           ),
+          RadioListTile<bool>(
+            contentPadding: const EdgeInsets.only(left: 24),
+            value: true,
+            groupValue: _omitir,
+            onChanged: _trabajando ? null : (v) => setState(() => _omitir = true),
+            title: const Text('Omitirlos (dejarlos como están)'),
+          ),
+          RadioListTile<bool>(
+            contentPadding: const EdgeInsets.only(left: 24),
+            value: false,
+            groupValue: _omitir,
+            onChanged: _trabajando ? null : (v) => setState(() => _omitir = false),
+            title: const Text('Actualizarlos con los datos del respaldo'),
+          ),
+          if (!_omitir)
+            CheckboxListTile(
+              contentPadding: const EdgeInsets.only(left: 48),
+              value: _reemplazar,
+              onChanged: _trabajando ? null : (v) => setState(() => _reemplazar = v ?? true),
+              title: const Text('También poner la existencia del respaldo'),
+            ),
+        ],
         CheckboxListTile(
           contentPadding: EdgeInsets.zero,
           value: _clientes,

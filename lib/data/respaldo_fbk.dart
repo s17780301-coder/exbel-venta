@@ -289,6 +289,7 @@ Future<(ResumenImportacion, ResumenImportacion)> importarRespaldo(
   bool productos = true,
   bool clientes = true,
   bool reemplazarExistencia = true,
+  bool omitirExistentes = false,
   String? cajeroId,
   void Function(int hechos, int total)? progreso,
 }) async {
@@ -304,6 +305,11 @@ Future<(ResumenImportacion, ResumenImportacion)> importarRespaldo(
       try {
         final codigo = _txt(r['CODIGO']);
         final existente = codigo.isEmpty ? null : await repos.productos.porCodigo(codigo);
+        if (existente != null && omitirExistentes) {
+          idNuevo[r['ID'] as int] = existente.id;
+          rp.omitidos++;
+          continue;
+        }
         final depNombre = c.departamentos[r['DEPT']] ?? '';
         String? depId = existente?.departamentoId;
         if (depNombre.isNotEmpty && depNombre != '- Sin Departamento -') {
