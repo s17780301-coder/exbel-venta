@@ -3,25 +3,22 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 
+import '../../core/impresora.dart';
 import '../../data/repos.dart';
 import '../zoom.dart';
 import '../tema/tema.dart';
 import 'dialogos.dart';
 
-const _claveImpresora = 'impresora_tickets';
+const _claveImpresora = claveImpresoraTickets;
 
 /// Imprime en la impresora de tickets elegida en Configuración, sin
 /// preguntar. Si no hay una elegida, abre el diálogo de Windows.
 Future<void> imprimir(BuildContext context, Uint8List pdf, {String nombre = 'ticket'}) async {
   try {
-    final elegida = repos.ajustes.texto(_claveImpresora);
-    if (elegida.isNotEmpty) {
-      final impresoras = await Printing.listPrinters();
-      final p = impresoras.where((x) => x.name == elegida).firstOrNull;
-      if (p != null) {
-        await Printing.directPrintPdf(printer: p, onLayout: (_) async => pdf, name: nombre);
-        return;
-      }
+    final p = await impresoraTickets();
+    if (p != null) {
+      await Printing.directPrintPdf(printer: p, onLayout: (_) async => pdf, name: nombre);
+      return;
     }
     await Printing.layoutPdf(onLayout: (_) async => pdf, name: nombre);
   } catch (e) {
@@ -47,7 +44,7 @@ Future<void> elegirImpresora(BuildContext context) async {
       children: [
         SimpleDialogOption(
           onPressed: () => Navigator.pop(c, ''),
-          child: Text('Preguntar cada vez${actual.isEmpty ? '  ✓' : ''}'),
+          child: Text('Automática (la de tickets)${actual.isEmpty ? '  ✓' : ''}'),
         ),
         for (final p in lista)
           SimpleDialogOption(
@@ -64,7 +61,7 @@ Future<void> elegirImpresora(BuildContext context) async {
 
 String impresoraElegida() {
   final n = repos.ajustes.texto(_claveImpresora);
-  return n.isEmpty ? 'Preguntar cada vez' : n;
+  return n.isEmpty ? 'Automática' : n;
 }
 
 /// Vista previa del ticket con botón de imprimir.

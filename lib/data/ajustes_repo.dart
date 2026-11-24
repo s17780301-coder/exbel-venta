@@ -79,7 +79,7 @@ abstract final class Ajuste {
     usarCredito: '1',
     avisoCredito: '80',
     permitirCobroMenor: '0',
-    impresion: 'preguntar',
+    impresion: 'siempre',
     tipoCambio: '1800',
     aceptarDolares: '1',
     aceptarVales: '1',

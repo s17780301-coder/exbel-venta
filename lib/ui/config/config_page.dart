@@ -31,7 +31,7 @@ import '../sesion.dart';
 import '../tema/tema.dart';
 import '../zoom.dart';
 
-const versionExBel = '0.11.0';
+const versionExBel = '0.11.1';
 
 /// Configuración de la tienda.
 class ConfigPage extends StatefulWidget {
@@ -1042,8 +1042,11 @@ class _CajonState extends State<_Cajon> {
       _titulo('Cajón de dinero', 'Para cajones conectados a la impresora de tickets con cable de teléfono (RJ11).'),
       const _Interruptor(Ajuste.cajonAbrir, 'Abrir el cajón al cobrar con efectivo',
           'También aparece el botón "Abrir cajón" en Ventas.'),
-      const _Campo(Ajuste.cajonImpresora, 'Nombre compartido de la impresora de tickets',
-          ayuda: 'Ej. TICKETS. Ver pasos abajo.'),
+      const Text('Se abre por la impresora elegida en "Impresora de Tickets". No hay que compartir nada.',
+          style: TextStyle(color: ExColor.texto2)),
+      const SizedBox(height: 8),
+      const _Campo(Ajuste.cajonImpresora, 'Solo si no abre: nombre compartido de la impresora (opcional)',
+          ayuda: 'Déjalo vacío normalmente. Ver pasos abajo.'),
       Align(
         alignment: Alignment.centerLeft,
         child: OutlinedButton.icon(

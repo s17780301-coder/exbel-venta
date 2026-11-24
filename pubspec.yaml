@@ -1,7 +1,7 @@
 name: exbel_venta
 description: exBel venta — punto de venta para tiendas de abarrotes y comercios. Windows, pantalla completa, funciona sin internet.
 publish_to: 'none'
-version: 0.11.0+32
+version: 0.11.1+33
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -13,6 +13,7 @@ dependencies:
     sdk: flutter
   # Base de datos local (SQLite) para Windows.
   sqflite_common_ffi: ^2.3.3
+  ffi: ^2.1.0
   sqlite3_flutter_libs: ^0.5.24
   path: ^1.9.0
   path_provider: ^2.1.3
