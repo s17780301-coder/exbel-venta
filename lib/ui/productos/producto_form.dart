@@ -9,6 +9,7 @@ import '../../data/ajustes_repo.dart';
 import '../../data/repos.dart';
 import '../../models/modelos.dart';
 import '../comun/dialogos.dart';
+import '../comun/enter_avanza.dart';
 import '../sesion.dart';
 import '../tema/tema.dart';
 import '../ventas/buscar_producto.dart';
@@ -219,6 +220,10 @@ class _FormState extends State<_Form> {
   @override
   Widget build(BuildContext context) {
     final sumaKit = _componentes.fold<int>(0, (s, c) => s + calcularImporte(c.cantidad, c.precioCentavos));
+    return EnterGuarda(onGuardar: _guardar, child: _dialogo(sumaKit));
+  }
+
+  Widget _dialogo(int sumaKit) {
     return AlertDialog(
       title: Text(p == null ? 'Nuevo producto' : 'Modificar producto'),
       content: SizedBox(

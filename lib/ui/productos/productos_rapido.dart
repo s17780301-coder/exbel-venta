@@ -6,6 +6,7 @@ import '../../core/ids.dart';
 import '../../data/ajustes_repo.dart';
 import '../../data/repos.dart';
 import '../../models/modelos.dart';
+import '../comun/enter_avanza.dart';
 import '../comun/ex_widgets.dart';
 import '../comun/dialogos.dart';
 import '../comun/ex_ui.dart';
@@ -177,15 +178,18 @@ class _AgregarState extends State<_Agregar> {
   Widget build(BuildContext context) {
     Widget campo(String etiqueta, TextEditingController c, {bool numero = false, bool auto = false, FocusNode? foco, ValueChanged<String>? cambio, String? ayuda}) =>
         numero
-            ? CampoNumero(controller: c, etiqueta: etiqueta, ayuda: ayuda, onSubmitted: (_) => _guardar())
+            ? CampoNumero(controller: c, etiqueta: etiqueta, ayuda: ayuda)
             : TextField(
                 controller: c,
                 focusNode: foco,
                 autofocus: auto,
                 onChanged: cambio,
                 decoration: InputDecoration(labelText: etiqueta, helperText: ayuda),
-                onSubmitted: (_) => _guardar(),
               );
+    return EnterGuarda(onGuardar: _guardar, child: _contenido(campo));
+  }
+
+  Widget _contenido(Widget Function(String, TextEditingController, {bool numero, bool auto, FocusNode? foco, ValueChanged<String>? cambio, String? ayuda}) campo) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(22, 4, 22, 18),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [

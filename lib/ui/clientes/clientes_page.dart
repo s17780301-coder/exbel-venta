@@ -9,6 +9,7 @@ import '../../data/repos.dart';
 import '../../models/modelos.dart';
 import '../comun/csv.dart';
 import '../comun/dialogos.dart';
+import '../comun/enter_avanza.dart';
 import '../comun/importar_dialogo.dart';
 import '../comun/ex_ui.dart';
 import '../comun/ex_widgets.dart';
@@ -386,7 +387,7 @@ class _FormClienteState extends State<_FormCliente> {
   @override
   Widget build(BuildContext context) {
     final c = widget.c;
-    return AlertDialog(
+    return EnterGuarda(onGuardar: _ok, child: AlertDialog(
       title: Text(c == null ? 'Nuevo cliente' : 'Modificar cliente'),
       content: SizedBox(
         width: 480,
@@ -411,21 +412,26 @@ class _FormClienteState extends State<_FormCliente> {
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
         FilledButton(
-          onPressed: () => Navigator.pop(
-            context,
-            (Cliente(
-              id: c?.id ?? nuevoId(),
-              numero: c?.numero ?? 0,
-              nombre: _nombre.text,
-              telefono: _tel.text.trim(),
-              direccion: _dir.text.trim(),
-              limiteCentavos: leerPesos(_limite.text) ?? 0,
-              saldoCentavos: c?.saldoCentavos ?? 0,
-            ), leerPesos(_anterior.text) ?? 0),
-          ),
+          onPressed: _ok,
           child: const Text('Guardar'),
         ),
       ],
+    ));
+  }
+
+  void _ok() {
+    final c = widget.c;
+    Navigator.pop(
+      context,
+      (Cliente(
+        id: c?.id ?? nuevoId(),
+        numero: c?.numero ?? 0,
+        nombre: _nombre.text,
+        telefono: _tel.text.trim(),
+        direccion: _dir.text.trim(),
+        limiteCentavos: leerPesos(_limite.text) ?? 0,
+        saldoCentavos: c?.saldoCentavos ?? 0,
+      ), leerPesos(_anterior.text) ?? 0),
     );
   }
 }

@@ -19,6 +19,7 @@ import 'core/formato.dart';
 import 'data/repos.dart';
 import 'ui/acceso/acceso_page.dart';
 import 'ui/comun/licencia_ui.dart';
+import 'ui/comun/enter_avanza.dart';
 import 'ui/comun/ex_widgets.dart';
 import 'ui/principal.dart' show limpiarCapturaVentas;
 import 'ui/tema/tema.dart';
@@ -106,7 +107,7 @@ class ExBelVenta extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      builder: (context, child) => ZoomPantalla(child: child ?? const SizedBox.shrink()),
+      builder: (context, child) => EnterAvanza(child: ZoomPantalla(child: child ?? const SizedBox.shrink())),
       home: const _Arranque(),
     );
   }

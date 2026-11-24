@@ -7,6 +7,7 @@ import '../../data/repos.dart';
 import '../../models/modelos.dart';
 import '../comun/csv.dart';
 import '../comun/dialogos.dart';
+import '../comun/enter_avanza.dart';
 import '../comun/ex_ui.dart';
 import '../comun/ex_widgets.dart';
 import '../sesion.dart';
@@ -162,7 +163,7 @@ class _MovimientoState extends State<_Movimiento> {
       'Ajuste' => 'Ajustar inventario (conteo físico)',
       _ => 'Salidas: merma, caducado, consumo',
     };
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+    return EnterGuarda(onGuardar: _guardar, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Text(titulo, style: ExTexto.titulo(22)),
       const SizedBox(height: 14),
       ExBuscador(
@@ -191,7 +192,8 @@ class _MovimientoState extends State<_Movimiento> {
                   controller: _cant,
                   autofocus: true,
                   etiqueta: widget.tipo == 'Ajuste' ? 'Cantidad que hay realmente' : 'Cantidad',
-                  onSubmitted: (_) => _guardar(),
+                  // En entradas, Enter pasa a costo y precio; en el último guarda.
+                  onSubmitted: widget.tipo == 'Entrada' ? null : (_) => _guardar(),
                 ),
               ),
               const SizedBox(width: 12),
@@ -224,7 +226,7 @@ class _MovimientoState extends State<_Movimiento> {
             ListTile(dense: true, leading: const Icon(Icons.check, color: ExColor.verde), title: Text(h)),
         ]),
       ),
-    ]);
+    ]));
   }
 }
 
