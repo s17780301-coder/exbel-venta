@@ -28,7 +28,7 @@ import '../sesion.dart';
 import '../tema/tema.dart';
 import '../zoom.dart';
 
-const versionExBel = '0.9.1';
+const versionExBel = '0.9.2';
 
 /// Configuración de la tienda.
 class ConfigPage extends StatefulWidget {
@@ -56,6 +56,7 @@ final _grupos = <(String, List<_Opcion>)>[
   (
     'General',
     const [
+      _Opcion('Importar del Sistema Anterior', Icons.drive_file_move_outline, _azul, _Precargados()),
       _Opcion('Opciones habilitadas', Icons.settings_suggest_outlined, ExColor.texto2, _Opciones()),
       _Opcion('Cajeros', Icons.badge_outlined, _azul, _Cajeros()),
       _Opcion('Base de Datos', Icons.storage_outlined, ExColor.indigo, _Respaldos()),
