@@ -101,7 +101,15 @@ class _PrincipalState extends State<Principal> {
     // F10 es tecla de sistema en Windows (activa el menú de la ventana y se
     // "come" las teclas siguientes): se consume también al soltarla.
     if (e is! KeyDownEvent) return e.logicalKey == LogicalKeyboardKey.f10;
-    if (!(ModalRoute.of(context)?.isCurrent ?? false)) return e.logicalKey == LogicalKeyboardKey.f10;
+    if (!(ModalRoute.of(context)?.isCurrent ?? false)) {
+      // F10 / Ctrl+F funciona también con cualquier ventana abierta (F3,
+      // cobro, clientes…): el buscador se abre encima.
+      if (buscar) {
+        if (!buscadorAbierto) _buscarUniversal();
+        return true;
+      }
+      return false;
+    }
     final mapa = {
       LogicalKeyboardKey.f1: 0,
       LogicalKeyboardKey.f2: 1,

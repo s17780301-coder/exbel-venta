@@ -22,8 +22,16 @@ class Hallazgo {
 
 /// F10 desde cualquier pantalla: busca productos (nombre o código),
 /// clientes (nombre, teléfono o número) y ventas (folio) a la vez.
-Future<Hallazgo?> buscarUniversal(BuildContext context, {String texto = '', String titulo = 'Buscar'}) {
-  return showDialog<Hallazgo>(context: context, builder: (_) => _Buscador(texto: texto, titulo: titulo));
+/// true mientras el buscador está abierto (F10 no abre otro encima).
+bool buscadorAbierto = false;
+
+Future<Hallazgo?> buscarUniversal(BuildContext context, {String texto = '', String titulo = 'Buscar'}) async {
+  buscadorAbierto = true;
+  try {
+    return await showDialog<Hallazgo>(context: context, builder: (_) => _Buscador(texto: texto, titulo: titulo));
+  } finally {
+    buscadorAbierto = false;
+  }
 }
 
 class _Buscador extends StatefulWidget {
