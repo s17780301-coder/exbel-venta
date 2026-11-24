@@ -525,7 +525,21 @@ class _ElegirClienteState extends State<_ElegirCliente> {
 
   Future<void> _buscar() async {
     final l = await repos.clientes.buscar(_c.text);
-    if (mounted) setState(() => _lista = l);
+    if (mounted) {
+      setState(() {
+        _lista = l;
+        _sel = 0;
+      });
+    }
+  }
+
+  int _sel = 0;
+  final _claveSel = GlobalKey();
+
+  void _mover(int d) {
+    if (_lista.isEmpty) return;
+    setState(() => _sel = (_sel + d).clamp(0, _lista.length - 1));
+    verFila(_claveSel, bajando: d > 0);
   }
 
   @override
@@ -543,8 +557,9 @@ class _ElegirClienteState extends State<_ElegirCliente> {
               autofocus: true,
               hint: 'Buscar cliente por nombre, teléfono o número',
               onChanged: (_) => _buscar(),
+              onFlecha: _mover,
               onSubmitted: (_) {
-                if (_lista.isNotEmpty) Navigator.pop(context, _lista.first);
+                if (_lista.isNotEmpty) Navigator.pop(context, _lista[_sel.clamp(0, _lista.length - 1)]);
               },
             ),
           ),
@@ -555,6 +570,9 @@ class _ElegirClienteState extends State<_ElegirCliente> {
               itemBuilder: (_, i) {
                 final c = _lista[i];
                 return ListTile(
+                  key: i == _sel ? _claveSel : null,
+                  selected: i == _sel,
+                  selectedTileColor: const Color(0xFFF0EEF9),
                   leading: ExAvatar(c.nombre),
                   title: Text(c.nombre),
                   subtitle: Text([

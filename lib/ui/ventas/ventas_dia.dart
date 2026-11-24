@@ -50,6 +50,15 @@ class _HistorialState extends State<_Historial> {
   List<Cajero> _cajeros = [];
   List<Venta> _ventas = [];
   Venta? _sel;
+  final _scroll = ScrollController();
+
+  void _mover(int d) {
+    if (_ventas.isEmpty) return;
+    final actual = _sel == null ? -1 : _ventas.indexWhere((v) => v.id == _sel!.id);
+    final i = actual < 0 ? (d > 0 ? 0 : _ventas.length - 1) : (actual + d).clamp(0, _ventas.length - 1);
+    _elegir(_ventas[i]);
+    seguirFila(_scroll, i, 40);
+  }
   List<LineaVendida> _lineas = [];
   int _linea = -1;
   final _buscar = TextEditingController();
@@ -216,7 +225,7 @@ class _HistorialState extends State<_Historial> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const Text('Puedes buscar por folio o nombre del cliente:'),
         const SizedBox(height: 6),
-        ExBuscador(controller: _buscar, autofocus: true, hint: 'Folio o cliente', onChanged: (_) => _cargar()),
+        ExBuscador(controller: _buscar, autofocus: true, hint: 'Folio o cliente', onChanged: (_) => _cargar(), onFlecha: _mover),
         const SizedBox(height: 10),
         EncabezadoTabla([
           ('Folio', 2, false),
@@ -230,6 +239,7 @@ class _HistorialState extends State<_Historial> {
             child: _ventas.isEmpty
                 ? const ExVacio('Sin ventas')
                 : ListView.builder(
+                    controller: _scroll,
                     itemCount: _ventas.length,
                     itemExtent: 40,
                     itemBuilder: (_, i) {

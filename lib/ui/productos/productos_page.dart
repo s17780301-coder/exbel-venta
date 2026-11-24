@@ -31,6 +31,20 @@ class _ProductosPageState extends State<ProductosPage> {
   String? _dep;
   bool _bajos = false;
   final _sel = <String>{};
+  final _scroll = ScrollController();
+
+  /// Flechas en el buscador: mueve la selección por la lista.
+  void _mover(int d) {
+    if (_lista.isEmpty) return;
+    final actual = _sel.length == 1 ? _lista.indexWhere((p) => p.id == _sel.first) : -1;
+    final i = actual < 0 ? (d > 0 ? 0 : _lista.length - 1) : (actual + d).clamp(0, _lista.length - 1);
+    setState(() {
+      _sel
+        ..clear()
+        ..add(_lista[i].id);
+    });
+    seguirFila(_scroll, i, 44);
+  }
   int _total = 0;
 
   @override
@@ -249,7 +263,20 @@ class _ProductosPageState extends State<ProductosPage> {
         ]),
         const SizedBox(height: 12),
         Row(children: [
-          Expanded(child: ExBuscador(controller: _buscar, hint: 'Buscar por nombre o código', onChanged: (_) => _cargar())),
+          Expanded(
+              child: ExBuscador(
+            controller: _buscar,
+            hint: 'Buscar por nombre o código',
+            onChanged: (_) => _cargar(),
+            onFlecha: _mover,
+            onSubmitted: (_) {
+              if (_sel.length == 1) {
+                _editar(_lista.firstWhere((p) => p.id == _sel.first));
+              } else if (_lista.isNotEmpty) {
+                _mover(1);
+              }
+            },
+          )),
           const SizedBox(width: 12),
           DropdownButton<String?>(
             value: _dep,
@@ -291,6 +318,7 @@ class _ProductosPageState extends State<ProductosPage> {
             child: _lista.isEmpty
                 ? const ExVacio('No hay productos con ese filtro')
                 : ListView.builder(
+                    controller: _scroll,
                     itemCount: _lista.length,
                     itemExtent: 44,
                     itemBuilder: (_, i) {

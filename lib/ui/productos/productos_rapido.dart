@@ -6,6 +6,7 @@ import '../../core/ids.dart';
 import '../../data/ajustes_repo.dart';
 import '../../data/repos.dart';
 import '../../models/modelos.dart';
+import '../comun/ex_widgets.dart';
 import '../comun/dialogos.dart';
 import '../comun/ex_ui.dart';
 import '../sesion.dart';
@@ -261,6 +262,13 @@ class _EliminarState extends State<_Eliminar> {
   final _buscar = TextEditingController();
   List<Producto> _lista = [];
   int _sel = -1;
+  final _claveSel = GlobalKey();
+
+  void _mover(int d) {
+    if (_lista.isEmpty) return;
+    setState(() => _sel = (_sel + d).clamp(0, _lista.length - 1));
+    verFila(_claveSel, bajando: d > 0);
+  }
 
   @override
   void dispose() {
@@ -306,8 +314,10 @@ class _EliminarState extends State<_Eliminar> {
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.delete): _eliminar,
-        const SingleActivator(LogicalKeyboardKey.arrowDown): () => setState(() => _sel = (_sel + 1).clamp(0, _lista.length - 1)),
-        const SingleActivator(LogicalKeyboardKey.arrowUp): () => setState(() => _sel = (_sel - 1).clamp(0, _lista.length - 1)),
+        const SingleActivator(LogicalKeyboardKey.arrowDown): () => _mover(1),
+        const SingleActivator(LogicalKeyboardKey.arrowUp): () => _mover(-1),
+        const SingleActivator(LogicalKeyboardKey.pageDown): () => _mover(10),
+        const SingleActivator(LogicalKeyboardKey.pageUp): () => _mover(-10),
       },
       child: Padding(
         padding: const EdgeInsets.fromLTRB(22, 4, 22, 18),
@@ -328,13 +338,14 @@ class _EliminarState extends State<_Eliminar> {
               decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: ExEstilo.linea)),
               clipBehavior: Clip.antiAlias,
               child: _lista.isEmpty
-                  ? const Center(child: Text('Escribe al menos 2 letras o escanea el producto', style: TextStyle(color: ExColor.texto2)))
+                  ? const Center(child: Text('Escribe una letra o escanea el producto', style: TextStyle(color: ExColor.texto2)))
                   : ListView.builder(
                       itemCount: _lista.length,
                       itemBuilder: (_, i) {
                         final p = _lista[i];
                         final sel = i == _sel;
                         return Material(
+                          key: sel ? _claveSel : null,
                           color: sel ? Tono.coral.fondo : Colors.white,
                           child: InkWell(
                             onTap: () => setState(() => _sel = i),

@@ -47,6 +47,7 @@ class _BuscadorState extends State<_Buscador> {
   late final _c = TextEditingController(text: widget.texto);
   List<Hallazgo> _r = [];
   int _sel = 0;
+  final _claveSel = GlobalKey();
   Timer? _espera;
   int _consulta = 0;
 
@@ -97,15 +98,17 @@ class _BuscadorState extends State<_Buscador> {
 
   KeyEventResult _tecla(FocusNode _, KeyEvent e) {
     if (e is! KeyDownEvent && e is! KeyRepeatEvent) return KeyEventResult.ignored;
-    if (e.logicalKey == LogicalKeyboardKey.arrowDown) {
-      setState(() => _sel = (_sel + 1).clamp(0, _r.isEmpty ? 0 : _r.length - 1));
-      return KeyEventResult.handled;
-    }
-    if (e.logicalKey == LogicalKeyboardKey.arrowUp) {
-      setState(() => _sel = (_sel - 1).clamp(0, _r.isEmpty ? 0 : _r.length - 1));
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
+    final d = switch (e.logicalKey) {
+      LogicalKeyboardKey.arrowDown => 1,
+      LogicalKeyboardKey.arrowUp => -1,
+      LogicalKeyboardKey.pageDown => 10,
+      LogicalKeyboardKey.pageUp => -10,
+      _ => 0,
+    };
+    if (d == 0) return KeyEventResult.ignored;
+    setState(() => _sel = (_sel + d).clamp(0, _r.isEmpty ? 0 : _r.length - 1));
+    verFila(_claveSel, bajando: d > 0);
+    return KeyEventResult.handled;
   }
 
   void _aceptar() {
@@ -207,7 +210,7 @@ class _BuscadorState extends State<_Buscador> {
           Expanded(
             child: _r.isEmpty
                 ? ExVacio(_c.text.trim().isEmpty ? 'Escribe una letra del producto, cliente o folio' : 'Sin resultados')
-                : ListView.builder(itemCount: _r.length, itemBuilder: (_, i) => _fila(i)),
+                : ListView.builder(itemCount: _r.length, itemBuilder: (_, i) => KeyedSubtree(key: i == _sel ? _claveSel : null, child: _fila(i))),
           ),
           Padding(
             padding: const EdgeInsets.all(14),

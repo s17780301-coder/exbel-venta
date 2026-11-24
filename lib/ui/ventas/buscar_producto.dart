@@ -29,6 +29,7 @@ class _BuscadorState extends State<_Buscador> {
   final _foco = FocusNode();
   List<Producto> _lista = [];
   int _sel = 0;
+  final _scroll = ScrollController();
   Timer? _espera;
 
   @override
@@ -59,15 +60,17 @@ class _BuscadorState extends State<_Buscador> {
 
   KeyEventResult _tecla(FocusNode _, KeyEvent e) {
     if (e is! KeyDownEvent && e is! KeyRepeatEvent) return KeyEventResult.ignored;
-    if (e.logicalKey == LogicalKeyboardKey.arrowDown) {
-      setState(() => _sel = (_sel + 1).clamp(0, _lista.isEmpty ? 0 : _lista.length - 1));
-      return KeyEventResult.handled;
-    }
-    if (e.logicalKey == LogicalKeyboardKey.arrowUp) {
-      setState(() => _sel = (_sel - 1).clamp(0, _lista.isEmpty ? 0 : _lista.length - 1));
-      return KeyEventResult.handled;
-    }
-    return KeyEventResult.ignored;
+    final d = switch (e.logicalKey) {
+      LogicalKeyboardKey.arrowDown => 1,
+      LogicalKeyboardKey.arrowUp => -1,
+      LogicalKeyboardKey.pageDown => 10,
+      LogicalKeyboardKey.pageUp => -10,
+      _ => 0,
+    };
+    if (d == 0) return KeyEventResult.ignored;
+    setState(() => _sel = (_sel + d).clamp(0, _lista.isEmpty ? 0 : _lista.length - 1));
+    seguirFila(_scroll, _sel, 44);
+    return KeyEventResult.handled;
   }
 
   void _aceptar() {
@@ -123,6 +126,7 @@ class _BuscadorState extends State<_Buscador> {
             child: _lista.isEmpty
                 ? Center(child: Text(_c.text.trim().isEmpty ? 'Escribe una letra o el código del producto' : 'Sin resultados', style: const TextStyle(fontSize: 16, color: ExColor.texto2)))
                 : ListView.builder(
+                    controller: _scroll,
                     itemCount: _lista.length,
                     itemExtent: 44,
                     itemBuilder: (_, i) {

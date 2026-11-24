@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../tema/ex_icon.dart';
 import '../tema/tema.dart';
@@ -349,8 +350,11 @@ class ExBuscador extends StatelessWidget {
     this.grande = false,
     this.enabled = true,
     this.atajo,
+    this.onFlecha,
   });
 
+  /// Flechas ↑ ↓ (±1) y Re Pág / Av Pág (±10) para moverse en los resultados.
+  final ValueChanged<int>? onFlecha;
   final TextEditingController controller;
   final String hint;
   final ValueChanged<String>? onChanged;
@@ -364,6 +368,30 @@ class ExBuscador extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radio = BorderRadius.circular(grande ? 16 : 12);
+    final campo = _campo(radio);
+    final f = onFlecha;
+    if (f == null) return campo;
+    return Focus(
+      canRequestFocus: false,
+      skipTraversal: true,
+      onKeyEvent: (_, e) {
+        if (e is! KeyDownEvent && e is! KeyRepeatEvent) return KeyEventResult.ignored;
+        final d = switch (e.logicalKey) {
+          LogicalKeyboardKey.arrowDown => 1,
+          LogicalKeyboardKey.arrowUp => -1,
+          LogicalKeyboardKey.pageDown => 10,
+          LogicalKeyboardKey.pageUp => -10,
+          _ => 0,
+        };
+        if (d == 0) return KeyEventResult.ignored;
+        f(d);
+        return KeyEventResult.handled;
+      },
+      child: campo,
+    );
+  }
+
+  Widget _campo(BorderRadius radio) {
     return TextField(
       controller: controller,
       focusNode: focusNode,
@@ -563,4 +591,30 @@ class EncabezadoNegocio extends StatelessWidget {
       ),
     );
   }
+}
+
+
+/// Para moverse con flechas en una lista de filas del mismo alto: recorre la
+/// lista para que la fila [i] quede a la vista.
+void seguirFila(ScrollController sc, int i, double alto) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!sc.hasClients || i < 0) return;
+    final pos = sc.position;
+    final arriba = i * alto, abajo = arriba + alto;
+    if (arriba < pos.pixels) {
+      sc.jumpTo(arriba.clamp(0, pos.maxScrollExtent));
+    } else if (abajo > pos.pixels + pos.viewportDimension) {
+      sc.jumpTo((abajo - pos.viewportDimension).clamp(0, pos.maxScrollExtent));
+    }
+  });
+}
+
+/// Igual, para filas de alto distinto: la fila elegida lleva la clave [k].
+void verFila(GlobalKey k, {required bool bajando}) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    final c = k.currentContext;
+    if (c == null) return;
+    Scrollable.ensureVisible(c,
+        alignmentPolicy: bajando ? ScrollPositionAlignmentPolicy.keepVisibleAtEnd : ScrollPositionAlignmentPolicy.keepVisibleAtStart);
+  });
 }

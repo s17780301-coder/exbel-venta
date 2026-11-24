@@ -33,6 +33,14 @@ class _ClientesPageState extends State<ClientesPage> {
   List<Cliente> _lista = [];
   bool _soloAdeudo = false;
   Cliente? _sel;
+  final _claveSel = GlobalKey();
+
+  void _mover(int d) {
+    if (_lista.isEmpty) return;
+    final actual = _sel == null ? -1 : _lista.indexWhere((c) => c.id == _sel!.id);
+    final i = actual < 0 ? (d > 0 ? 0 : _lista.length - 1) : (actual + d).clamp(0, _lista.length - 1);
+    _elegir(_lista[i]).then((_) => verFila(_claveSel, bajando: d > 0));
+  }
   List<MovimientoCuenta> _cuenta = [];
   DateTime? _desde;
   int _saldoTotal = 0;
@@ -172,7 +180,15 @@ class _ClientesPageState extends State<ClientesPage> {
                     child: TituloSeccion('Clientes', icono: Icons.people_alt_rounded, tono: Tono.coral, subtitulo: '${_lista.length} en la lista'),
                   ),
                   const SizedBox(height: 12),
-                  ExBuscador(controller: _buscar, hint: 'Buscar cliente', onChanged: (_) => _cargar()),
+                  ExBuscador(
+                    controller: _buscar,
+                    hint: 'Buscar cliente',
+                    onChanged: (_) => _cargar(),
+                    onFlecha: _mover,
+                    onSubmitted: (_) {
+                      if (_sel == null) _mover(1);
+                    },
+                  ),
                   const SizedBox(height: 10),
                   Row(children: [
                     FilterChip(
@@ -214,6 +230,7 @@ class _ClientesPageState extends State<ClientesPage> {
                         itemBuilder: (_, i) {
                           final c = _lista[i];
                           return ListTile(
+                            key: _sel?.id == c.id ? _claveSel : null,
                             selected: _sel?.id == c.id,
                             selectedTileColor: const Color(0xFFF0EEF9),
                             leading: ExAvatar(c.nombre),
