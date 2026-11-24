@@ -39,34 +39,61 @@ class RespaldoFbk {
 
   int _i32le(int o) => _bd.getInt32(o, Endian.little);
 
-  List<_Campo> campos(String tabla) {
-    final nb = latin1.encode(tabla);
-    final i = _buscar([3, 1, nb.length, ...nb]);
-    if (i < 0) return const [];
-    var fin = _buscar([9, 3, 1], i + 4);
-    if (fin < 0) fin = d.length;
-    final fs = <_Campo>[];
-    const corte = {0, 0x0f, 0x05, 0x23, 0x07, 0x06, 0x0e, 0x1b, 0x03};
-    var j = i;
-    while (j < fin - 4) {
-      if (d[j] == 0 && d[j + 1] == 4 && d[j + 2] == 1 && d[j + 3] >= 1 && d[j + 3] <= 0x40) {
-        var k = j + 2;
-        final a = <int, Uint8List>{};
-        while (k < fin && !corte.contains(d[k]) && a.length <= 20) {
-          final n = d[k + 1];
-          a.putIfAbsent(d[k], () => Uint8List.sublistView(d, k + 2, k + 2 + n));
-          k += 2 + n;
-        }
-        int? g(int t) => a[t] != null && a[t]!.length == 4 ? ByteData.sublistView(a[t]!).getInt32(0, Endian.little) : null;
-        if (a[1] != null && a[8] != null) {
-          fs.add(_Campo(latin1.decode(a[1]!), g(8)!, g(10) ?? 0, g(11) ?? 0));
-        }
-        j = k;
+  /// Atributos con texto largo: después del tipo van 4 bytes con el largo.
+  static const _largos = {0x0f, 0x23, 0x27};
+
+  /// Lee atributos (tipo, largo, valor) hasta el 0 final.
+  (Map<int, Uint8List>, int) _atributos(int i) {
+    final a = <int, Uint8List>{};
+    while (i < d.length) {
+      final t = d[i++];
+      if (t == 0) break;
+      final n = d[i];
+      if (_largos.contains(t) && n == 4) {
+        final l = _i32le(i + 1);
+        a.putIfAbsent(t, () => Uint8List.sublistView(d, i + 5, i + 5 + l));
+        i += 5 + l;
       } else {
-        j++;
+        a.putIfAbsent(t, () => Uint8List.sublistView(d, i + 1, i + 1 + n));
+        i += 1 + n;
       }
     }
+    return (a, i);
+  }
+
+  List<_Campo> campos(String tabla) {
+    final nb = latin1.encode(tabla);
+    final inicio = _buscar([3, 1, nb.length, ...nb]);
+    if (inicio < 0) return const [];
+    var (_, i) = _atributos(inicio + 1);
+    final fs = <_Campo>[];
+    while (i < d.length && d[i] == 4) {
+      final (a, sig) = _atributos(i + 1);
+      i = sig;
+      int? g(int t) => a[t] != null && a[t]!.length == 4 ? ByteData.sublistView(a[t]!).getInt32(0, Endian.little) : null;
+      if (a[1] != null && a[8] != null) fs.add(_Campo(latin1.decode(a[1]!), g(8)!, g(10) ?? 0, g(11) ?? 0));
+    }
     return fs;
+  }
+
+  bool _letraNombre(int c) => (c >= 0x41 && c <= 0x5a) || (c >= 0x30 && c <= 0x39) || c == 0x5f || c == 0x24;
+
+  /// Dónde empiezan los datos de la siguiente tabla (fin de los de ésta).
+  int _siguienteTabla(int desde) {
+    for (var k = desde; k < d.length - 4; k++) {
+      if (d[k] != 8 || d[k + 1] != 1) continue;
+      final l = d[k + 2];
+      if (l < 1 || l > 0x40 || k + 3 + l >= d.length || d[k + 3 + l] != 0) continue;
+      var ok = true;
+      for (var j = 0; j < l; j++) {
+        if (!_letraNombre(d[k + 3 + j])) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok) return k;
+    }
+    return d.length;
   }
 
   /// Filas de una tabla como mapas campo → valor.
@@ -76,7 +103,8 @@ class RespaldoFbk {
     final nb = latin1.encode(tabla);
     var i = _buscar([8, 1, nb.length, ...nb, 0]);
     if (i < 0) return;
-    i = _buscar([6, 1, 4], i + nb.length + 4);
+    final limite = _siguienteTabla(i + nb.length + 4);
+    i = _buscar([6, 1, 4], i + nb.length + 4, limite);
     if (i < 0) return;
     Map<String, Object?>? prev;
     while (i < d.length && (d[i] == 6 || d[i] == 7)) {
@@ -93,8 +121,9 @@ class RespaldoFbk {
         i += 2 + n;
       }
       i++;
-      final total = a[1]!;
-      final util = a[17] ?? total;
+      // 17 = largo real del registro (formato portátil); 1 = largo en la base.
+      final util = a[17] ?? a[1]!;
+      final total = util;
       final m = Uint8List(total);
       var o = 0;
       while (o < util) {
@@ -144,18 +173,20 @@ class RespaldoFbk {
     num escala(num v, int s) => s == 0 ? v : v * _pot10(s);
     for (final f in fs) {
       Object? v;
-      if (o >= m.length) {
+      if (o + 4 > m.length) {
         vals.add(null);
         continue;
       }
+      try {
       switch (f.tipo) {
         case 37:
           final n = b.getUint32(o);
-          final fin = (o + 4 + n).clamp(0, m.length);
-          v = latin1.decode(m.sublist(o + 4, fin));
+          final ini = (o + 4).clamp(0, m.length);
+          final fin = (o + 4 + n).clamp(ini, m.length);
+          v = latin1.decode(m.sublist(ini, fin));
           o += 4 + p4(n);
         case 14:
-          v = latin1.decode(m.sublist(o, (o + f.largo).clamp(0, m.length))).trimRight();
+          v = latin1.decode(m.sublist(o, (o + f.largo).clamp(o, m.length))).trimRight();
           o += p4(f.largo);
         case 7 || 8:
           v = escala(b.getInt32(o), f.escala);
@@ -177,6 +208,10 @@ class RespaldoFbk {
           o += 8;
         default:
           o += p4(f.largo);
+      }
+      } on RangeError {
+        v = null;
+        o = m.length;
       }
       vals.add(v);
     }
