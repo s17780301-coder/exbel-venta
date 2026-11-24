@@ -71,6 +71,17 @@ class _VentasPageState extends State<VentasPage> {
     encabezadoVentas.value = (_) => _ticketsSegmentados();
     _cargarFavoritos();
     _restaurarTickets();
+    _cargarUltimoCobro();
+  }
+
+  /// Al abrir: el último cobro de este turno, para que siempre se vea.
+  Future<void> _cargarUltimoCobro() async {
+    try {
+      final t = sesion.turno;
+      if (t == null) return;
+      final v = (await repos.ventas.listar(turnoId: t.id, limite: 1)).firstOrNull;
+      if (v != null && mounted && _ultima == null) setState(() => _ultima = v);
+    } catch (_) {}
   }
 
   /// Cada cambio guarda los tickets abiertos: si se cierra el programa o se
@@ -1059,10 +1070,11 @@ class _VentasPageState extends State<VentasPage> {
             Row(children: [
               Mosaico(_ultima == null ? Icons.receipt_long_rounded : Icons.check_rounded, tono: _ultima == null ? Tono.gris : Tono.verde, tamano: 28),
               const SizedBox(width: 10),
-              Text(_ultima == null ? 'VENTA ANTERIOR' : 'VENTA ANTERIOR · FOLIO ${_ultima!.folio}',
+              Text(_ultima == null ? 'ÚLTIMO COBRO' : 'ÚLTIMO COBRO · FOLIO ${_ultima!.folio}',
                   style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, letterSpacing: 0.4, color: ExEstilo.texto2)),
             ]),
             const SizedBox(height: 6),
+            renglon('Total', formatoPesos(_ultima?.totalCentavos ?? 0), fuerte: true),
             renglon('Pagó con', formatoPesos(pagoCon)),
             renglon('Su cambio', formatoPesos(cambio), color: cambio > 0 ? Tono.verde.color : null, fuerte: true),
           ]),
