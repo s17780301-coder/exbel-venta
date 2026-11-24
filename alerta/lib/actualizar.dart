@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:ota_update/ota_update.dart';
 
-const versionApp = '1.0.0';
+const versionApp = '1.1.0';
 const urlVersionApp = 'https://github.com/s17780301-coder/exbel-venta/releases/download/ultima/alerta-version.json';
 
 int compararVersiones(String a, String b) {

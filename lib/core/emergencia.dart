@@ -47,7 +47,11 @@ Future<bool> enviarAlertaEmergencia({required String caja, required String cajer
         'p_cajero': cajero,
         'p_prueba': prueba,
       });
-      if (r != null) return true;
+      if (r != null) {
+        // Además del aviso que revisan los celulares cada 5 s, se manda push.
+        if (r is int) await nubeFuncion('exbel-push', {'alerta': r});
+        return true;
+      }
       if (prueba || DateTime.now().isAfter(fin)) return false;
       await Future<void>.delayed(const Duration(seconds: 5));
     }

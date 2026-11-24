@@ -40,3 +40,20 @@ Future<String?> descargarTexto(String url, {Duration limite = const Duration(sec
     cliente.close(force: true);
   }
 }
+
+/// Llama a una función Edge de la nube (no espera respuesta útil).
+Future<void> nubeFuncion(String nombre, Map<String, Object?> args, {Duration limite = const Duration(seconds: 10)}) async {
+  final cliente = HttpClient()..connectionTimeout = limite;
+  try {
+    final req = await cliente.postUrl(Uri.parse('$nubeUrl/functions/v1/$nombre')).timeout(limite);
+    req.headers
+      ..set('apikey', nubeClave)
+      ..contentType = ContentType.json;
+    req.add(utf8.encode(jsonEncode(args)));
+    final res = await req.close().timeout(limite);
+    await res.drain<void>();
+  } catch (_) {
+  } finally {
+    cliente.close(force: true);
+  }
+}

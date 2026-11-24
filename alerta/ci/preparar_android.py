@@ -84,3 +84,24 @@ if b64 and clave:
 else:
     print('Firma: de prueba (faltan los secretos ALERTA_FIRMA y ALERTA_CLAVE)')
 kts.write_text(g)
+
+# Firebase (notificaciones push): con ci/google-services.json se generan las opciones.
+gs = pathlib.Path('ci/google-services.json')
+if gs.exists():
+    import json
+    j = json.loads(gs.read_text())
+    pi = j['project_info']
+    cli = next((c for c in j['client'] if c['client_info']['android_client_info']['package_name'] == 'mx.exbel.exbel_alerta'), j['client'][0])
+    pathlib.Path('lib/firebase_opciones.dart').write_text(f"""import 'package:firebase_core/firebase_core.dart';
+
+const FirebaseOptions? opcionesFirebase = FirebaseOptions(
+  apiKey: '{cli['api_key'][0]['current_key']}',
+  appId: '{cli['client_info']['mobilesdk_app_id']}',
+  messagingSenderId: '{pi['project_number']}',
+  projectId: '{pi['project_id']}',
+  storageBucket: '{pi.get('storage_bucket', '')}',
+);
+""")
+    print('Push: activado')
+else:
+    print('Push: apagado (falta ci/google-services.json)')

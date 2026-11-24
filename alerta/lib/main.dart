@@ -12,6 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'actualizar.dart';
 import 'nube.dart';
 import 'nube.dart' as nube;
+import 'push.dart';
 import 'servicio.dart';
 
 // Colores de exBel.
@@ -30,6 +31,7 @@ Future<void> main() async {
   FlutterForegroundTask.initCommunicationPort();
   configurarServicio();
   await Alarm.init();
+  await iniciarPush();
   runApp(const AppAlerta());
 }
 
@@ -441,6 +443,7 @@ class _VincularState extends State<Vincular> {
     setState(() => _trabajando = true);
     try {
       await vincular(c, _nombre.text.trim(), _rol);
+      await registrarPush();
       await arrancarServicio();
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
