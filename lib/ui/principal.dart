@@ -179,7 +179,11 @@ class _PrincipalState extends State<Principal> {
     final h = await buscarUniversal(context);
     if (h == null || !mounted) return;
     final p = h.producto, c = h.cliente, v = h.venta;
-    if (p != null) {
+    final enInventario = elegirEnInventario;
+    if (p != null && _actual == 3 && enInventario != null) {
+      // En Inventario (agregar mercancía, ajuste o salida): el producto va al formulario.
+      enInventario(p);
+    } else if (p != null) {
       if (await autorizar(context, Permiso.productos) && mounted && await editarProducto(context, p)) avisarCambio();
     } else if (c != null) {
       clienteParaAbrir.value = c.id;

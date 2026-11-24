@@ -78,6 +78,10 @@ class _InventarioPageState extends State<InventarioPage> {
   }
 }
 
+/// Si la pantalla de entrada/ajuste/salida está abierta, el buscador
+/// universal (F10) le pasa aquí el producto elegido.
+void Function(Producto)? elegirEnInventario;
+
 /// Entrada, ajuste o salida de un producto.
 class _Movimiento extends StatefulWidget {
   const _Movimiento({required this.tipo});
@@ -98,7 +102,25 @@ class _MovimientoState extends State<_Movimiento> {
   final _hechos = <String>[];
 
   @override
+  void initState() {
+    super.initState();
+    elegirEnInventario = _ponerProducto;
+  }
+
+  void _ponerProducto(Producto p) {
+    if (!mounted) return;
+    setState(() {
+      _p = p;
+      _codigo.clear();
+      _cant.text = widget.tipo == 'Ajuste' ? formatoCantidad(p.existencia) : '';
+      _costo.text = (p.costoCentavos / 100).toStringAsFixed(2);
+      _precio.text = (p.precioCentavos / 100).toStringAsFixed(2);
+    });
+  }
+
+  @override
   void dispose() {
+    if (elegirEnInventario == _ponerProducto) elegirEnInventario = null;
     for (final c in [_codigo, _cant, _costo, _precio, _motivo]) {
       c.dispose();
     }
