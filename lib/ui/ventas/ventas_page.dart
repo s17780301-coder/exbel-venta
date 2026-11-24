@@ -1106,21 +1106,42 @@ class _VentasPageState extends State<VentasPage> {
           ),
         ),
         const SizedBox(height: 12),
-        // Venta anterior
+        // Último cobro: grande y siempre a la vista, como en el sistema anterior.
         Container(
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
-          decoration: BoxDecoration(color: ExEstilo.tarjeta, borderRadius: BorderRadius.circular(14), border: Border.all(color: ExEstilo.linea)),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          decoration: BoxDecoration(
+            color: _ultima == null ? ExEstilo.tarjeta : const Color(0xFFEAF4EE),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: _ultima == null ? ExEstilo.linea : const Color(0xFFB9D9C5)),
+          ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Row(children: [
-              Mosaico(_ultima == null ? Icons.receipt_long_rounded : Icons.check_rounded, tono: _ultima == null ? Tono.gris : Tono.verde, tamano: 28),
-              const SizedBox(width: 10),
               Text(_ultima == null ? 'ÚLTIMO COBRO' : 'ÚLTIMO COBRO · FOLIO ${_ultima!.folio}',
-                  style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, letterSpacing: 0.4, color: ExEstilo.texto2)),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, letterSpacing: 0.5, color: ExEstilo.texto2)),
+              const Spacer(),
+              if (_ultima != null)
+                Text(pago!.descripcion, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: ExEstilo.texto2)),
             ]),
-            const SizedBox(height: 6),
-            renglon('Total', formatoPesos(_ultima?.totalCentavos ?? 0), fuerte: true),
-            renglon('Pagó con', formatoPesos(pagoCon)),
-            renglon('Su cambio', formatoPesos(cambio), color: cambio > 0 ? Tono.verde.color : null, fuerte: true),
+            const SizedBox(height: 8),
+            Row(children: [
+              const Expanded(child: Text('Total', style: TextStyle(fontSize: 16, color: ExEstilo.texto2))),
+              Text(formatoPesos(_ultima?.totalCentavos ?? 0),
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: ExColor.tinta, fontFeatures: num)),
+            ]),
+            const SizedBox(height: 2),
+            Row(children: [
+              const Expanded(child: Text('Pagó con', style: TextStyle(fontSize: 16, color: ExEstilo.texto2))),
+              Text(formatoPesos(pagoCon),
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: ExColor.tinta, fontFeatures: num)),
+            ]),
+            const Divider(height: 14),
+            Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              const Expanded(child: Text('Su cambio', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: ExColor.tinta))),
+              Text(formatoPesos(cambio),
+                  style: TextStyle(
+                      fontSize: 34, fontWeight: FontWeight.w800, height: 1.05,
+                      color: cambio > 0 ? const Color(0xFF2F6B47) : ExColor.tinta, fontFeatures: num)),
+            ]),
           ]),
         ),
         const Spacer(),
