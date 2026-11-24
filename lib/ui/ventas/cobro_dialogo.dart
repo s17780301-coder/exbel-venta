@@ -220,8 +220,6 @@ class _CobroState extends State<_Cobro> {
       _Forma.tarjeta,
       _Forma.transferencia,
       if (repos.ajustes.si(Ajuste.usarCredito)) _Forma.credito,
-      if (repos.ajustes.si(Ajuste.aceptarVales)) _Forma.vales,
-      if (repos.ajustes.si(Ajuste.aceptarDolares)) _Forma.dolares,
       _Forma.mixto,
     ];
     return CallbackShortcuts(
@@ -447,8 +445,6 @@ class _CobroState extends State<_Cobro> {
           const SizedBox(height: 8),
           fila('Tarjeta:', _mTa, foco: true),
           fila('Transferencia:', _mTr),
-          if (repos.ajustes.si(Ajuste.aceptarVales)) fila('Vales:', _mVa),
-          if (repos.ajustes.si(Ajuste.aceptarDolares)) fila('Dólares (USD):', _mUsd),
           if (repos.ajustes.si(Ajuste.usarCredito)) fila('A crédito:', _mCr),
           const Divider(height: 24),
           _renglonGrande('Efectivo:', Text(formatoPesos(resta < 0 ? 0 : resta), style: ExTexto.mono(26, peso: FontWeight.w600))),

@@ -9,6 +9,7 @@ import '../sesion.dart';
 import '../tema/tema.dart';
 import '../zoom.dart';
 import 'dialogos.dart';
+import 'importar_respaldo.dart';
 
 /// Importa productos o clientes desde el Excel que exporta otro sistema (u otro
 /// sistema). Detecta las columnas solo y deja corregirlas antes de importar.
@@ -16,10 +17,11 @@ Future<void> importarDesdeArchivo(BuildContext context, {bool clientes = false})
   final r = await FilePicker.platform.pickFiles(
     dialogTitle: clientes ? 'Archivo de clientes' : 'Catálogo de productos',
     type: FileType.custom,
-    allowedExtensions: ['xlsx', 'xls', 'csv', 'txt'],
+    allowedExtensions: ['xlsx', 'xls', 'csv', 'txt', 'fbk'],
   );
   final ruta = r?.files.single.path;
   if (ruta == null || !context.mounted) return;
+  if (ruta.toLowerCase().endsWith('.fbk')) return importarRespaldoFbk(context, ruta);
   if (ruta.toLowerCase().endsWith('.xls')) {
     await showDialog<void>(
       context: context,

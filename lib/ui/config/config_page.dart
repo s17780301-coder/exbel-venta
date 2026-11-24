@@ -28,7 +28,7 @@ import '../sesion.dart';
 import '../tema/tema.dart';
 import '../zoom.dart';
 
-const versionExBel = '0.8.4';
+const versionExBel = '0.9.0';
 
 /// Configuración de la tienda.
 class ConfigPage extends StatefulWidget {
@@ -457,9 +457,6 @@ class _FormasPago extends StatelessWidget {
       _titulo('Formas de pago', 'Efectivo, tarjeta, transferencia y pago mixto siempre están disponibles.'),
       const _Interruptor(Ajuste.usarCredito, 'Crédito (fiado)'),
       const _Campo(Ajuste.avisoCredito, 'Avisar al llegar a este % del tope de crédito', ayuda: 'Ej. 80 = avisa cuando el cliente ya usó el 80 % de su tope', numero: true),
-      const _Interruptor(Ajuste.aceptarVales, 'Vales de despensa'),
-      const _Interruptor(Ajuste.aceptarDolares, 'Dólares'),
-      const _Campo(Ajuste.tipoCambio, 'Tipo de cambio (pesos por dólar)', pesos: true),
       const _Interruptor(Ajuste.permitirCobroMenor, 'Permitir cobrar en efectivo menos del total',
           'Normalmente apagado: así no se cobra de menos por error.'),
     ]);
@@ -602,7 +599,8 @@ class _Precargados extends StatelessWidget {
       ExSeccion(
         titulo: 'Traer tu catálogo de otro sistema',
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Exporta tu catálogo a Excel desde tu sistema anterior e impórtalo aquí. '
+          const Text('Elige el respaldo (.fbk) de tu sistema anterior: trae productos (con pieza o granel exacto), existencias y clientes con su crédito. '
+              'También acepta el catálogo exportado a Excel. '
               'Se reconocen las columnas solas.'),
           const SizedBox(height: 10),
           FilledButton.icon(
@@ -610,7 +608,7 @@ class _Precargados extends StatelessWidget {
               if (await autorizar(context, Permiso.productos) && context.mounted) await importarDesdeArchivo(context);
             },
             icon: const Icon(Icons.file_download_outlined),
-            label: const Text('Importar productos (Excel)'),
+            label: const Text('Importar respaldo o Excel'),
           ),
         ]),
       ),
