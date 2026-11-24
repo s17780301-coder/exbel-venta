@@ -55,6 +55,9 @@ class _VentasPageState extends State<VentasPage> {
   final _scroll = ScrollController();
   List<Producto> _favoritos = [];
   Venta? _ultima;
+
+  /// Cantidad escrita antes de escanear (".5*"): se usa en el siguiente producto.
+  double? _pendiente;
   bool _ocupado = false;
 
   Ticket get _t => _tickets[_actual];
@@ -252,7 +255,18 @@ class _VentasPageState extends State<VentasPage> {
       return;
     }
     double? cantidad;
+    // ".5*" o "3*": cantidad para el siguiente producto que se escanee.
+    if (texto.endsWith('*')) {
+      final c = leerCantidad(texto.substring(0, texto.length - 1));
+      if (c == null || c <= 0) {
+        aviso(context, 'Escribe la cantidad antes del *. Ejemplo: .5* para medio kilo.');
+      } else {
+        setState(() => _pendiente = c);
+      }
+      return _enfocar();
+    }
     final estrella = texto.indexOf('*');
+    if (estrella == 0) texto = texto.substring(1).trim();
     if (estrella > 0) {
       cantidad = leerCantidad(texto.substring(0, estrella));
       texto = texto.substring(estrella + 1).trim();
@@ -262,6 +276,25 @@ class _VentasPageState extends State<VentasPage> {
       }
     }
     var p = await repos.productos.porCodigo(texto);
+    // Solo un número (".5", "0.250", "1,5", "3"): es una cantidad, no un código.
+    if (p == null && cantidad == null && RegExp(r'^(\d{0,3}[.,]\d{1,3}|\d{1,3})$').hasMatch(texto)) {
+      final c = leerCantidad(texto) ?? 0;
+      if (c <= 0) return _enfocar();
+      if (_t.renglones.isNotEmpty) {
+        // Cambia la cantidad del producto seleccionado (o del último agregado).
+        final i = _t.seleccion >= 0 && _t.seleccion < _t.renglones.length ? _t.seleccion : _t.renglones.length - 1;
+        final rg = _t.renglones[i];
+        if (!_hayExistencia(rg, c)) return _enfocar();
+        setState(() {
+          rg.cantidad = c;
+          _t.seleccion = i;
+        });
+      } else {
+        // Sin productos todavía: queda para el siguiente que se escanee.
+        setState(() => _pendiente = c);
+      }
+      return _enfocar();
+    }
     if (p == null) {
       final b = await _deBascula(texto);
       if (b != null) {
@@ -276,6 +309,8 @@ class _VentasPageState extends State<VentasPage> {
       if (elegido == null) return _enfocar();
       p = elegido;
     }
+    if (cantidad == null && _pendiente != null) cantidad = _pendiente;
+    if (_pendiente != null) setState(() => _pendiente = null);
     await _agregar(p, cantidad: cantidad);
   }
 
@@ -705,6 +740,16 @@ class _VentasPageState extends State<VentasPage> {
       child: Row(children: [
         const Icon(Icons.qr_code_scanner_rounded, color: ExEstilo.primario, size: 24),
         const SizedBox(width: 12),
+        if (_pendiente != null) ...[
+          InputChip(
+            label: Text('${formatoCantidad(_pendiente!)} ×', style: const TextStyle(fontWeight: FontWeight.w700, color: ExEstilo.primarioOscuro)),
+            backgroundColor: ExEstilo.suave,
+            side: BorderSide.none,
+            onDeleted: () => setState(() => _pendiente = null),
+            tooltip: 'Cantidad para el siguiente producto',
+          ),
+          const SizedBox(width: 8),
+        ],
         Expanded(
           child: TextField(
             controller: _codigo,
@@ -712,7 +757,7 @@ class _VentasPageState extends State<VentasPage> {
             autofocus: true,
             style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w500, color: ExColor.tinta),
             decoration: const InputDecoration(
-              hintText: 'Escanea o escribe el código del producto…',
+              hintText: 'Escanea o escribe el código  ·  .5* = medio kilo del siguiente',
               hintStyle: TextStyle(fontSize: 17, color: ExEstilo.texto2, fontWeight: FontWeight.w400),
               border: InputBorder.none,
               enabledBorder: InputBorder.none,
