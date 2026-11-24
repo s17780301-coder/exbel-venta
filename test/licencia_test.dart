@@ -5,8 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('código de activación por equipo', () {
-    expect(codigoActivacionPara('AB12-CD34'), '0A95-A334-3D3A');
-    expect(codigoActivacionPara('ab12cd34'), '0A95-A334-3D3A');
+    final c = codigoActivacionPara('AB12-CD34');
+    expect(c, matches(RegExp(r'^[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}$')));
+    expect(codigoActivacionPara('ab12cd34'), c);
+    expect(codigoActivacionPara('AB12-CD35'), isNot(c));
   });
 
   test('prueba de 7 días y activación', () async {

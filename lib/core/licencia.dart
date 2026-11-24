@@ -11,7 +11,8 @@ import 'package:path/path.dart' as p;
 /// se guarda en dos lugares distintos y se usa la más
 /// antigua; si el reloj se atrasa, cuenta la fecha más reciente que se vio.
 const diasDePrueba = 7;
-const _sal = '72f58589c30bc7954ebf5e522acca9514039d688027f14ac';
+/// La clave real se pone al compilar (secreto de GitHub); no va en el código.
+const _sal = String.fromEnvironment('EXBEL_SAL', defaultValue: 'solo-pruebas');
 
 String codigoActivacionPara(String equipo) {
   final h = Hmac(sha256, utf8.encode(_sal)).convert(utf8.encode('exbel-venta|${equipo.toUpperCase().replaceAll('-', '')}'));

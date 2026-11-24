@@ -63,8 +63,16 @@ jobs:
           Set-Content $f $c
           Select-String -Path $f -Pattern 'SC_KEYMENU'
           if (-not (Select-String -Path $f -Pattern 'SC_KEYMENU' -Quiet)) { exit 1 }
+      - name: Revisar la clave de activación
+        shell: pwsh
+        env:
+          EXBEL_SAL: ${{ secrets.EXBEL_SAL }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:EXBEL_SAL)) { Write-Error 'Falta el secreto EXBEL_SAL en GitHub (Settings > Secrets and variables > Actions).'; exit 1 }
       - name: Compilar
-        run: flutter build windows --release --build-number=${{ github.run_number }}
+        env:
+          EXBEL_SAL: ${{ secrets.EXBEL_SAL }}
+        run: flutter build windows --release --build-number=${{ github.run_number }} --dart-define=EXBEL_SAL=${{ env.EXBEL_SAL }}
       - name: Incluir las librerías de Visual C++ (para equipos que no las tienen)
         shell: pwsh
         run: |
