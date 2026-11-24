@@ -75,18 +75,16 @@ class _SeccionEmergenciaState extends State<SeccionEmergencia> {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(color: Tono.coral.fondo, borderRadius: BorderRadius.circular(12)),
           child: const Row(children: [
-            Text('Presiona  ', style: TextStyle(fontWeight: FontWeight.w600)),
-            Tecla('Ctrl'),
-            Text(' + '),
-            Tecla('Alt'),
-            Text(' + '),
-            Tecla('E'),
+            Icon(Icons.back_hand_rounded, size: 20),
+            SizedBox(width: 8),
+            Text('Pon la mano sobre el teclado', style: TextStyle(fontWeight: FontWeight.w700)),
           ]),
         ),
       ]),
       const SizedBox(height: 12),
       const Text(
-          'En cualquier pantalla de exBel venta esas tres teclas mandan la alerta sin que aparezca nada en la pantalla. '
+          'En cualquier pantalla de exBel venta, apretar varias teclas a la vez (la mano o el puño sobre el teclado, en cualquier parte) '
+          'manda la alerta sin que aparezca nada en la pantalla. También funciona Ctrl + Alt + E. '
           'En los celulares vinculados suena una sirena a todo volumen, aunque estén en silencio, hasta que alguien la atiende.',
           style: TextStyle(fontSize: 15)),
       const SizedBox(height: 16),

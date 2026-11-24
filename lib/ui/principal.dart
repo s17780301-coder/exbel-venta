@@ -47,6 +47,9 @@ int esMasOMenos(KeyEvent e) {
 /// Lo pone Ventas: si el campo de código está vacío, + y − cambian la cantidad.
 bool Function() codigoVentasVacio = () => true;
 
+/// Borra lo que se haya escrito en el campo de código (al activar el pánico).
+void Function() limpiarCapturaVentas = () {};
+
 class _Seccion {
   const _Seccion(this.nombre, this.tecla, this.icono, this.permiso, this.tono);
   final String nombre;

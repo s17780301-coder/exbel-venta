@@ -20,6 +20,7 @@ import 'data/repos.dart';
 import 'ui/acceso/acceso_page.dart';
 import 'ui/comun/licencia_ui.dart';
 import 'ui/comun/ex_widgets.dart';
+import 'ui/principal.dart' show limpiarCapturaVentas;
 import 'ui/tema/tema.dart';
 import 'ui/zoom.dart';
 import 'data/ajustes_repo.dart';
@@ -45,19 +46,27 @@ Future<void> main() async {
   }, (e, s) => _registrarError('$e\n$s'));
 }
 
-/// Ctrl + Alt + E en cualquier pantalla: alerta de emergencia silenciosa.
+final _panico = DetectorPanico();
+
+/// Alerta de emergencia silenciosa, en cualquier pantalla:
+/// la mano sobre el teclado (muchas teclas juntas) o Ctrl + Alt + E.
 bool _teclaEmergencia(KeyEvent e) {
-  if (e is! KeyDownEvent || e.logicalKey != LogicalKeyboardKey.keyE) return false;
+  if (e is! KeyDownEvent) return false;
   final k = HardwareKeyboard.instance;
-  if (!k.isControlPressed || !k.isAltPressed) return false;
-  try {
-    enviarAlertaEmergencia(
-      caja: cajaLocal.nombreCaja,
-      cajero: sesion.cajero?.nombre ?? '',
-      equipo: Licencia.instancia.equipo,
-    );
-  } catch (_) {}
-  return true;
+  final n = k.physicalKeysPressed.length;
+  final combinacion = e.logicalKey == LogicalKeyboardKey.keyE && k.isControlPressed && k.isAltPressed;
+  if (combinacion || _panico.alPresionar(n, DateTime.now())) {
+    try {
+      limpiarCapturaVentas();
+      enviarAlertaEmergencia(
+        caja: cajaLocal.nombreCaja,
+        cajero: sesion.cajero?.nombre ?? '',
+        equipo: Licencia.instancia.equipo,
+      );
+    } catch (_) {}
+    return true;
+  }
+  return DetectorPanico.tragar(n);
 }
 
 Future<void> _registrarError(String texto) async {

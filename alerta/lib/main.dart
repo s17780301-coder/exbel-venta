@@ -274,7 +274,7 @@ class _InicioState extends State<Inicio> with WidgetsBindingObserver {
               Icon(Icons.notifications_active_rounded, color: Color(0xFFB0573F)),
               SizedBox(width: 12),
               Expanded(
-                  child: Text('En la caja se activa con Ctrl + Alt + E. La alerta suena a todo volumen aunque el celular esté en silencio.',
+                  child: Text('En la caja se activa poniendo la mano sobre el teclado (varias teclas a la vez). La alerta suena a todo volumen aunque el celular esté en silencio.',
                       style: TextStyle(color: cTexto2))),
             ]),
           ),

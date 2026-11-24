@@ -75,6 +75,9 @@ class _VentasPageState extends State<VentasPage> {
     teclasVentas.addListener(_alTeclear);
     cambiosDatos.addListener(_cargarFavoritos);
     codigoVentasVacio = () => _codigo.text.isEmpty;
+    limpiarCapturaVentas = () {
+      if (mounted) _codigo.clear();
+    };
     encabezadoVentas.value = (_) => _ticketsSegmentados();
     _cargarFavoritos();
     _restaurarTickets();
