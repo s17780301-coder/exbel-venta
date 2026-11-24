@@ -43,14 +43,19 @@ class CajaRepo {
 
   /// Cierra el turno con lo que se contó en la caja. Regresa la diferencia
   /// (positiva = sobrante, negativa = faltante).
-  Future<int> cerrarTurno(String turnoId, int contadoCentavos) async {
+  /// Cierra el turno. [fondoSiguienteCentavos] es lo que se deja en la caja
+  /// para el siguiente cajero; el resto del efectivo contado se retira.
+  Future<int> cerrarTurno(String turnoId, int contadoCentavos, {int? fondoSiguienteCentavos}) async {
     final corte = await corteTurno(turnoId);
+    final fondo = (fondoSiguienteCentavos ?? 0).clamp(0, contadoCentavos < 0 ? 0 : contadoCentavos);
     await db.update(
         'turnos',
         {
           'cerrado': ahoraLocal(),
           'contado_centavos': contadoCentavos,
           'esperado_centavos': corte.esperadoCentavos,
+          'fondo_siguiente_centavos': fondoSiguienteCentavos == null ? null : fondo,
+          'retiro_centavos': fondoSiguienteCentavos == null ? null : contadoCentavos - fondo,
           'estado': 'cerrado',
           'actualizado': ahoraUtc(),
           'sincronizado': 0,
@@ -58,6 +63,14 @@ class CajaRepo {
         where: 'id = ?',
         whereArgs: [turnoId]);
     return contadoCentavos - corte.esperadoCentavos;
+  }
+
+  /// Fondo que dejó el último turno cerrado de esta caja (para el que entra).
+  Future<int?> fondoDejado({String? caja}) async {
+    final f = await db.rawQuery(
+        "SELECT fondo_siguiente_centavos FROM turnos WHERE estado = 'cerrado' AND caja = ? ORDER BY cerrado DESC LIMIT 1",
+        [caja ?? cajaLocal.nombreCaja]);
+    return f.isEmpty ? null : f.first['fondo_siguiente_centavos'] as int?;
   }
 
   Future<List<Turno>> turnos({DateTime? desde, DateTime? hasta}) async {

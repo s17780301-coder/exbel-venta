@@ -32,6 +32,7 @@ class _AccesoPageState extends State<AccesoPage> {
   final _clave = TextEditingController();
   final _clave2 = TextEditingController();
   final _fondo = TextEditingController();
+  int? _fondoDejado;
   final _focoClave = FocusNode();
   bool _ejemplo = false;
   bool _ocupado = false;
@@ -96,8 +97,10 @@ class _AccesoPageState extends State<AccesoPage> {
     final t = await repos.caja.turnoAbierto();
     if (!mounted) return;
     if (t != null) return _irAPrincipal(t);
-    _fondo.text = (repos.ajustes.entero(Ajuste.fondoSugerido) / 100).toStringAsFixed(2);
-    setState(() => _paso = _Paso.fondo);
+    final dejado = await repos.caja.fondoDejado();
+    _fondoDejado = dejado;
+    _fondo.text = ((dejado ?? repos.ajustes.entero(Ajuste.fondoSugerido)) / 100).toStringAsFixed(2);
+    if (mounted) setState(() => _paso = _Paso.fondo);
   }
 
   Future<void> _abrirTurno() async {
@@ -245,7 +248,9 @@ class _AccesoPageState extends State<AccesoPage> {
         return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Text('Hola, ${_cajero?.nombre ?? ''}', style: ExTexto.titulo(32)),
           const SizedBox(height: 6),
-          const Text('Abre tu turno. ¿Con cuánto dinero empieza la caja?'),
+          Text(_fondoDejado != null
+              ? 'El turno anterior dejó ${formatoPesos(_fondoDejado!)} de fondo. Cuéntalo y, si está bien, abre tu turno.'
+              : 'Abre tu turno. ¿Con cuánto dinero empieza la caja?'),
           const SizedBox(height: 24),
           CampoNumero(
               controller: _fondo,

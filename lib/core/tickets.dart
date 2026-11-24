@@ -121,7 +121,7 @@ Future<Uint8List> ticketVenta(Venta v, List<LineaVendida> lineas, {bool copia = 
 }
 
 /// Comprobante de corte.
-Future<Uint8List> ticketCorte(Corte c, {int? contadoCentavos}) async {
+Future<Uint8List> ticketCorte(Corte c, {int? contadoCentavos, int? fondoSiguienteCentavos}) async {
   final doc = pw.Document();
   final ahora = DateTime.now();
   doc.addPage(pw.Page(
@@ -148,6 +148,16 @@ Future<Uint8List> ticketCorte(Corte c, {int? contadoCentavos}) async {
         _fila('Contado', formatoPesos(contadoCentavos)),
         _fila(contadoCentavos >= c.esperadoCentavos ? 'Sobrante' : 'Faltante',
             formatoPesos((contadoCentavos - c.esperadoCentavos).abs()), negrita: true),
+        if (fondoSiguienteCentavos != null) ...[
+          _linea(),
+          _fila('ENTREGA DE CAJA', ''),
+          _fila('Se deja de fondo', formatoPesos(fondoSiguienteCentavos), negrita: true),
+          _fila('Se retira', formatoPesos(contadoCentavos - fondoSiguienteCentavos), negrita: true),
+          pw.SizedBox(height: 22),
+          _fila('Entregó ____________', ''),
+          pw.SizedBox(height: 16),
+          _fila('Recibió ____________', ''),
+        ],
       ],
       _linea(),
       pw.Text('VENTAS POR FORMA DE PAGO', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold)),

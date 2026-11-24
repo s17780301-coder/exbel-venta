@@ -199,4 +199,14 @@ void main() {
     final r = await repos.productos.buscar('ja', porUso: true);
     expect(r.first.codigo, '1074');
   });
+
+  test('entrega de caja: el fondo que se deja pasa al siguiente turno', () async {
+    await repos.caja.cerrarTurno(turno.id, 62000, fondoSiguienteCentavos: 50000);
+    final t = (await repos.caja.turnos()).firstWhere((x) => x.id == turno.id);
+    expect(t.retiroCentavos, 12000);
+    expect(t.fondoSiguienteCentavos, 50000);
+    expect(await repos.caja.fondoDejado(), 50000);
+    final nuevo = await repos.caja.abrirTurno(admin.id, 50000);
+    expect(nuevo.numero, turno.numero + 1);
+  });
 }

@@ -13,7 +13,7 @@ import 'texto.dart';
 class AppDb {
   AppDb._();
 
-  static const version = 6;
+  static const version = 7;
 
   /// Carpeta de datos de exBel venta (base, respaldos, logotipo).
   static Future<Directory> carpeta() async {
@@ -38,7 +38,7 @@ class AppDb {
         onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
         onCreate: (db, _) async {
           final b = db.batch();
-          for (final sql in [...esquema, ...migracionV2, ...migracionV3, ...migracionV4, ...migracionV5, ...migracionV6]) {
+          for (final sql in [...esquema, ...migracionV2, ...migracionV3, ...migracionV4, ...migracionV5, ...migracionV6, ...migracionV7]) {
             b.execute(sql);
           }
           await b.commit(noResult: true);
@@ -73,6 +73,11 @@ class AppDb {
           }
           if (antes < 6) {
             for (final sql in migracionV6) {
+              await db.execute(sql);
+            }
+          }
+          if (antes < 7) {
+            for (final sql in migracionV7) {
               await db.execute(sql);
             }
           }
@@ -289,6 +294,12 @@ const migracionV5 = <String>[
 /// v6: multicaja, cada turno es de una caja.
 const migracionV6 = <String>[
   "ALTER TABLE turnos ADD COLUMN caja TEXT NOT NULL DEFAULT 'Caja 1'",
+];
+
+/// v7: entrega de caja (lo que se deja de fondo y lo que se retira).
+const migracionV7 = <String>[
+  'ALTER TABLE turnos ADD COLUMN fondo_siguiente_centavos INTEGER',
+  'ALTER TABLE turnos ADD COLUMN retiro_centavos INTEGER',
 ];
 
 /// Actualiza la fila si existe; si no, la inserta.

@@ -29,6 +29,7 @@ class _CortePageState extends State<CortePage> {
   DateTime _dia = DateTime.now();
   List<Turno> _turnos = [];
   List<MovimientoCaja> _movs = [];
+  List<Turno> _turnosDia = [];
 
   @override
   void initState() {
@@ -48,6 +49,7 @@ class _CortePageState extends State<CortePage> {
     Corte? c;
     var movs = <MovimientoCaja>[];
     var turnos = <Turno>[];
+    var turnosDia = <Turno>[];
     switch (_vista) {
       case _Vista.turno:
         if (t != null) {
@@ -59,6 +61,7 @@ class _CortePageState extends State<CortePage> {
         final inicio = DateTime(_dia.year, _dia.month, _dia.day);
         final ts = await repos.caja.turnos(desde: inicio, hasta: inicio.add(const Duration(days: 1)));
         movs = await repos.caja.movimientosCaja(ts.map((x) => x.id).toList());
+        turnosDia = ts;
       case _Vista.historial:
         turnos = await repos.caja.turnos(desde: DateTime.now().subtract(const Duration(days: 60)));
     }
@@ -67,6 +70,7 @@ class _CortePageState extends State<CortePage> {
       _corte = c;
       _movs = movs;
       _turnos = turnos;
+      _turnosDia = turnosDia;
     });
   }
 
@@ -89,26 +93,25 @@ class _CortePageState extends State<CortePage> {
     if (t == null || c == null) return;
     final contado = await showDialog<int>(context: context, builder: (_) => const _Conteo());
     if (contado == null || !mounted) return;
-    if (!await confirmar(context, 'Cerrar turno',
-        'Contaste ${formatoPesos(contado)}. Al cerrar el turno ya no se pueden registrar ventas en él. ¿Cerrar?',
-        si: 'Cerrar turno')) {
-      return;
-    }
-    final dif = await repos.caja.cerrarTurno(t.id, contado);
+    final sugerido = repos.ajustes.entero(Ajuste.fondoSugerido);
+    final fondo = await showDialog<int>(
+      context: context,
+      builder: (_) => _Entrega(contado: contado, esperado: c.esperadoCentavos, fondoInicial: sugerido > 0 ? sugerido : c.fondoCentavos),
+    );
+    if (fondo == null || !mounted) return;
+    final dif = await repos.caja.cerrarTurno(t.id, contado, fondoSiguienteCentavos: fondo);
     await respaldoAutomatico(repos.db);
     if (!mounted) return;
     final corte = await repos.caja.corteTurno(t.id);
-    final pdf = await ticketCorte(corte, contadoCentavos: contado);
+    final pdf = await ticketCorte(corte, contadoCentavos: contado, fondoSiguienteCentavos: fondo);
     if (!mounted) return;
     await showDialog<void>(
       context: context,
       builder: (d) => AlertDialog(
         title: const Text('Turno cerrado'),
-        content: Text(dif == 0
-            ? 'La caja cuadra exacto. ¡Bien!'
-            : dif > 0
-                ? 'Sobran ${formatoPesos(dif)} en la caja.'
-                : 'Faltan ${formatoPesos(-dif)} en la caja.'),
+        content: Text('${dif == 0 ? 'La caja cuadra exacto.' : dif > 0 ? 'Sobran ${formatoPesos(dif)} en la caja.' : 'Faltan ${formatoPesos(-dif)} en la caja.'}\n\n'
+            'Retira ${formatoPesos(contado - fondo)} y deja ${formatoPesos(fondo)} de fondo para el siguiente turno.',
+            style: const TextStyle(fontSize: 17)),
         actions: [
           OutlinedButton(
               onPressed: () async {
@@ -262,6 +265,40 @@ class _CortePageState extends State<CortePage> {
             ),
           ),
         ]),
+        if (_vista == _Vista.dia && _turnosDia.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          ExSeccion(
+            titulo: 'Turnos del día (por caja y cajero)',
+            child: Column(children: [
+              for (final t in _turnosDia)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 5),
+                  child: Row(children: [
+                    SizedBox(width: 90, child: Text(t.caja, style: const TextStyle(fontWeight: FontWeight.w600))),
+                    Expanded(child: Text('Turno ${t.numero} · ${t.cajeroNombre ?? ''}')),
+                    Text(t.cerrado == null ? 'Abierto' : 'Contó ${formatoPesos(t.contadoCentavos ?? 0)}',
+                        style: ExTexto.mono(14)),
+                    SizedBox(
+                      width: 150,
+                      child: Text(
+                        t.contadoCentavos == null || t.esperadoCentavos == null
+                            ? ''
+                            : (t.contadoCentavos! - t.esperadoCentavos! == 0
+                                ? 'Cuadró'
+                                : '${t.contadoCentavos! > t.esperadoCentavos! ? 'Sobró' : 'Faltó'} ${formatoPesos((t.contadoCentavos! - t.esperadoCentavos!).abs())}'),
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: (t.contadoCentavos ?? 0) == (t.esperadoCentavos ?? 0)
+                                ? ExColor.verde
+                                : ((t.contadoCentavos ?? 0) > (t.esperadoCentavos ?? 0) ? ExColor.verde : ExColor.rojo)),
+                      ),
+                    ),
+                  ]),
+                ),
+            ]),
+          ),
+        ],
         const SizedBox(height: 16),
         ExSeccion(
           titulo: 'Entradas y salidas de efectivo',
@@ -286,8 +323,9 @@ class _CortePageState extends State<CortePage> {
   Widget _historial() {
     return Column(children: [
       const EncabezadoTabla([
-        ('Turno', 1, false), ('Cajero', 3, false), ('Abierto', 3, false), ('Cerrado', 3, false),
-        ('Fondo', 2, true), ('Esperado', 2, true), ('Contado', 2, true), ('Diferencia', 2, true),
+        ('Turno', 1, false), ('Caja', 2, false), ('Cajero', 3, false), ('Abierto', 3, false), ('Cerrado', 3, false),
+        ('Fondo', 2, true), ('Esperado', 2, true), ('Contado', 2, true), ('Diferencia', 2, true), ('Retiró', 2, true),
+        ('Dejó', 2, true),
       ]),
       Expanded(
         child: Container(
@@ -300,6 +338,7 @@ class _CortePageState extends State<CortePage> {
               return FilaTabla(
                 [
                   (celda('${t.numero}', mono: true), 1, false),
+                  (celda(t.caja), 2, false),
                   (celda(t.cajeroNombre ?? ''), 3, false),
                   (celda(formatoFechaHora(t.abierto), mono: true), 3, false),
                   (celda(t.cerrado == null ? 'Abierto' : formatoFechaHora(t.cerrado!), mono: true), 3, false),
@@ -312,11 +351,13 @@ class _CortePageState extends State<CortePage> {
                     2,
                     true
                   ),
+                  (celda(t.retiroCentavos == null ? '—' : formatoPesos(t.retiroCentavos!), mono: true), 2, true),
+                  (celda(t.fondoSiguienteCentavos == null ? '—' : formatoPesos(t.fondoSiguienteCentavos!), mono: true), 2, true),
                 ],
                 par: i.isOdd,
                 onDoubleTap: () async {
                   final c = await repos.caja.corteTurno(t.id);
-                  final pdf = await ticketCorte(c, contadoCentavos: t.contadoCentavos);
+                  final pdf = await ticketCorte(c, contadoCentavos: t.contadoCentavos, fondoSiguienteCentavos: t.fondoSiguienteCentavos);
                   if (mounted) await vistaPrevia(context, pdf, titulo: 'Corte turno ${t.numero}');
                 },
               );
@@ -393,6 +434,81 @@ class _ConteoState extends State<_Conteo> {
           },
           child: const Text('Continuar'),
         ),
+      ],
+    );
+  }
+}
+
+/// Entrega de caja: cuánto se deja de fondo para el siguiente turno y
+/// cuánto se retira.
+class _Entrega extends StatefulWidget {
+  const _Entrega({required this.contado, required this.esperado, required this.fondoInicial});
+  final int contado;
+  final int esperado;
+  final int fondoInicial;
+
+  @override
+  State<_Entrega> createState() => _EntregaState();
+}
+
+class _EntregaState extends State<_Entrega> {
+  late final _fondo = TextEditingController(
+      text: (widget.fondoInicial.clamp(0, widget.contado < 0 ? 0 : widget.contado) / 100).toStringAsFixed(2));
+
+  int get _f => (leerPesos(_fondo.text) ?? 0).clamp(0, widget.contado < 0 ? 0 : widget.contado);
+
+  @override
+  void dispose() {
+    _fondo.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dif = widget.contado - widget.esperado;
+    Widget fila(String a, int b, {Color? color, double t = 17}) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(children: [
+            Expanded(child: Text(a, style: TextStyle(fontSize: t))),
+            Text(formatoPesos(b), style: ExTexto.mono(t + 2, color: color)),
+          ]),
+        );
+    return AlertDialog(
+      title: const Text('Entrega de caja'),
+      content: SizedBox(
+        width: 460,
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          fila('Efectivo contado', widget.contado),
+          fila(dif >= 0 ? 'Sobrante' : 'Faltante', dif.abs(), color: dif == 0 ? ExColor.verde : (dif > 0 ? ExColor.verde : ExColor.rojo)),
+          const Divider(height: 24),
+          CampoNumero(
+            controller: _fondo,
+            etiqueta: 'Dejar de fondo para el siguiente turno (\$)',
+            ayuda: 'Dinero para dar cambio que se queda en la caja',
+            autofocus: true,
+            onChanged: (_) => setState(() {}),
+            onSubmitted: (_) => Navigator.pop(context, _f),
+          ),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: ExColor.banda,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: ExColor.borde, width: 1.4),
+            ),
+            child: Column(children: [
+              fila('Se retira de la caja', widget.contado - _f, t: 19),
+              fila('Se queda de fondo', _f, t: 19),
+            ]),
+          ),
+          const SizedBox(height: 10),
+          const Text('Al cerrar el turno ya no se pueden registrar ventas en él.', style: TextStyle(color: ExColor.texto2)),
+        ]),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        FilledButton(onPressed: () => Navigator.pop(context, _f), child: const Text('Cerrar turno')),
       ],
     );
   }

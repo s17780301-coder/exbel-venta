@@ -220,7 +220,7 @@ class Cajero {
 class Turno {
   Turno({required this.id, required this.numero, required this.cajeroId, required this.abierto,
       required this.fondoCentavos, required this.estado, this.cajeroNombre, this.cerrado,
-      this.contadoCentavos, this.esperadoCentavos, this.caja = 'Caja 1'});
+      this.contadoCentavos, this.esperadoCentavos, this.caja = 'Caja 1', this.fondoSiguienteCentavos, this.retiroCentavos});
   final String id;
   final int numero;
   final String caja;
@@ -231,6 +231,10 @@ class Turno {
   final int fondoCentavos;
   final int? contadoCentavos;
   final int? esperadoCentavos;
+
+  /// Al cerrar: efectivo que se dejó para el siguiente turno y lo que se retiró.
+  final int? fondoSiguienteCentavos;
+  final int? retiroCentavos;
   final String estado;
 
   bool get estaAbierto => estado == 'abierto';
@@ -245,6 +249,8 @@ class Turno {
         fondoCentavos: m['fondo_centavos'] as int,
         contadoCentavos: m['contado_centavos'] as int?,
         esperadoCentavos: m['esperado_centavos'] as int?,
+        fondoSiguienteCentavos: m['fondo_siguiente_centavos'] as int?,
+        retiroCentavos: m['retiro_centavos'] as int?,
         estado: m['estado'] as String,
         caja: (m['caja'] as String?) ?? 'Caja 1',
       );
