@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -51,27 +52,67 @@ Future<VersionNueva?> buscarActualizacion(String actual) async {
   return VersionNueva(v, '${m['url']}');
 }
 
-/// Descarga el instalador. [avance] de 0 a 1.
+/// Descarga el instalador. [avance] de 0 a 1. Reintenta 3 veces y, si falla,
+/// el error dice el motivo real (internet, antivirus, disco…).
 Future<File> descargarInstalador(VersionNueva v, void Function(double) avance) async {
-  final destino = File(p.join(Directory.systemTemp.path, 'exBel-venta-${v.version}.exe'));
-  final cliente = HttpClient()..connectionTimeout = const Duration(seconds: 30);
-  try {
-    final res = await (await cliente.getUrl(Uri.parse(v.url))).close();
-    if (res.statusCode >= 300) throw HttpException('Código ${res.statusCode}');
-    final total = res.contentLength;
-    final sink = destino.openWrite();
-    var recibidos = 0;
-    await for (final parte in res) {
-      sink.add(parte);
-      recibidos += parte.length;
-      if (total > 0) avance(recibidos / total);
+  Object? ultimo;
+  for (var intento = 1; intento <= 3; intento++) {
+    try {
+      return await _descargar(v, avance);
+    } catch (e) {
+      ultimo = e;
+      avance(0);
+      await Future<void>.delayed(Duration(seconds: 2 * intento));
     }
-    await sink.close();
-    if (await destino.length() < 1000000) throw const FileSystemException('La descarga quedó incompleta');
+  }
+  throw ultimo ?? Exception('error desconocido');
+}
+
+Future<File> _descargar(VersionNueva v, void Function(double) avance) async {
+  final carpeta = Directory(p.join(Directory.systemTemp.path, 'exbel-actualizacion'));
+  await carpeta.create(recursive: true);
+  final destino = File(p.join(carpeta.path, 'exBel-venta-${v.version}.exe'));
+  final parcial = File('${destino.path}.descarga');
+  final cliente = HttpClient()
+    ..connectionTimeout = const Duration(seconds: 30)
+    ..idleTimeout = const Duration(seconds: 30)
+    ..userAgent = 'exBel-venta';
+  try {
+    final req = await cliente.getUrl(Uri.parse(v.url));
+    req.followRedirects = true;
+    req.maxRedirects = 10;
+    final res = await req.close().timeout(const Duration(seconds: 60));
+    if (res.statusCode >= 300) throw Exception('el servidor respondió ${res.statusCode}');
+    final total = res.contentLength;
+    final sink = parcial.openWrite();
+    var recibidos = 0;
+    try {
+      await for (final parte in res.timeout(const Duration(seconds: 60))) {
+        sink.add(parte);
+        recibidos += parte.length;
+        if (total > 0) avance(recibidos / total);
+      }
+    } finally {
+      await sink.close();
+    }
+    final n = await parcial.length();
+    if (n < 1000000 || (total > 0 && n != total)) throw Exception('la descarga quedó incompleta ($n de $total bytes)');
+    if (await destino.exists()) await destino.delete();
+    await parcial.rename(destino.path);
+    if (!await destino.exists()) throw Exception('el antivirus borró el instalador');
     return destino;
   } finally {
     cliente.close(force: true);
   }
+}
+
+/// Motivo legible de un error de descarga.
+String motivoDescarga(Object e) {
+  if (e is SocketException || e is HandshakeException || e is TimeoutException) {
+    return 'sin conexión con el servidor de descargas ($e)';
+  }
+  if (e is FileSystemException) return 'Windows no dejó guardar el archivo (${e.message} ${e.osError?.message ?? ''})';
+  return '$e'.replaceFirst('Exception: ', '');
 }
 
 /// Abre el instalador en modo silencioso; al terminar vuelve a abrir exBel.

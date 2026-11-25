@@ -80,7 +80,7 @@ Future<void> actualizarAhora(BuildContext context, VersionNueva v) async {
   } catch (e) {
     if (context.mounted) {
       Navigator.of(context).pop();
-      aviso(context, 'No se pudo descargar la actualización. Revisa el internet e inténtalo de nuevo.');
+      aviso(context, 'No se pudo descargar la actualización: ${motivoDescarga(e)}');
     }
   }
 }
