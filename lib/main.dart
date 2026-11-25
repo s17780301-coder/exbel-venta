@@ -69,14 +69,14 @@ bool _teclaEmergencia(KeyEvent e) {
   final n = _abajo.length;
   final k = HardwareKeyboard.instance;
   final combinacion = e.logicalKey == LogicalKeyboardKey.keyE && k.isControlPressed && k.isAltPressed;
-  if (combinacion || _panico.alPresionar(n, ahora)) {
+  if (combinacion || _panico.alPresionar(n, ahora, tecla: e.physicalKey)) {
     try {
       limpiarCapturaVentas();
       enviarAlertaEmergencia(
         caja: cajaLocal.nombreCaja,
         cajero: sesion.cajero?.nombre ?? '',
         equipo: Licencia.instancia.equipo,
-      );
+      ).then((ok) => _registrarError('Alerta de pánico (teclas: $n) ${ok ? 'enviada' : 'NO llegó a la nube'}'));
     } catch (_) {}
     return true;
   }

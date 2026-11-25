@@ -28,4 +28,25 @@ void main() {
     expect(d.alPresionar(3, t0), isFalse);
     expect(d.alPresionar(3, t0.add(const Duration(seconds: 5))), isFalse);
   });
+  test('manotazo con teclado que solo reporta 2 juntas activa', () {
+    final d = DetectorPanico();
+    var r = false;
+    for (var i = 0; i < 8; i++) {
+      r = d.alPresionar(i.isEven ? 1 : 2, t0.add(Duration(milliseconds: i * 40)), tecla: i);
+    }
+    expect(r, isTrue);
+  });
+  test('lector de códigos rápido (sin teclas encimadas) no activa', () {
+    final d = DetectorPanico();
+    for (var i = 0; i < 13; i++) {
+      expect(d.alPresionar(1, t0.add(Duration(milliseconds: i * 8)), tecla: i % 10), isFalse);
+    }
+  });
+  test('escribir normal no activa', () {
+    final d = DetectorPanico();
+    // ~6 teclas por segundo con alguna encimada.
+    for (var i = 0; i < 20; i++) {
+      expect(d.alPresionar(i % 4 == 0 ? 2 : 1, t0.add(Duration(milliseconds: i * 160)), tecla: i % 7), isFalse);
+    }
+  });
 }

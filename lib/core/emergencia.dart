@@ -68,15 +68,24 @@ Future<void> latido({required String caja, required String cajero, required Stri
 }
 
 /// Botón de pánico: poner la mano sobre el teclado, en cualquier parte.
-/// Se activa con 4 o más teclas apretadas al mismo tiempo, o con 3 a la vez
-/// dos veces seguidas (por si el teclado no reconoce tantas juntas). El lector
-/// de códigos manda una tecla a la vez, así que no lo activa.
+/// Se activa con cualquiera de estas señales:
+/// - 4 o más teclas apretadas al mismo tiempo;
+/// - 3 a la vez dos veces seguidas;
+/// - un "manotazo": muchas teclas distintas en menos de un segundo, varias
+///   encimadas (muchos teclados no reportan más de 2 teclas juntas).
+/// El lector de códigos manda una tecla a la vez (nunca encimadas), así que
+/// no lo activa.
 class DetectorPanico {
   DateTime? _tres;
   DateTime? _ultima;
+  final _rafaga = <({DateTime t, Object? tecla, bool encimada})>[];
+
+  static const ventana = Duration(milliseconds: 1000);
+  static const minTeclas = 7, minDistintas = 5, minEncimadas = 3;
 
   /// [presionadas]: teclas apretadas en este momento (incluida la nueva).
-  bool alPresionar(int presionadas, DateTime ahora) {
+  /// [tecla]: cuál se apretó (para contar teclas distintas).
+  bool alPresionar(int presionadas, DateTime ahora, {Object? tecla}) {
     var activar = false;
     if (presionadas >= 4) {
       activar = true;
@@ -85,12 +94,22 @@ class DetectorPanico {
       if (antes != null && ahora.difference(antes) <= const Duration(milliseconds: 1500)) activar = true;
       _tres = ahora;
     }
+    _rafaga
+      ..add((t: ahora, tecla: tecla ?? Object(), encimada: presionadas >= 2))
+      ..removeWhere((r) => ahora.difference(r.t) > ventana);
+    if (!activar &&
+        _rafaga.length >= minTeclas &&
+        _rafaga.map((r) => r.tecla).toSet().length >= minDistintas &&
+        _rafaga.where((r) => r.encimada).length >= minEncimadas) {
+      activar = true;
+    }
     if (!activar) return false;
     // Una sola alerta cada 20 segundos aunque sigan apretando.
     final u = _ultima;
     if (u != null && ahora.difference(u) < const Duration(seconds: 20)) return false;
     _ultima = ahora;
     _tres = null;
+    _rafaga.clear();
     return true;
   }
 
