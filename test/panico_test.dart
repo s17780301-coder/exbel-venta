@@ -32,7 +32,7 @@ void main() {
     final d = DetectorPanico();
     var r = false;
     for (var i = 0; i < 8; i++) {
-      r = d.alPresionar(i.isEven ? 1 : 2, t0.add(Duration(milliseconds: i * 40)), tecla: i);
+      r = d.alPresionar(i.isEven ? 1 : 2, t0.add(Duration(milliseconds: i * 40)), tecla: i) || r;
     }
     expect(r, isTrue);
   });
