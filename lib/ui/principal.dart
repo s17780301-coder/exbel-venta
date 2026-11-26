@@ -72,6 +72,7 @@ const _secciones = <_Seccion>[
   _Seccion('Inventario', 'F4', Icons.warehouse_rounded, null, Tono.ambar),
   _Seccion('Corte', null, Icons.calculate_rounded, null, Tono.azul),
   _Seccion('Reportes', null, Icons.bar_chart_rounded, Permiso.reportes, Tono.rosa),
+  _Seccion('Empleados', null, Icons.badge_rounded, Permiso.configuracion, Tono.azul),
   _Seccion('Ajustes', null, Icons.settings_rounded, Permiso.configuracion, Tono.gris),
 ];
 
@@ -251,6 +252,7 @@ class _PrincipalState extends State<Principal> with WidgetsBindingObserver {
           Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const AccesoPage()));
         }),
       5 => const ReportesPage(),
+      6 => const SeccionEmpleados(),
       _ => const ConfigPage(),
     };
   }

@@ -31,7 +31,7 @@ import '../sesion.dart';
 import '../tema/tema.dart';
 import '../zoom.dart';
 
-const versionExBel = '0.14.0';
+const versionExBel = '0.14.1';
 
 /// Configuración de la tienda.
 class ConfigPage extends StatefulWidget {
@@ -1230,6 +1230,20 @@ class _BorrarState extends State<_Borrar> {
       ],
     );
   }
+}
+
+/// Pantalla de Empleados del menú principal (la misma que en Ajustes).
+class SeccionEmpleados extends StatelessWidget {
+  const SeccionEmpleados({super.key});
+
+  @override
+  Widget build(BuildContext context) => const SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(28, 24, 28, 28),
+        child: Align(
+          alignment: Alignment.topLeft,
+          child: ConstrainedBox(constraints: BoxConstraints(maxWidth: 900), child: _Cajeros()),
+        ),
+      );
 }
 
 class _Cajeros extends StatefulWidget {
