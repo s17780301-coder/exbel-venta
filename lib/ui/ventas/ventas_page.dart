@@ -289,9 +289,26 @@ class _VentasPageState extends State<VentasPage> {
       aviso(context, 'Ya está en lo mínimo. Para quitar el producto usa SUPR o "Borrar art.".');
       return;
     }
+    // Con "+" nunca se pasa de la existencia (aunque esté permitido vender
+    // sin existencia: eso es para escanear, no para subir con la tecla).
+    final p = r.producto;
+    if (d > 0 && p != null && p.usaInventario && !p.esKit) {
+      final enOtros = _t.renglones.where((x) => x != r && x.producto?.id == p.id).fold<double>(0, (s, x) => s + x.cantidad);
+      if (nueva + enOtros > p.existencia + 1e-9) {
+        if (!sostenida) aviso(context, 'Solo hay ${formatoCantidad(p.existencia)} de "${p.descripcion}" en existencia.');
+        if (!_avisoTope && sostenida) {
+          _avisoTope = true;
+          aviso(context, 'Solo hay ${formatoCantidad(p.existencia)} de "${p.descripcion}" en existencia.');
+        }
+        return;
+      }
+    }
+    if (!sostenida) _avisoTope = false;
     if (!_hayExistencia(r, nueva)) return;
     setState(() => r.cantidad = nueva);
   }
+
+  bool _avisoTope = false;
 
   // ---------------- Agregar productos ----------------
 
