@@ -163,7 +163,10 @@ jobs:
           VER=$(grep -m1 '^version:' fuente/pubspec.yaml | sed 's/version: *//; s/+.*//')
           # El aviso apunta a un instalador con la versión en el nombre: ese
           # archivo nunca se borra ni se reemplaza mientras alguien lo descarga.
-          printf '{"version":"%s","url":"https://github.com/%s/releases/download/ultima/exBel-venta-%s-instalador.exe"}\n' "$VER" "${{ github.repository }}" "$VER" > version.json
+          # Se descarga por el espejo de la nube de exBel (llega aunque la red no
+          # alcance los servidores de archivos de GitHub); el programa tiene
+          # GitHub directo como respaldo.
+          printf '{"version":"%s","url":"https://tdsyzimeafaxxocjpndd.supabase.co/functions/v1/exbel-descarga?v=%s"}\n' "$VER" "$VER" > version.json
           cat version.json
           cp artefactos/exbel-venta-instalador/exBel-venta-instalador.exe .
           cp exBel-venta-instalador.exe "exBel-venta-$VER-instalador.exe"

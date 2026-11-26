@@ -55,20 +55,29 @@ Future<VersionNueva?> buscarActualizacion(String actual) async {
 /// Descarga el instalador. [avance] de 0 a 1. Reintenta 3 veces y, si falla,
 /// el error dice el motivo real (internet, antivirus, disco…).
 Future<File> descargarInstalador(VersionNueva v, void Function(double) avance) async {
-  Object? ultimo;
-  for (var intento = 1; intento <= 3; intento++) {
-    try {
-      return await _descargar(v, avance);
-    } catch (e) {
-      ultimo = e;
-      avance(0);
-      await Future<void>.delayed(Duration(seconds: 2 * intento));
+  // Varias fuentes: la del aviso, el espejo de la nube de exBel (por si la
+  // red no llega a GitHub) y GitHub directo.
+  final fuentes = <String>{
+    v.url,
+    '$nubeUrl/functions/v1/exbel-descarga?v=${v.version}',
+    'https://github.com/s17780301-coder/exbel-venta/releases/download/ultima/exBel-venta-${v.version}-instalador.exe',
+  };
+  final errores = <String>[];
+  for (final url in fuentes) {
+    for (var intento = 1; intento <= 2; intento++) {
+      try {
+        return await _descargar(v, url, avance);
+      } catch (e) {
+        errores.add(motivoDescarga(e));
+        avance(0);
+        await Future<void>.delayed(Duration(seconds: 2 * intento));
+      }
     }
   }
-  throw ultimo ?? Exception('error desconocido');
+  throw Exception(errores.toSet().join(' / '));
 }
 
-Future<File> _descargar(VersionNueva v, void Function(double) avance) async {
+Future<File> _descargar(VersionNueva v, String url, void Function(double) avance) async {
   final carpeta = Directory(p.join(Directory.systemTemp.path, 'exbel-actualizacion'));
   await carpeta.create(recursive: true);
   final destino = File(p.join(carpeta.path, 'exBel-venta-${v.version}.exe'));
@@ -78,7 +87,7 @@ Future<File> _descargar(VersionNueva v, void Function(double) avance) async {
     ..idleTimeout = const Duration(seconds: 30)
     ..userAgent = 'exBel-venta';
   try {
-    final req = await cliente.getUrl(Uri.parse(v.url));
+    final req = await cliente.getUrl(Uri.parse(url));
     req.followRedirects = true;
     req.maxRedirects = 10;
     final res = await req.close().timeout(const Duration(seconds: 60));
