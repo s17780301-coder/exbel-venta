@@ -179,6 +179,9 @@ abstract final class Permiso {
   static const corteDia = 'corte_dia';
   static const configuracion = 'configuracion';
 
+  /// Marca de empleado: solo entra a Ventas.
+  static const soloVentas = 'solo_ventas';
+
   static const todos = <String, String>{
     descuentos: 'Dar descuentos y cambiar precios en la venta',
     cancelar: 'Cancelar ventas',
@@ -205,7 +208,11 @@ class Cajero {
   final Set<String> permisos;
   final bool activo;
 
-  bool puede(String permiso) => administrador || permisos.contains(permiso);
+  bool puede(String permiso) => administrador || (!empleado && permisos.contains(permiso));
+
+  /// Empleado: solo usa la pantalla de Ventas; lo demás pide la contraseña
+  /// de un administrador.
+  bool get empleado => !administrador && permisos.contains(Permiso.soloVentas);
 
   factory Cajero.desdeMapa(Map<String, Object?> m) => Cajero(
         id: m['id'] as String,

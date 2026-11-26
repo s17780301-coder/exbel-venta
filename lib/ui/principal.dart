@@ -194,7 +194,13 @@ class _PrincipalState extends State<Principal> with WidgetsBindingObserver {
         (ctrl && [LogicalKeyboardKey.keyP, LogicalKeyboardKey.keyD, LogicalKeyboardKey.keyB, LogicalKeyboardKey.keyF, LogicalKeyboardKey.keyR].contains(k));
   }
 
+  bool get _esEmpleado => sesion.cajero?.empleado ?? false;
+
   Future<void> _ir(int i) async {
+    if (i != 0 && _esEmpleado) {
+      aviso(context, 'Tu usuario de empleado solo tiene acceso a Ventas.');
+      return;
+    }
     final permiso = _secciones[i].permiso;
     if (permiso != null && !await autorizar(context, permiso)) return;
     setState(() {
@@ -251,6 +257,11 @@ class _PrincipalState extends State<Principal> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    // Un empleado siempre está en Ventas.
+    if (_esEmpleado && _actual != 0) {
+      _actual = 0;
+      ventasVisible = true;
+    }
     return Scaffold(
       backgroundColor: ExEstilo.fondo,
       body: Row(children: [
@@ -354,9 +365,11 @@ class _PrincipalState extends State<Principal> with WidgetsBindingObserver {
       child: Column(children: [
         const ExMarca(tamano: 17),
         const SizedBox(height: 18),
-        for (var i = 0; i < _secciones.length - 1; i++) _opcionMenu(i),
+        // Los empleados solo ven Ventas.
+        for (var i = 0; i < _secciones.length - 1; i++)
+          if (i == 0 || !_esEmpleado) _opcionMenu(i),
         const Spacer(),
-        _opcionMenu(_secciones.length - 1),
+        if (!_esEmpleado) _opcionMenu(_secciones.length - 1),
       ]),
     );
   }

@@ -13,7 +13,7 @@ import 'texto.dart';
 class AppDb {
   AppDb._();
 
-  static const version = 7;
+  static const version = 8;
 
   /// Carpeta de datos de exBel venta (base, respaldos, logotipo).
   static Future<Directory> carpeta() async {
@@ -78,6 +78,11 @@ class AppDb {
           }
           if (antes < 7) {
             for (final sql in migracionV7) {
+              await db.execute(sql);
+            }
+          }
+          if (antes < 8) {
+            for (final sql in migracionV8) {
               await db.execute(sql);
             }
           }
@@ -300,6 +305,12 @@ const migracionV6 = <String>[
 const migracionV7 = <String>[
   'ALTER TABLE turnos ADD COLUMN fondo_siguiente_centavos INTEGER',
   'ALTER TABLE turnos ADD COLUMN retiro_centavos INTEGER',
+];
+
+/// Llegan los empleados (solo Ventas): todos los usuarios que ya existían
+/// quedan con acceso total, como pidió el dueño.
+const migracionV8 = <String>[
+  "UPDATE cajeros SET administrador = 1, sincronizado = 0 WHERE activo = 1",
 ];
 
 /// Actualiza la fila si existe; si no, la inserta.

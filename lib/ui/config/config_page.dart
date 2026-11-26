@@ -31,7 +31,7 @@ import '../sesion.dart';
 import '../tema/tema.dart';
 import '../zoom.dart';
 
-const versionExBel = '0.13.10';
+const versionExBel = '0.14.0';
 
 /// Configuración de la tienda.
 class ConfigPage extends StatefulWidget {
@@ -61,7 +61,7 @@ final _grupos = <(String, List<_Opcion>)>[
     const [
       _Opcion('Importar del Sistema Anterior', Icons.drive_file_move_outline, _azul, _Precargados()),
       _Opcion('Opciones habilitadas', Icons.settings_suggest_outlined, ExColor.texto2, _Opciones()),
-      _Opcion('Cajeros', Icons.badge_outlined, _azul, _Cajeros()),
+      _Opcion('Usuarios y empleados', Icons.badge_outlined, _azul, _Cajeros()),
       _Opcion('Base de Datos', Icons.storage_outlined, ExColor.indigo, _Respaldos()),
       _Opcion('Artículos Precargados', Icons.inventory_outlined, ExColor.rojo, _Precargados()),
       _Opcion('Facturación', Icons.receipt_long_outlined, ExColor.texto2, _Proximamente('Facturación',
@@ -1262,8 +1262,10 @@ class _CajerosState extends State<_Cajeros> {
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
       Row(children: [
-        Expanded(child: _titulo('Cajeros y permisos', 'Cada cajero entra con su usuario y contraseña.')),
-        FilledButton.icon(onPressed: () => _editar(), icon: const Icon(Icons.add), label: const Text('Nuevo cajero')),
+        Expanded(
+            child: _titulo('Usuarios y empleados',
+                'Cada quien entra con su usuario y contraseña. Los empleados solo pueden usar Ventas.')),
+        FilledButton.icon(onPressed: () => _editar(), icon: const Icon(Icons.person_add_alt_1), label: const Text('Nuevo empleado')),
       ]),
       for (final c in _l)
         Card(
@@ -1271,14 +1273,16 @@ class _CajerosState extends State<_Cajeros> {
             leading: ExAvatar(c.nombre),
             title: Text(c.nombre),
             subtitle: Text(c.administrador
-                ? 'Usuario: ${c.usuario} · Administrador (todos los permisos)'
-                : 'Usuario: ${c.usuario} · ${c.permisos.length} permisos'),
+                ? 'Usuario: ${c.usuario} · Acceso a todo el sistema'
+                : c.empleado
+                    ? 'Usuario: ${c.usuario} · Empleado: solo Ventas'
+                    : 'Usuario: ${c.usuario} · ${c.permisos.length} permisos'),
             trailing: Wrap(spacing: 4, children: [
               IconButton(onPressed: () => _editar(c), icon: const Icon(Icons.edit_outlined)),
               if (c.id != sesion.cajero?.id)
                 IconButton(
                   onPressed: () async {
-                    if (await confirmar(context, 'Eliminar cajero', '¿Eliminar a ${c.nombre}?', si: 'Eliminar', peligro: true) &&
+                    if (await confirmar(context, 'Eliminar usuario', '¿Eliminar a ${c.nombre}?', si: 'Eliminar', peligro: true) &&
                         context.mounted) {
                       await intentar(context, () => repos.cajeros.eliminar(c.id));
                       _cargar();
@@ -1305,8 +1309,10 @@ class _FormCajeroState extends State<_FormCajero> {
   late final _nombre = TextEditingController(text: widget.c?.nombre ?? '');
   late final _usuario = TextEditingController(text: widget.c?.usuario ?? '');
   final _clave = TextEditingController();
+  // Nuevo = empleado. Los que ya existen conservan lo que son.
   late bool _admin = widget.c?.administrador ?? false;
-  late final Set<String> _permisos = {...?widget.c?.permisos};
+  late bool _empleado = widget.c == null || widget.c!.empleado;
+  late final Set<String> _permisos = {...?widget.c?.permisos}..remove(Permiso.soloVentas);
 
   @override
   void dispose() {
@@ -1319,7 +1325,7 @@ class _FormCajeroState extends State<_FormCajero> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.c == null ? 'Nuevo cajero' : 'Modificar cajero'),
+      title: Text(widget.c == null ? 'Nuevo empleado' : 'Modificar usuario'),
       content: SizedBox(
         width: 560,
         child: SingleChildScrollView(
@@ -1339,27 +1345,27 @@ class _FormCajeroState extends State<_FormCajero> {
               ),
             ]),
             const SizedBox(height: 8),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              value: _admin,
-              onChanged: (v) => setState(() => _admin = v),
-              title: const Text('Administrador (dueño)'),
-              subtitle: const Text('Puede hacer todo, incluida la configuración.'),
+            const SizedBox(height: 12),
+            const Text('¿Qué puede hacer?', style: TextStyle(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 6),
+            SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(value: true, icon: Icon(Icons.point_of_sale_rounded), label: Text('Empleado: solo Ventas')),
+                ButtonSegment(value: false, icon: Icon(Icons.admin_panel_settings_outlined), label: Text('Acceso a todo')),
+              ],
+              selected: {!_admin},
+              onSelectionChanged: (v) => setState(() {
+                _admin = !v.first;
+                _empleado = v.first;
+              }),
             ),
-            if (!_admin) ...[
-              const Divider(),
-              const Text('Permisos', style: TextStyle(fontWeight: FontWeight.w700)),
-              const Text('Lo que no tenga permitido le pedirá la contraseña de un supervisor.',
-                  style: TextStyle(color: ExColor.texto2, fontSize: 12)),
-              for (final e in Permiso.todos.entries)
-                CheckboxListTile(
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  value: _permisos.contains(e.key),
-                  onChanged: (v) => setState(() => v == true ? _permisos.add(e.key) : _permisos.remove(e.key)),
-                  title: Text(e.value),
-                ),
-            ],
+            const SizedBox(height: 8),
+            Text(
+                _admin
+                    ? 'Entra a todas las pantallas: productos, inventario, clientes, corte, reportes y ajustes.'
+                    : 'Solo ve la pantalla de Ventas. Para descuentos, cancelaciones, entradas o salidas de efectivo y '
+                        'cualquier otra cosa se pedirá la contraseña de un administrador.',
+                style: const TextStyle(color: ExColor.texto2, fontSize: 12)),
           ]),
         ),
       ),
@@ -1375,7 +1381,7 @@ class _FormCajeroState extends State<_FormCajero> {
                 nombre: _nombre.text,
                 clave: _clave.text,
                 administrador: _admin,
-                permisos: _permisos,
+                permisos: _admin ? const {} : (_empleado ? {Permiso.soloVentas} : _permisos),
               ),
             );
             if (ok && context.mounted) Navigator.pop(context, true);
