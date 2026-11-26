@@ -1237,11 +1237,11 @@ class SeccionEmpleados extends StatelessWidget {
   const SeccionEmpleados({super.key});
 
   @override
-  Widget build(BuildContext context) => const SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(28, 24, 28, 28),
+  Widget build(BuildContext context) => SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(28, 24, 28, 28),
         child: Align(
           alignment: Alignment.topLeft,
-          child: ConstrainedBox(constraints: BoxConstraints(maxWidth: 900), child: _Cajeros()),
+          child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 900), child: const _Cajeros()),
         ),
       );
 }
