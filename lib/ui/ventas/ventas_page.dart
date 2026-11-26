@@ -288,13 +288,32 @@ class _VentasPageState extends State<VentasPage> {
   // ---------------- Agregar productos ----------------
 
   /// Interpreta lo que se escribió: "3*7501…", código de báscula o código.
+  // Enter mientras se procesa lo anterior (por ejemplo "jit" + Enter + Enter
+  // rápido): el segundo Enter no se pierde, elige el primer resultado.
+  bool _capturando = false, _enterPendiente = false;
+
   Future<void> _capturar(String texto) async {
     texto = texto.trim();
     _codigo.clear();
     if (texto.isEmpty) {
+      if (_capturando) {
+        _enterPendiente = true;
+        return;
+      }
       _enfocar();
       return;
     }
+    _capturando = true;
+    _enterPendiente = false;
+    try {
+      await _capturarTexto(texto);
+    } finally {
+      _capturando = false;
+      _enterPendiente = false;
+    }
+  }
+
+  Future<void> _capturarTexto(String texto) async {
     double? cantidad;
     final estrella = texto.indexOf('*');
     if (estrella == 0) texto = texto.substring(1).trim();
@@ -337,7 +356,7 @@ class _VentasPageState extends State<VentasPage> {
     if (!mounted) return;
     if (p == null) {
       // No es un código: se busca por descripción.
-      final elegido = await buscarProducto(context, texto: texto);
+      final elegido = await buscarProducto(context, texto: texto, enterPendiente: () => _enterPendiente);
       if (elegido == null) return _enfocar();
       p = elegido;
     }

@@ -64,13 +64,20 @@ class _BuscadorState extends State<_Buscador> {
     super.dispose();
   }
 
+  String _buscado = '\u0000';
+
   Future<void> _buscar() async {
     final n = ++_consulta;
     final t = _c.text.trim();
     final r = <Hallazgo>[];
     // Vacío hasta que se escriban al menos 2 letras (como pidió la tienda).
     if (t.isEmpty) {
-      if (mounted) setState(() => _r = []);
+      if (mounted) {
+        setState(() {
+          _r = [];
+          _buscado = t;
+        });
+      }
       return;
     }
     final folio = int.tryParse(t);
@@ -93,6 +100,7 @@ class _BuscadorState extends State<_Buscador> {
     setState(() {
       _r = r;
       _sel = 0;
+      _buscado = t;
     });
   }
 
@@ -111,12 +119,23 @@ class _BuscadorState extends State<_Buscador> {
     return KeyEventResult.handled;
   }
 
-  void _aceptar() {
+  /// Enter: espera a que termine la búsqueda de lo escrito (no se pierde el
+  /// primer Enter).
+  Future<void> _aceptar() async {
+    if (_c.text.trim() != _buscado) {
+      _espera?.cancel();
+      await _buscar();
+      if (!mounted) return;
+    }
     if (_r.isEmpty) return;
-    _elegir(_r[_sel]);
+    _elegir(_r[_sel.clamp(0, _r.length - 1)]);
   }
 
+  bool _cerrado = false;
+
   void _elegir(Hallazgo h) {
+    if (_cerrado) return;
+    _cerrado = true;
     final p = h.producto;
     if (p != null) repos.productos.registrarBusqueda(p.id);
     Navigator.pop(context, h);

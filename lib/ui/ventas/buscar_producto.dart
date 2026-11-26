@@ -12,13 +12,17 @@ import '../zoom.dart';
 import '../tema/tema.dart';
 
 /// F10: buscar producto por nombre o código. Enter agrega el seleccionado.
-Future<Producto?> buscarProducto(BuildContext context, {String texto = ''}) {
-  return showDialog<Producto>(context: context, builder: (_) => _Buscador(texto: texto));
+/// [enterPendiente]: si devuelve true al terminar la primera búsqueda, se
+/// agrega el primer resultado (el cajero ya había dado Enter antes de que la
+/// ventana apareciera).
+Future<Producto?> buscarProducto(BuildContext context, {String texto = '', bool Function()? enterPendiente}) {
+  return showDialog<Producto>(context: context, builder: (_) => _Buscador(texto: texto, enterPendiente: enterPendiente));
 }
 
 class _Buscador extends StatefulWidget {
-  const _Buscador({required this.texto});
+  const _Buscador({required this.texto, this.enterPendiente});
   final String texto;
+  final bool Function()? enterPendiente;
 
   @override
   State<_Buscador> createState() => _BuscadorState();
@@ -35,7 +39,9 @@ class _BuscadorState extends State<_Buscador> {
   @override
   void initState() {
     super.initState();
-    _buscar();
+    _buscar().then((_) {
+      if (mounted && (widget.enterPendiente?.call() ?? false)) _aceptar();
+    });
   }
 
   @override
@@ -46,16 +52,21 @@ class _BuscadorState extends State<_Buscador> {
     super.dispose();
   }
 
+  int _consulta = 0;
+  String _buscado = '\u0000';
+
   Future<void> _buscar() async {
+    final n = ++_consulta;
     final t = _c.text.trim();
     // Vacío hasta 2 letras; luego primero los más buscados y vendidos.
     final r = t.isEmpty ? <Producto>[] : await repos.productos.buscar(t, porUso: true, limite: 200);
-    if (mounted) {
-      setState(() {
-        _lista = r;
-        _sel = 0;
-      });
-    }
+    // Si mientras tanto se escribió otra cosa, este resultado ya no sirve.
+    if (!mounted || n != _consulta) return;
+    setState(() {
+      _lista = r;
+      _sel = 0;
+      _buscado = t;
+    });
   }
 
   KeyEventResult _tecla(FocusNode _, KeyEvent e) {
@@ -73,12 +84,25 @@ class _BuscadorState extends State<_Buscador> {
     return KeyEventResult.handled;
   }
 
-  void _aceptar() {
+  /// Enter: si la búsqueda de lo que se escribió todavía no termina (por
+  /// ejemplo, Enter muy rápido al abrir), se espera a que termine en lugar
+  /// de no hacer nada.
+  Future<void> _aceptar() async {
+    if (_c.text.trim() != _buscado) {
+      _espera?.cancel();
+      await _buscar();
+      if (!mounted) return;
+    }
     if (_lista.isEmpty) return;
-    _elegir(_lista[_sel]);
+    _elegir(_lista[_sel.clamp(0, _lista.length - 1)]);
   }
 
+  bool _cerrado = false;
+
   void _elegir(Producto p) {
+    // Dos Enter seguidos no deben cerrar dos ventanas.
+    if (_cerrado) return;
+    _cerrado = true;
     repos.productos.registrarBusqueda(p.id);
     Navigator.pop(context, p);
   }
