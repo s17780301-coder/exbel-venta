@@ -16,6 +16,7 @@ import '../comun/dialogos.dart';
 import '../comun/ex_ui.dart';
 import '../config/config_page.dart' show versionExBel;
 import '../comun/impresion.dart';
+import '../comun/actualizacion_ui.dart' show ventaEnCurso;
 import '../principal.dart';
 import '../sesion.dart';
 import '../tema/tema.dart';
@@ -80,6 +81,7 @@ class _VentasPageState extends State<VentasPage> {
       if (mounted) _codigo.clear();
     };
     enfocarVentas = _enfocar;
+    ventaEnCurso = () => _tickets.any((t) => t.renglones.isNotEmpty);
     FocusManager.instance.addListener(_vigilarFoco);
     encabezadoVentas.value = (_) => _ticketsSegmentados();
     _cargarFavoritos();
