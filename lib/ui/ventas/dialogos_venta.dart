@@ -231,7 +231,8 @@ class _ComunState extends State<_Comun> {
               decoration: const InputDecoration(labelText: 'Descripción')),
           const SizedBox(height: 14),
           Row(children: [
-            Expanded(child: CampoNumero(controller: _cant, etiqueta: 'Cantidad', onSubmitted: (_) => _aceptar())),
+            // Enter en Cantidad pasa a Precio; Enter en Precio agrega.
+            Expanded(child: CampoNumero(controller: _cant, etiqueta: 'Cantidad')),
             const SizedBox(width: 12),
             Expanded(child: CampoNumero(controller: _precio, etiqueta: 'Precio (\$)', onSubmitted: (_) => _aceptar())),
           ]),
