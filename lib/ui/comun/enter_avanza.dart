@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 ///   se respeta.
 /// - Campos de varias líneas: Enter hace renglón nuevo.
 /// - En el último campo: si el formulario está dentro de [EnterGuarda], guarda.
+/// SUPR en un campo de texto borra todo su contenido.
 class EnterAvanza extends StatelessWidget {
   const EnterAvanza({super.key, required this.child});
   final Widget child;
@@ -36,8 +37,53 @@ bool _esCampo(FocusNode n) {
   return e != null && e.maxLines == 1 && !e.readOnly && n.canRequestFocus && n.context != null;
 }
 
+/// Campo que de verdad se ve (no de una sección escondida).
+bool _visible(FocusNode n) {
+  var ok = true;
+  n.context?.visitAncestorElements((a) {
+    final w = a.widget;
+    if ((w is Offstage && w.offstage) || (w is Visibility && !w.visible)) {
+      ok = false;
+      return false;
+    }
+    return true;
+  });
+  return ok;
+}
+
+/// Orden de captura: renglón por renglón de arriba hacia abajo y, en cada
+/// renglón, de izquierda a derecha.
+List<FocusNode> _ordenar(List<FocusNode> campos) {
+  final l = [...campos]..sort((a, b) => a.rect.center.dy.compareTo(b.rect.center.dy));
+  final renglones = <List<FocusNode>>[];
+  for (final n in l) {
+    final r = renglones.isEmpty ? null : renglones.last;
+    if (r != null && (n.rect.center.dy - r.first.rect.center.dy).abs() <= 24) {
+      r.add(n);
+    } else {
+      renglones.add([n]);
+    }
+  }
+  return [
+    for (final r in renglones) ...(r..sort((a, b) => a.rect.left.compareTo(b.rect.left))),
+  ];
+}
+
 KeyEventResult _tecla(FocusNode _, KeyEvent e) {
   if (e is! KeyDownEvent) return KeyEventResult.ignored;
+  // SUPR borra todo lo escrito en el campo de una vez (no letra por letra).
+  // El punto del teclado numérico con Bloq Num apagado también llega como
+  // SUPR: ese no se toca.
+  if (e.logicalKey == LogicalKeyboardKey.delete && e.physicalKey != PhysicalKeyboardKey.numpadDecimal) {
+    final f = FocusManager.instance.primaryFocus;
+    final ed = f == null ? null : _editable(f);
+    if (f != null && _esCampo(f) && ed != null && ed.controller.text.isNotEmpty) {
+      ed.controller.clear();
+      ed.onChanged?.call('');
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
   if (e.logicalKey != LogicalKeyboardKey.enter && e.logicalKey != LogicalKeyboardKey.numpadEnter) {
     return KeyEventResult.ignored;
   }
@@ -51,9 +97,9 @@ KeyEventResult _tecla(FocusNode _, KeyEvent e) {
   final ctx = foco.context!;
   final ambito = foco.nearestScope;
   if (ambito == null) return KeyEventResult.ignored;
-  final campos = ambito.traversalDescendants.where(_esCampo).toList();
-  final politica = FocusTraversalGroup.maybeOf(ctx) ?? ReadingOrderTraversalPolicy();
-  final orden = politica.sortDescendants(campos, foco).toList();
+  final campos = ambito.traversalDescendants.where((n) => _esCampo(n) && _visible(n)).toList();
+  if (!campos.contains(foco)) campos.add(foco);
+  final orden = _ordenar(campos);
   final i = orden.indexOf(foco);
   if (i >= 0 && i < orden.length - 1) {
     final sig = orden[i + 1];

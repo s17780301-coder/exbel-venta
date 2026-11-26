@@ -133,6 +133,15 @@ class _PrincipalState extends State<Principal> with WidgetsBindingObserver {
     final buscar = e.logicalKey == LogicalKeyboardKey.f10 || (ctrl && e.logicalKey == LogicalKeyboardKey.keyF);
     // F10 es tecla de sistema en Windows (activa el menú de la ventana y se
     // "come" las teclas siguientes): se consume también al soltarla.
+    // + y − sostenidos en Ventas: siguen sumando o restando (no escriben).
+    if (e is KeyRepeatEvent &&
+        _actual == 0 &&
+        esMasOMenos(e) != 0 &&
+        codigoVentasVacio() &&
+        (ModalRoute.of(context)?.isCurrent ?? false)) {
+      teclasVentas.value = e;
+      return true;
+    }
     if (e is! KeyDownEvent) return e.logicalKey == LogicalKeyboardKey.f10;
     if (!(ModalRoute.of(context)?.isCurrent ?? false)) {
       // F10 / Ctrl+F funciona también con cualquier ventana abierta (F3,

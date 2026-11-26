@@ -247,7 +247,7 @@ class _VentasPageState extends State<VentasPage> {
     } else if (k == LogicalKeyboardKey.arrowDown) {
       _mover(1);
     } else if (esMasOMenos(e) != 0) {
-      if (_codigo.text.isEmpty) _sumar(esMasOMenos(e));
+      if (_codigo.text.isEmpty) _sumar(esMasOMenos(e), sostenida: e is KeyRepeatEvent);
     } else if (ctrl && k == LogicalKeyboardKey.keyP) {
       _comun();
     } else if (ctrl && k == LogicalKeyboardKey.keyD) {
@@ -264,7 +264,7 @@ class _VentasPageState extends State<VentasPage> {
     setState(() => _t.seleccion = (_t.seleccion + d).clamp(0, _t.renglones.length - 1));
   }
 
-  void _sumar(int d) {
+  void _sumar(int d, {bool sostenida = false}) {
     if ((_t.seleccion < 0 || _t.seleccion >= _t.renglones.length) && _t.renglones.isNotEmpty) {
       _t.seleccion = _t.renglones.length - 1;
     }
@@ -275,6 +275,7 @@ class _VentasPageState extends State<VentasPage> {
     // Con "−" no se borra el producto: se queda en lo mínimo. Para quitarlo
     // está SUPR / "Borrar art.".
     if (nueva < 1 && d < 0) {
+      if (sostenida) return;
       aviso(context, 'Ya está en lo mínimo. Para quitar el producto usa SUPR o "Borrar art.".');
       return;
     }
@@ -388,6 +389,9 @@ class _VentasPageState extends State<VentasPage> {
     return true;
   }
 
+  /// Menos de esto en la báscula cuenta como vacía (kg).
+  static const vacioBascula = 0.010;
+
   void _fijarVivo() {
     _vivoEspera?.cancel();
     if (_vivo == null) return;
@@ -412,17 +416,19 @@ class _VentasPageState extends State<VentasPage> {
     if (r == null || v == null || !mounted) return;
     // Ya no está en el ticket, o el cajero cambió la cantidad a mano: se fija.
     if (!_t.renglones.contains(r) || (r.cantidad - _vivoPeso).abs() > 0.0005) return _fijarVivo();
-    // Báscula vacía: se queda con el último peso.
-    if (v <= 0.002) return _fijarVivo();
+    // Báscula vacía (o casi: menos de 10 g, lo que queda al levantar el
+    // producto o el temblor de la báscula): se queda con el último peso.
+    if (v < vacioBascula) return _fijarVivo();
     // Sigue a la báscula (sube y baja) pero solo cuando el peso ya está
-    // quieto 0.7 s. Al levantar el producto la báscula pasa rápido por pesos
-    // intermedios hasta llegar a cero: esos no se toman y se queda el último
-    // peso estable.
+    // quieto. Al levantar el producto la báscula pasa por pesos intermedios
+    // hasta llegar a cero: para bajar se pide más tiempo quieto (1.5 s) y así
+    // esos pesos de paso no se toman.
     if ((v - r.cantidad).abs() < 0.0005) return;
     _vivoEspera?.cancel();
-    _vivoEspera = Timer(const Duration(milliseconds: 700), () {
+    final espera = Duration(milliseconds: v > r.cantidad ? 700 : 1500);
+    _vivoEspera = Timer(espera, () {
       final ahora = LectorBascula.instancia.peso.value;
-      if (!mounted || _vivo != r || ahora == null || (ahora - v).abs() > 0.002 || ahora <= 0.002) return;
+      if (!mounted || _vivo != r || ahora == null || (ahora - v).abs() > 0.002 || ahora < vacioBascula) return;
       if (!_t.renglones.contains(r) || (r.cantidad - _vivoPeso).abs() > 0.0005) return _fijarVivo();
       setState(() {
         r.cantidad = ahora;
