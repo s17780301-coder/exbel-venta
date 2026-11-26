@@ -81,9 +81,34 @@ class _GranelState extends State<_Granel> {
     _cant.text = formatoCantidad((i / widget.p.precioCentavos * 1000).round() / 1000);
   }
 
-  void _aceptar() {
+  bool _cerrado = false;
+
+  /// Enter / Agregar. Si la báscula todavía no manda el peso (se está
+  /// conectando o el producto apenas se puso), espera hasta 3 segundos en
+  /// lugar de cerrar sin agregar nada.
+  Future<void> _aceptar() async {
+    if (_cerrado) return;
+    var c = leerCantidad(_cant.text);
+    if ((c == null || c <= 0) && _bascula != null && _siguePeso) {
+      _cerrado = true;
+      for (var i = 0; i < 30 && mounted; i++) {
+        final v = _lector.peso.value;
+        if (v != null && v >= 0.010) {
+          c = v;
+          break;
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      }
+      _cerrado = false;
+      if (!mounted) return;
+    }
+    if (c == null || c <= 0) {
+      aviso(context, _bascula != null ? 'La báscula no marca peso. Pon el producto o escribe la cantidad.' : 'Escribe la cantidad o el importe.');
+      return;
+    }
+    _cerrado = true;
     granelDesdeBascula = _bascula != null && _siguePeso;
-    Navigator.pop(context, leerCantidad(_cant.text));
+    Navigator.pop(context, c);
   }
 
   @override

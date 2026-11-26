@@ -81,6 +81,13 @@ class _VentasPageState extends State<VentasPage> {
       if (mounted) _codigo.clear();
     };
     enfocarVentas = _enfocar;
+    // La báscula queda conectada mientras Ventas está abierta: así el peso
+    // ya está listo al vender a granel (conectarla tarda un par de segundos).
+    final bascula = configBascula(repos.ajustes);
+    if (bascula != null) {
+      _basculaLista = true;
+      LectorBascula.instancia.usar(bascula);
+    }
     ventaEnCurso = () => _tickets.any((t) => t.renglones.isNotEmpty);
     FocusManager.instance.addListener(_vigilarFoco);
     encabezadoVentas.value = (_) => _ticketsSegmentados();
@@ -181,6 +188,7 @@ class _VentasPageState extends State<VentasPage> {
   @override
   void dispose() {
     FocusManager.instance.removeListener(_vigilarFoco);
+    if (_basculaLista) LectorBascula.instancia.soltar();
     _fijarVivo();
     teclasVentas.removeListener(_alTeclear);
     encabezadoVentas.value = null;
@@ -291,6 +299,7 @@ class _VentasPageState extends State<VentasPage> {
   // Enter mientras se procesa lo anterior (por ejemplo "jit" + Enter + Enter
   // rápido): el segundo Enter no se pierde, elige el primer resultado.
   bool _capturando = false, _enterPendiente = false;
+  bool _basculaLista = false;
 
   Future<void> _capturar(String texto) async {
     texto = texto.trim();

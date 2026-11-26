@@ -31,7 +31,7 @@ import '../sesion.dart';
 import '../tema/tema.dart';
 import '../zoom.dart';
 
-const versionExBel = '0.14.2';
+const versionExBel = '0.14.3';
 
 /// Configuración de la tienda.
 class ConfigPage extends StatefulWidget {
